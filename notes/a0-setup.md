@@ -1,10 +1,9 @@
 # A0 环境与工作流
 
 这一单元不涉及深度学习。目的是让你能顺畅地写代码、跑代码、看图、提交。
-做完这一单元，你应该能自己回答"我的代码在哪、环境怎么用、报错去哪看"。
 
-**讲义里不会给你可以直接粘贴的完整代码。** 给的是要求、骨架、**该读哪一段材料**和分级提示。
-自己写出来才算过。
+**讲义里不会给你可以直接粘贴的完整代码**，但会**把每个 API 直接讲清楚**，
+不需要你去别处找知识。你读完讲义，凭理解把代码写出来。
 
 ---
 
@@ -68,9 +67,7 @@ uv run python work/a0/hello_tensor.py    # 用 .venv 跑
 
 注意 `python3 xxx.py` 看不到 `.venv` 里的包，`uv run python xxx.py` 才看得到。
 
-## 3. 先认识四件事
-
-写第一个脚本之前，有四个 Python 的约定。都不难，但不认识就会处处卡。
+## 3. Python 的四个约定
 
 ### 3.1 import：用库之前先加载
 
@@ -78,32 +75,43 @@ uv run python work/a0/hello_tensor.py    # 用 .venv 跑
 import torch
 ```
 
-这一行执行之后，`torch` 这个名字才能在下面用。所有功能都挂在它下面，写成 `torch.xxx`。
+这一行执行之后，`torch` 这个名字才能在下面用，所有功能都挂在它下面，写成 `torch.xxx`。
 
 和 C++ 的 `#include` 不一样：`#include` 是编译期把代码文本插进来，`import` 是运行时去加载一个
 已经编译好的模块，加载完把模块对象绑到名字上。
 
-也有只取一部分的写法：
+也可以只取一部分，或者起别名：
 
 ```python
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt      # as plt 是社区惯例，为了少打字
 ```
 
-第二种里的 `as plt` 是起别名，社区惯例，为了少打字。后面会看到大量这种写法。
-
-### 3.2 属性与方法：括号加不加，意思完全不同
+### 3.2 属性与方法
 
 ```python
-x.shape        # 属性，直接取一个值
-x.numel()      # 方法，调用它，返回一个值
+x.shape        # 没有括号
+x.numel()      # 有括号
 ```
 
-`x.shape` 不加括号，拿到的是"形状"这个属性本身。
-`x.numel()` 加括号，是"调用 numel 这个方法"。
+两种东西，用法不同：
 
-写成 `x.numel` 不报错，但你拿到的是方法对象而不是数字。这个错误很难看出来，
-打印出来像 `<built-in method numel of Tensor object at 0x...>`。看到这种输出，就是漏了括号。
+- **属性**是对象上已经存好的数据，直接取，不加括号
+- **方法**是一段可以执行的逻辑，加括号才是"调用它"
+
+写成 `x.numel` 不报错，但你拿到的是方法对象本身而不是数字。打印出来长这样：
+
+```
+<built-in method numel of Tensor object at 0x7f...>
+```
+
+看到这种输出，就是漏了括号。
+
+哪些是属性哪些是方法，只能记。张量上常用的：
+
+| 属性（不加括号） | 方法（加括号） |
+|---|---|
+| `shape`、`dtype`、`device`、`T` | `numel()`、`size()`、`item()`、`tolist()`、`reshape()`、`to()` |
 
 ### 3.3 用缩进代替大括号
 
@@ -113,70 +121,156 @@ x.numel()      # 方法，调用它，返回一个值
 
 `#` 到行尾。写"为什么这样写"，不写"这行在做什么"。
 
-## 4. 该读什么
+## 4. 你要用到的 API
 
-### 4.1 从官方教程入手，别从 API 文档入手
+这一节是任务一和任务二需要的全部东西。**我在这里讲清楚，不用你去别处查。**
+想深入的时候再看第 7 节的链接。
 
-API 文档是给已经知道自己在找什么的人查的。你现在需要的是有人按顺序讲一遍的材料。
+### 4.1 版本号存在 `__version__` 里
 
-PyTorch 官方的入门系列在这里：
+```python
+print("torch 版本：", torch.__version__)
+```
 
-<https://docs.pytorch.org/tutorials/beginner/basics/intro.html>
+`print` 是 Python 内置函数，接受任意多个参数，用逗号隔开，输出时自动插空格。
 
-那一页自己写了读法（原文）：
+Python 的库有一个通行约定：**用 `__version__` 这个属性暴露版本号字符串**。
+torch、numpy、matplotlib 全都遵守。名字两边各两条下划线的写法叫 dunder，
+是 Python 里"语言或框架约定的特殊名字"的标记，A1 会专门讲。
+现在只要记住：torch 的版本号是 `torch.__version__`，一个字符串。
 
-> If you're familiar with other deep learning frameworks, check out the 0. Quickstart first
-> to quickly familiarize yourself with PyTorch's API. If you're new to deep learning frameworks,
-> head right into the first section of our step-by-step guide: 1. Tensors.
+### 4.2 判断显卡能不能用
 
-你没有别的框架经验，所以**跳过 0. Quickstart，从 1. Tensors 读起**：
+```python
+torch.cuda.is_available()
+```
 
-<https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html>
+`torch.cuda` 是 torch 里管 NVIDIA 显卡的子模块。`is_available` 是它下面的一个函数，
+**返回布尔值**，告诉你这台机器的 torch 能不能用上显卡。
 
-（Quickstart 会把下载数据、建模型、训练、保存整套流程一次过完，现在看信息量太大。
-B06 学完线性回归之后回来读它正合适。）
+它是个函数，所以要写 `is_available()`。这是第 3.2 节那条规则的第一个实例。
 
-Tensors 那一页里和 A0 有关的小节：
+顺便说一句命名：CUDA 是 NVIDIA 的并行计算平台。torch 里凡是只管 N 卡的功能都放在
+`torch.cuda` 下面。PyTorch 后来加了个更通用的 `torch.accelerator`，泛指各类加速器，
+教程里偶尔会见到，功能等价。本机只有 N 卡，用 `torch.cuda` 更直接。
 
-| 小节 | 讲什么 | 用在 |
-|---|---|---|
-| Initializing a Tensor | 造张量的四种方式：从数据、从 NumPy、从另一个张量、用随机数或常量 | 任务一第 3 步 |
-| Attributes of a Tensor | 三个属性：`shape`、`dtype`、`device` | 任务一第 4 步 |
-| Operations on Tensors 开头几段 | 张量默认在 CPU；用 `.to()` 搬到加速器 | 任务一第 5 步 |
-| Bridge with NumPy | 张量与 NumPy 数组共享内存，`.numpy()` | 任务二 |
+### 4.3 造一个张量
 
-再往后的 Datasets & DataLoaders、Transforms、Build Model、Autograd、Optimization、
-Save & Load Model 现在不用看，那对应 B06 到 B07。
+**张量**是这门课的主角，可以理解成"能放在显卡上算的多维数组"。
 
-一处提醒：教程里搬设备写的是 `torch.accelerator`，那是新 API，泛指 CUDA / MPS / XPU 各类
-加速器。本机只有 NVIDIA 显卡，写 `torch.cuda` 更直接，两种都对。
+```python
+torch.arange(12)
+```
 
-### 4.2 教程没讲到的三个，查 API 文档
+`arange` 是 "array range" 的缩写，`arange(12)` 给出从 0 到 11 的一维张量，**不含 12**，
+和 Python 的 `range` 一样是左闭右开。默认元素类型是 **int64**，也就是整数。
 
-Tensors 那页没有 `arange`、`reshape`、`numel`。这三个查 API：
+要浮点得显式指定：
 
-| 查什么 | 去哪 | 重点看 |
-|---|---|---|
-| 怎么造一串连续数字 | [torch.arange](https://pytorch.org/docs/stable/generated/torch.arange.html) | Parameters 里 `dtype` 的默认值 |
-| 怎么改形状 | [Tensor.reshape](https://pytorch.org/docs/stable/generated/torch.Tensor.reshape.html) | 参数能不能写成一个 tuple |
-| 怎么看元素个数 | [Tensor.numel](https://pytorch.org/docs/stable/generated/torch.Tensor.numel.html) | 返回值是什么类型 |
+```python
+torch.arange(12, dtype=torch.float32)
+```
 
-API 文档的读法：先看签名和第一句话，再看 Parameters 表。表里写了默认值的参数可以不传。
+`dtype=` 是**关键字参数**：函数签名里写死的参数名，传的时候带上名字。
+好处是不用记住参数顺序。Python 里函数可以有任意多个关键字参数。
 
-### 4.3 任务二的材料
+为什么这里必须指定浮点，B02 会讲清楚，现在照做就行。
 
-- `plt.plot`、`plt.xlabel`、`plt.ylabel`：看
-  [Pyplot tutorial](https://matplotlib.org/stable/tutorials/pyplot.html) 的
-  **Introduction to pyplot** 那一节。再往后的 "Formatting the style of your plot" 讲颜色和线型，
-  现在用不上
-- `plt.figure`：[figure 文档](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html)，
-  只需要 `figsize`
-- `plt.savefig`：[savefig 文档](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html)，
-  只需要 `fname` 和 `dpi`
+### 4.4 改形状
+
+```python
+x.reshape(3, 4)
+```
+
+把一个 12 个元素的一维张量排成 3 行 4 列。元素总数必须对得上，否则报错。
+也可以写 `x.reshape((3, 4))`，两种写法等价。
+
+### 4.5 看形状和元素个数
+
+```python
+x.shape      # torch.Size([3, 4])，可以当元组用
+x.numel()    # 12，int
+```
+
+`shape` 是属性，不加括号；`numel` 是方法，要加括号。`numel` 是 "number of elements" 的缩写。
+
+### 4.6 把张量搬到显卡
+
+张量默认建在内存（CPU）上。搬到显卡：
+
+```python
+g = x.to("cuda")
+```
+
+`.to("cuda")` **返回一个新张量**，原来那个 `x` 还在 CPU 上，没动。
+
+新张量在哪个设备上，用 `.device` 属性看，输出形如 `cuda:0`（0 是显卡编号）。
+
+搬回内存：
+
+```python
+g.cpu()
+```
+
+**为什么必须搬回来**：显卡上的张量 Python 打印不了，`print` 会报错。
+要看内容就得先 `.cpu()`。
+
+### 4.7 画图
+
+四个调用：
+
+```python
+plt.figure(figsize=(5, 3))    # 新建画布，figsize 单位是英寸
+plt.plot(x, y)                # 画折线，两个参数是横坐标和纵坐标
+plt.xlabel("x")               # 横轴标签
+plt.ylabel("sin(x)")          # 纵轴标签
+plt.savefig("out.png", dpi=120)   # 存成 PNG，dpi 是每英寸像素数
+```
+
+**matplotlib 只认 numpy 数组，不认 torch 张量。** 传进去之前要转换：
+
+```python
+x.numpy()
+```
+
+`.numpy()` 是张量的方法，返回对应的 numpy 数组。要求张量在 CPU 上、且不连着计算图，
+这两个条件在 A0 里都满足。
+
+生成横坐标用：
+
+```python
+torch.linspace(0, 2 * 3.14159, 200)
+```
+
+`linspace` 是 "linear space"，在起点和终点之间**均匀取 N 个点**（含两端）。
+和 `arange` 的区别：`arange` 按步长，`linspace` 按点的个数。
+
+求正弦：
+
+```python
+torch.sin(x)
+```
+
+逐元素求正弦，返回形状一样的张量。
+
+### 4.8 为什么画图前要设 `Agg` 后端
+
+**后端**指的是 matplotlib 用什么把图画出来。默认后端会去开一个窗口显示。
+这台机器没有显示器，开窗口会报错或卡住。
+
+`Agg` 后端只往内存里的位图渲染，不显示，由 `savefig` 写进文件。
+
+```python
+import matplotlib
+matplotlib.use("Agg")
+```
+
+**必须在 `import matplotlib.pyplot` 之前调用**。因为 pyplot 在导入的那一刻就把后端定下来
+并创建了相关对象，之后再改不生效。
 
 ## 5. 任务一：确认环境活着
 
-写 `work/a0/hello_tensor.py`，跑出来的输出和下面的"期望输出"对得上。
+写 `work/a0/hello_tensor.py`。
 
 ### 要求
 
@@ -186,9 +280,11 @@ API 文档的读法：先看签名和第一句话，再看 Parameters 表。表�
 4. 打印 `x` 的内容、`x` 的形状、`x` 的元素个数
 5. 如果 CUDA 可用：把 `x` 搬到显卡上，打印它现在在哪个设备；在显卡上乘 2，再搬回 CPU 打印结果
 
+第 4 节的 4.1 到 4.6 已经把这五步需要的东西全讲了，直接写。
+
 ### 骨架
 
-`____` 是你要填的。先读第 4.1、4.2 节的材料，再回来填。
+`____` 是你要填的。填不出来回去看第 4 节对应小节，别看提示。
 
 ```python
 import torch
@@ -196,7 +292,6 @@ import torch
 print("torch 版本：", ____)
 print("CUDA 可用：", ____)
 
-# 逐步来：先造一维的，再变形
 x = ____
 
 print("x =\n", x)
@@ -226,47 +321,6 @@ x =
         [16., 18., 20., 22.]])
 ```
 
-### 提示（卡住再看，从上往下）
-
-<details><summary>提示 1：版本号与 CUDA</summary>
-
-版本号是 torch 模块自带的一个属性，名字两边各两条下划线。
-
-CUDA 能不能用，是 `torch.cuda` 下面一个函数返回的布尔值，函数名是 `is_available`，要加括号。
-
-按第 3.2 节的原则判断：你要的是"值"还是"调用结果"。
-
-</details>
-
-<details><summary>提示 2：造张量</summary>
-
-`torch.arange(12)` 得到 0 到 11 的一维张量，**默认是整数**。
-要浮点得传 `dtype=torch.float32`，这是关键字参数。
-
-变形用 `.reshape(3, 4)`。为什么必须指定 float32，B02 会讲，现在照做。
-
-</details>
-
-<details><summary>提示 3：形状与元素个数</summary>
-
-一个不加括号，一个加括号。去 Tensors 教程的 **Attributes of a Tensor** 一节，
-对照 `shape` 和 `dtype` 的写法，再看 `numel` 的 API 文档。
-
-</details>
-
-<details><summary>提示 4：搬显卡</summary>
-
-Tensors 教程的 **Operations on Tensors** 开头有 `.to()` 的用法。
-在它基础上把"当前加速器"换成 `"cuda"`。
-
-它现在在哪，看 `.device` 属性——这个属性在 **Attributes of a Tensor** 一节里出现过。
-
-搬回内存用 `.cpu()`。
-
-注意 `(g * 2).cpu()` 里的括号：先算乘法，再搬回来，最后打印。
-
-</details>
-
 ## 6. 任务二：把图画出来
 
 写 `work/a0/sin.py`，在 `work/a0/sin.png` 生成一张 sin 曲线图。
@@ -278,58 +332,26 @@ Tensors 教程的 **Operations on Tensors** 开头有 `.to()` 的用法。
 3. 画折线，给两个轴加标签
 4. 存成 PNG 文件
 
+第 4 节的 4.7 和 4.8 讲了全部需要的东西。
+
 ### 骨架
 
 ```python
 import matplotlib
-____                    # 这一行必须在下一行之前
+____                    # 4.8 讲了这里填什么、为什么必须在下一行之前
 
 import matplotlib.pyplot as plt
 import torch
 
-x = ____                # 提示：torch.linspace
+x = ____                # 横坐标，见 4.7
 
 plt.figure(figsize=(5, 3))
-plt.plot(____, ____)    # 两个参数：横坐标、纵坐标
+plt.plot(____, ____)    # 注意 4.7 最后那条：不能直接把张量传进去
 plt.xlabel("x")
 plt.ylabel("sin(x)")
 plt.savefig("work/a0/sin.png", dpi=120)
 print("已保存 work/a0/sin.png")
 ```
-
-### 那个空行是干什么的
-
-这台机器没有显示器。matplotlib 默认会去开一个窗口，开不了就报错或者卡住。
-要换成 `Agg` 后端，它只往内存里的位图渲染，最后由 `savefig` 写进文件。
-
-后端必须在 `import matplotlib.pyplot` **之前**选定。pyplot 在导入的那一刻就把后端定下来，
-导入之后再改不生效。要填的那个词是后端名字，三个字母。
-
-### 提示
-
-<details><summary>提示 1：横坐标</summary>
-
-`torch.linspace(起点, 终点, 点的个数)`，linspace 是 "linear space"。
-它没出现在第 4 节的表里，可以顺手查一下它的 API 文档。
-
-2π 可以写 `2 * 3.14159`，也可以 `import math` 之后用 `math.pi`。
-
-</details>
-
-<details><summary>提示 2：纵坐标</summary>
-
-有个逐元素求正弦的函数，叫 `torch.sin`，返回同样形状的张量。
-
-</details>
-
-<details><summary>提示 3：为什么不能把张量直接交给 plot</summary>
-
-matplotlib 不认识 torch 张量，只认 numpy 数组。
-Tensor 上有个方法能转过去，看 Tensors 教程的 **Bridge with NumPy** 一节。
-
-转换要求张量在 CPU 上、且不连着计算图。这里两个条件都满足，不会有问题。
-
-</details>
 
 ### 跑起来
 
@@ -342,14 +364,26 @@ just run work/a0/sin.py
 
 图存好之后，在 VSCodium 的远程文件树里点开 `work/a0/sin.png` 就能看。
 
-## 7. 数据集从哪来
+## 7. 想深入的时候看这些
+
+讲义是自足的，这些链接是给"想多知道一点"用的，不是必经之路。
+
+| 想了解 | 去哪 |
+|---|---|
+| 张量的完整介绍 | [Learn the Basics 系列](https://docs.pytorch.org/tutorials/beginner/basics/intro.html) 的 **1. Tensors** 一页。它的 Initializing、Attributes、Bridge with NumPy 三节和第 4 节讲的是同一批东西，可以对照 |
+| 整个训练流程长什么样 | 同系列的 **0. Quickstart**。现在看信息量太大，B06 学完线性回归回来读正合适 |
+| `arange` 的完整参数 | [API 文档](https://pytorch.org/docs/stable/generated/torch.arange.html) |
+| 画图的更多用法 | [Pyplot tutorial](https://matplotlib.org/stable/tutorials/pyplot.html)，读到 "Formatting the style of your plot" 为止就够 A0 用了 |
+| Python 语法本身 | [Python 官方中文教程](https://docs.python.org/zh-cn/3/tutorial/) |
+
+## 8. 数据集从哪来
 
 `d2l` 包默认的数据源在国内不通，不要照着书上的下载代码抄。
 可用的路子是用 `torchvision.datasets`，具体到 B07 那一章会给能跑通的代码。
 
 数据统一放 `data/`（已在 `.gitignore` 里，不会提交）。
 
-## 8. git
+## 9. git
 
 开发机上的仓库是权威副本，也是要公开的学习记录。每完成一个小任务提交一次，别攒着：
 
@@ -361,7 +395,7 @@ git commit -m "a0: 跑通第一个张量脚本"
 
 历史用 `git log --oneline`，撤未提交的改动用 `git restore <文件>`。
 
-## 9. 常用命令速查
+## 10. 常用命令速查
 
 | 想干什么 | 命令 |
 |---|---|
@@ -385,7 +419,8 @@ git commit -m "a0: 跑通第一个张量脚本"
 5. 为什么 `(g * 2).cpu()` 要加括号？
 6. 画图那行 `matplotlib.use("Agg")` 为什么必须写在 `import matplotlib.pyplot` 之前？
 7. 为什么不能把 torch 张量直接传给 `plt.plot`？
-8. `just run work/a0/sin.py` 展开成什么命令？
+8. `torch.arange` 和 `torch.linspace` 有什么区别？
+9. `just run work/a0/sin.py` 展开成什么命令？
 
 <details>
 <summary>做完再看：答案</summary>
@@ -393,12 +428,13 @@ git commit -m "a0: 跑通第一个张量脚本"
 1. import 是运行时加载模块，加载完把模块对象绑到名字上，之后才能通过这个名字访问里面的东西。
    `#include` 是编译期把源文本插进来，两者发生的时机和机制都不同。
 2. 要一个已经存好的值就用属性（不加括号）；要执行一段逻辑拿返回值就调用方法（加括号）。
-   拿不准就看文档，或者打印出来看：是 `<built-in method ...>` 就是漏了括号。
+   拿不准就看打印出来是不是 `<built-in method ...>`。
 3. `torch.arange(12)` 默认 `int64`。浮点运算和梯度要求浮点类型，整数张量送进线性层会报 dtype 不匹配。
 4. 没变。`.to()` 返回新张量，`x` 还是原来那个在 CPU 上的。
 5. `.cpu()` 作用于 `g * 2` 的结果。不加括号会改变运算顺序。
 6. pyplot 在导入时就把后端定下来并创建相关对象，之后再调 `use()` 不生效。
 7. matplotlib 只认 numpy 数组，torch 张量要先 `.numpy()` 转过去。
-8. `python3 work/a0/sin.py`。
+8. `arange` 按**步长**生成（默认步长 1），`linspace` 按**点的个数**在两端之间均匀取。
+9. `python3 work/a0/sin.py`。
 
 </details>
