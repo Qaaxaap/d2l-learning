@@ -1,4 +1,23 @@
+"""
 import torch
+
+# 造一批数据，准备拿去做浮点运算
+x = torch.arange(12) 
+
+# 变形成 3 行 4 列
+X = x.reshape(3, 4)
+
+# 打印它的形状
+print(X.size)
+
+# 取第一行改一改，认为 X 不会受影响
+row = X[0]
+row[0] = 100.0
+print(X[0, 0])
+
+"""
+import torch
+import numpy as np
 import pandas as pd
 
 def tensor_info(x: torch.Tensor):
@@ -60,10 +79,24 @@ def clone_is_copy() -> bool:
 def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
     """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。"""
     data = pd.read_csv(path)
-    for col in data.columns:
-        if (pd.api.types.is_numeric_dtype(col)):
-            col = col.fillna(col.mean())
-        else:
-            col = col.get_dummies(col, dummy_na=True)
-    x = torch.tensor(data, dtype=torch.float32)
-    
+    num_cols = [
+        col for col in data.columns
+        if pd.api.types.is_numeric_dtype(data[col])
+    ]
+    cat_cols = [
+        col for col in data.columns
+        if col not in num_cols
+    ]
+    d = {
+        "数值列": num_cols.copy(), 
+        "类别列": {}
+    }
+    for col in cat_cols:
+        d["类别列"][col] = data[col].value_counts().to_dict()
+    for col in num_cols:
+        data[col] = data[col].fillna(data[col].mean())
+    if cat_cols:
+        data = pd.get_dummies(data,columns=cat_cols,dummy_na=False)
+    x = torch.Tensor(data.to_numpy(dtype=np.float32))
+    name = list(data.columns)
+    return (x, name, d)

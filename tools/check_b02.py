@@ -46,7 +46,8 @@ def load_user_module():
 
 
 def make_csv() -> str:
-    content = "num1,cat,num2\n1.0,a,10\n,b,20\n3.0,a,\n"
+    # 第三行 cat 缺失，用来检验"缺失值不单独成列、该行 one-hot 全 0"
+    content = "num1,cat,num2\n1.0,a,10\n,b,20\n3.0,,\n"
     handle = tempfile.NamedTemporaryFile(
         "w", suffix=".csv", delete=False, encoding="utf-8"
     )
@@ -118,7 +119,7 @@ def main() -> int:
         assert isinstance(feats, torch.Tensor), "第一个返回值应是张量"
         assert feats.dtype == torch.float32, f"dtype 应为 float32，得到 {feats.dtype}"
         assert tuple(feats.shape) == (3, 4), (
-            f"应有 3 行 4 列（num1, num2, cat 的两类），得到 {tuple(feats.shape)}"
+            f"应有 3 行 4 列（num1, num2, cat 的两个取值），得到 {tuple(feats.shape)}"
         )
         assert len(names) == feats.shape[1], (
             f"特征名有 {len(names)} 个，张量有 {feats.shape[1]} 列，对不上"
@@ -135,17 +136,23 @@ def main() -> int:
         assert torch.allclose(col("num2"), torch.tensor([10.0, 20.0, 15.0])), (
             f"num2 缺失值应填均值 15.0，得到 {col('num2').tolist()}"
         )
-        hot = [n for n in names if n.startswith("cat_")]
-        assert len(hot) == 2, f"cat 列应展成两列 one-hot，实际 {hot}"
-        total = sum(col(name).sum().item() for name in hot)
-        assert total == 3.0, (
-            f"每行恰好一个 1，one-hot 各列之和应等于行数 3，得到 {total}"
+        hot = sorted(n for n in names if n.startswith("cat_"))
+        assert hot == ["cat_a", "cat_b"], (
+            f"cat 列有两个取值 a、b，应展成 cat_a 与 cat_b 两列；"
+            f"缺失值不单独成列。实际 {hot}"
+        )
+        assert torch.allclose(col("cat_a"), torch.tensor([1.0, 0.0, 0.0])), (
+            f"cat_a 应为 [1,0,0]，得到 {col('cat_a').tolist()}"
+        )
+        assert torch.allclose(col("cat_b"), torch.tensor([0.0, 1.0, 0.0])), (
+            f"cat_b 应为 [0,1,0]，得到 {col('cat_b').tolist()}"
         )
         assert isinstance(stats, dict), "第三个返回值应是 dict"
         assert "数值列" in stats, f"统计信息缺少 '数值列'，实际键 {list(stats)}"
         assert "类别列" in stats, f"统计信息缺少 '类别列'，实际键 {list(stats)}"
-        assert stats["类别列"].get("cat") == {"a": 2, "b": 1}, (
-            f"cat 列取值计数应为 {{'a': 2, 'b': 1}}，得到 {stats['类别列'].get('cat')}"
+        assert stats["类别列"].get("cat") == {"a": 1, "b": 1}, (
+            f"cat 列取值计数应为 {{'a': 1, 'b': 1}}（缺失值不计入），"
+            f"得到 {stats['类别列'].get('cat')}"
         )
 
     print(f"通过 {len(_passed)} 项")
