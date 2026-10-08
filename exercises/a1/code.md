@@ -84,11 +84,11 @@ class ScaledShift(nn.Module):
 |---|---|
 | 构造签名 | `ScaledShift(size)` |
 | 属性名 | 系数叫 `self.scale`，偏置叫 `self.bias` |
-| `self.scale` | 形状 `(size,)` 的参数，初值全 1 |
-| `self.bias` | 形状 `(size,)` 的参数，初值全 0 |
+| `self.scale` | 形状 `(size,)` 的参数（一维，长度 size），初值全 1 |
+| `self.bias` | 形状 `(size,)` 的参数（一维，长度 size），初值全 0 |
 | 两者的类型 | 必须是 `nn.Parameter`，不是普通张量 |
 | `forward(X)` | 返回 `X * self.scale + self.bias`。`*` 是逐元素乘法，不是矩阵乘法 |
-| `net.parameters()` | 恰好两个张量，形状都是 `(size,)` |
+| `net.parameters()` | 恰好两个张量，形状都是一维、长度 size |
 | 反向传播 | `net(X).sum().backward()` 之后两个参数的 `.grad` 都不为 `None` |
 
 讲义第 3 节的三条规矩都要做对：调 `super().__init__()`、参数用 `nn.Parameter` 包起来、

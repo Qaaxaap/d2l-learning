@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 class Counter:
     """用法：
@@ -48,4 +49,5 @@ def batch_indices(n: int, batch_size: int):
         yield ret
 class ScaledShift(nn.Module):
     """把输入逐元素乘一个可学习的系数，再逐元素加一个可学习的偏置。"""
-    
+    def __init__(self, size):
+        self.scale = nn.Parameter(torch.ones(size,)))
