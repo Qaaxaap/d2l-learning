@@ -298,6 +298,21 @@ X = torch.tensor(inputs.to_numpy(dtype=float))
 y = torch.tensor(outputs.to_numpy(dtype=float))
 ```
 
+**为什么字符串列能和数值列放进同一个张量**：张量是同质的，一个张量只能有一个 dtype，
+所以要把多列塞进同一个张量，前提是它们全是数值。
+
+one-hot 做的就是这件事。以上面那张表为例：
+
+```
+处理前                          处理后
+NumRooms  Alley  Price    →    NumRooms  Alley_Pave  Alley_nan  Price
+3         Pave   127500        3.0       1.0         0.0        127500.0
+2         NA     106000        2.0       0.0         1.0        106000.0
+```
+
+字符串信息没有丢，它变成了"在哪一列上是 1"的位置信息。`Alley_Pave` 这一列的值本来就是数值。
+统一成 `float32` 是为了后面所有列能一起参与浮点运算。
+
 `dummy_na=True` 把缺失值本身当作一个类别，`Alley` 生成 `Alley_Pave` 和 `Alley_nan` 两列。
 当前 pandas 的 `get_dummies` 返回 bool 列，`to_numpy(dtype=float)` 把 True/False 转成 1.0/0.0。
 得到的 `X` 是 `torch.float64`、形状 `(4, 3)`，喂给模型前通常再转一次 `float32`。电子版这里的

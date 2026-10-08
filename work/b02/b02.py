@@ -62,4 +62,8 @@ def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
     data = pd.read_csv(path)
     for col in data.columns:
         if (pd.api.types.is_numeric_dtype(col)):
-            
+            col = col.fillna(col.mean())
+        else:
+            col = col.get_dummies(col, dummy_na=True)
+    x = torch.tensor(data, dtype=torch.float32)
+    
