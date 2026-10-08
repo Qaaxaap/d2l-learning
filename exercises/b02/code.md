@@ -9,6 +9,9 @@
 
 ## T1 张量自述
 
+`dict` 是 Python 的字典（`{"键": 值}`），写法与用法见 A1 讲义第 1.2 节。
+`-> dict` 那个位置是类型注解，不参与运行，只是给人看的。
+
 ```python
 def tensor_info(x: torch.Tensor) -> dict:
     """返回关于 x 的一份描述，键固定为：
@@ -56,6 +59,8 @@ def clone_is_copy() -> bool:
 def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
     """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。
 ```
+
+返回的是一个三元组：张量、字符串列表、字典。`tuple[...]`、`list[...]`、`dict` 都是类型注解。
 
 要求：
 - 数值列：用该列**均值**填缺失值。
