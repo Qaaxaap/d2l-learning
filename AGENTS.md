@@ -26,12 +26,15 @@
 - 本地 `/home/Qaaxaap/Projects/d2l-tutor` 是你的写作区。
 - 同步：`tools/sync.sh push`（本地→远程，不碰 `work/`）、`tools/sync.sh pull`（远程→本地，拉 `work/`）。
 - 远程操作一律 `ssh -o BatchMode=yes -p 2222 Qaaxaap@192.168.1.155 '<cmd>'`。
-- 跑远程 Python 必须先进 devShell：
+- 跑远程 Python 直接调系统解释器，**不要**套 `nix develop`：
 
 ```bash
-ssh -p 2222 Qaaxaap@192.168.1.155 'cd ~/Projects/d2l && nix develop --command bash -c "python3 work/a1/foo.py"'
+ssh -p 2222 Qaaxaap@192.168.1.155 'cd ~/Projects/d2l && python3 work/a1/foo.py'
 ```
 
+  解释器和包都是系统那份（Arch python3.14 + `python-pytorch-cuda` 2.14.0，CUDA 可用）。
+  用 nix 的 python 会遮蔽系统解释器，C 扩展对不上。nix 只提供 uv/just/git。
+- 只有装了 `.venv` 里的包才要 `uv run python ...`。
 - 远程访问 github 需要 `export https_proxy=http://127.0.0.1:7890`。本机代理对局域网开放，
   远程自己的 mihomo 也在 7890。
 

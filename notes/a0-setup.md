@@ -13,7 +13,6 @@ cd ~/Projects/d2l
 ```
 
 远程配置：Arch Linux，i9-14900K（32 线程），62G 内存，RTX 4070 SUPER（12G 显存）。
-不用在本地写代码再传过去，直接在远程写。
 
 仓库目录分工：
 
@@ -25,43 +24,41 @@ cd ~/Projects/d2l
 | `tools/` | 验收脚本、同步脚本 |
 | `refs/` | 参考资料，做题时别看 |
 
-## 2. 进环境
+## 2. 环境分层
+
+这台机器上 Python 环境分三层，搞清每层管什么，后面的报错才好定位：
+
+| 层 | 谁提供 | 内容 |
+|---|---|---|
+| 解释器 | Arch pacman | `/usr/bin/python3`，版本 3.14 |
+| 科学计算包 | Arch pacman | `python-pytorch-cuda`（torch 2.14.0）、`python-numpy`、`python-matplotlib`、`python-pandas`、`python-tqdm`、`python-requests` |
+| 工具链 | nix flake | `uv`、`just`、`git` |
+
+先看一眼实际状态：
 
 ```bash
 cd ~/Projects/d2l
-nix develop
+just env
 ```
 
-进去之后提示符会多一行 `d2l devShell: Python 3.12.15 | uv 0.12.22`。
-这时候 `python`、`uv`、`make` 都能用了。退出敲 `exit` 或者 `Ctrl-D`。
+应该看到 torch 2.14.0、CUDA 可用、RTX 4070 SUPER。
 
-不用 `conda activate`，不用改 `.zshrc`，不拖慢 shell 启动。环境是 `flake.nix` 声明的，
-nix 把它整个装进 `/nix/store`，跟你系统里的 Python 完全隔离。
+**为什么不用 conda**：conda 会往 shell 启动脚本里塞钩子，每次开终端都要跑一遍初始化。
+这里解释器和包由 pacman 管，nix 只补工具链，你在任何目录 `python3 xxx.py` 都能跑。
 
-第一次跑 `nix develop` 会下载依赖，之后是秒进（除非改了 `flake.nix`）。
+**需要额外包时**（比如第二版官方的 `d2l` 包）才用到 uv：
 
-### 依赖装在哪
-
-Python 的第三方包（torch、matplotlib 等）不在 nix store 里，在**项目内**的 `.venv/`：
-
-```
-~/Projects/d2l/.venv/
+```bash
+just setup          # 第一次：建 .venv，带 --system-site-packages，能看到系统包
+uv add d2l          # 装进 .venv，同时写进 pyproject.toml
+uv run python work/a0/hello_tensor.py    # 用 .venv 跑
 ```
 
-它由 `pyproject.toml` 声明、`uv sync` 生成。分工是：nix 管"Python 解释器本身和系统库"，
-uv 管"Python 包"。这么做是因为 PyTorch 的 CUDA wheel 走 PyPI 最省事，
-而解释器用 nix 管能保证版本固定。
-
-| 想干什么 | 命令 |
-|---|---|
-| 装新包 | `uv add <包名>`（会同时写进 `pyproject.toml`） |
-| 按 `pyproject.toml` 同步环境 | `uv sync` |
-| 看装了哪些包 | `uv pip list` |
-| 直接跑一个脚本而不进 shell | `uv run python xxx.py` |
+注意 `python3 xxx.py` 看不到 `.venv` 里的包，`uv run python xxx.py` 才看得到。
 
 ## 3. 写第一个脚本
 
-`work/a0/hello_tensor.py`：
+新建 `work/a0/hello_tensor.py`：
 
 ```python
 import torch
@@ -82,10 +79,10 @@ if torch.cuda.is_available():
 跑：
 
 ```bash
-make run F=work/a0/hello_tensor.py
+just run work/a0/hello_tensor.py
 ```
 
-等价于 `python work/a0/hello_tensor.py`。`make run` 只是省得你每次打全路径。
+等价于 `python3 work/a0/hello_tensor.py`。`just run` 只是省得你每次打全路径。
 
 ## 4. 怎么看图
 
@@ -117,14 +114,13 @@ scp -P 2222 Qaaxaap@192.168.1.155:~/Projects/d2l/work/a0/sin.png /tmp/
 
 2. 用 VSCodium 的 Remote-SSH 连上去，直接点开文件。
 
-（如果你本地终端支持图片协议，装个 `chafa` 或 `timg` 可以在终端里直接看，需要的话说一声。）
+（本地终端如果支持图片协议，装个 `chafa` 或 `timg` 可以直接在终端里看图，需要的话说一声。）
 
 ## 5. 数据集从哪来
 
-`d2l` 包默认的数据源在国内不通，不要照着书上的下载代码抄。可用的走 `torchvision`：
-
-- Fashion-MNIST、CIFAR-10 用 `torchvision.datasets`，它会从可达的镜像拉。
-- 具体到 B07 那一章会给能跑通的下载代码。
+`d2l` 包默认的数据源在国内不通（`ap-northeast-1.d2l.ai` 超时，
+`d2l-data.s3-accelerate.amazonaws.com` 返回 403），不要照着书上的下载代码抄。
+可用的路子是用 `torchvision.datasets`，具体到 B07 那一章会给能跑通的代码。
 
 数据统一放 `data/`（已在 `.gitignore` 里，不会提交）。
 
@@ -141,27 +137,40 @@ git commit -m "a0: 跑通第一个张量脚本"
 
 查看历史：`git log --oneline`。撤掉还没提交的改动：`git restore <文件>`。
 
-## 7. nvim 最小操作
+## 7. 常用命令速查
 
-（待补：等确认你 nvim 的配置情况）
+| 想干什么 | 命令 |
+|---|---|
+| 看环境 | `just env` |
+| 跑脚本 | `just run work/a0/hello_tensor.py` |
+| 跑某单元验收 | `just check b02` |
+| 进 nix 工具环境 | `nix develop`（可选） |
+| 装额外的包 | `just setup` 然后 `uv add <包>` |
+| 让 AI 看到你的改动 | 跟 AI 说一声，它自己拉 |
+| 看讲义 | `less notes/a0-setup.md` |
 
 ## 自测
 
-1. `nix develop` 之后，`which python` 指向哪里？为什么不指向 `/usr/bin/python3`？
-2. `.venv/` 和 `/nix/store` 各自管什么？如果我要装 `scikit-learn`，用哪条命令？
+1. `python3` 指向哪里？为什么不指向 `/nix/store` 里的某个 Python？
+2. 三层环境各自管什么？我要装 `scikit-learn`，走哪条路？
 3. 为什么画图脚本必须写 `matplotlib.use("Agg")`，而且必须写在 `import matplotlib.pyplot` 之前？
-4. `make run F=work/a0/hello_tensor.py` 展开成什么命令？
-5. 你在远程改了 `work/a0/hello_tensor.py`，怎么让本地的 AI 看到？
+4. `just run work/a0/hello_tensor.py` 展开成什么命令？
+5. `python3 xxx.py` 和 `uv run python xxx.py` 有什么区别？
+6. 你在远程改了 `work/a0/hello_tensor.py`，怎么让本地的 AI 看到？
 
 <details>
 <summary>做完再看：答案</summary>
 
-1. 指向 `/nix/store/...-python-3.12.15/bin/python3`。因为 `nix develop` 把 nix 环境注入 PATH 最前面，
-   系统的 `/usr/bin/python3` 是 Arch 的 3.14，不在环境里。
-2. `.venv/` 管 Python 包，`/nix/store` 管解释器和系统库。装包用 `uv add scikit-learn`。
-3. 远程没有 X/Wayland 显示服务，默认后端（TkAgg/QtAgg）没有可用的显示目标。
-   必须在 pyplot 导入时选定后端，导入之后再改不生效。
-4. `python work/a0/hello_tensor.py`。
-5. 告诉 AI 一声，AI 用 `tools/sync.sh pull` 拉回去看。
+1. 指向 `/usr/bin/python3`（Arch 的 3.14）。nix flake 里没有提供 python，
+   免得遮蔽系统解释器，也免得和系统里那份编译好的 torch C 扩展对不上。
+2. 解释器归 pacman，科学计算包归 pacman，工具链归 nix。装 `scikit-learn`
+   先看 pacman 有没有（`pacman -Ss python-scikit-learn`），有就用 pacman；
+   没有就 `uv add scikit-learn` 装进项目 `.venv`。
+3. 远程没有 X/Wayland 显示服务，默认后端（TkAgg/QtAgg）找不到显示目标。
+   后端必须在 pyplot 导入时选定，导入之后再改不生效。
+4. `python3 work/a0/hello_tensor.py`。
+5. 前者用系统解释器，只看得到 pacman 装的包；后者用项目 `.venv`，
+   既看得到 `.venv` 里的包，也看得到系统包。
+6. 告诉 AI 一声，AI 用 `tools/sync.sh pull` 拉回去看。
 
 </details>
