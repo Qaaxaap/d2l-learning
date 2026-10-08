@@ -378,6 +378,7 @@ class Vec:
 | `__repr__` | `print(foo)`、调试显示 | `operator<<` / `Debug` |
 | `__enter__` `__exit__` | `with foo:` 进入和退出 | RAII 析构 |
 | `__getattr__` | 访问不存在的属性时 | 没有对应物 |
+| `__get__` `__set__` | 属性被读/写时（描述符协议），`@property` 就是用它实现的 | 没有对应物 |
 | `__setattr__` | 给属性赋值时 | 没有对应物 |
 
 前十一行你都能用 C++/Rust 的直觉理解。最后两行是 Python 特有的，也是 `nn.Module` 的魔法来源。
