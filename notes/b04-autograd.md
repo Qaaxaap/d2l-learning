@@ -107,7 +107,7 @@ $$\mathbf{v}^\top \mathbf{J},\qquad \mathbf{J}=\frac{\partial \mathbf{y}}{\parti
 
 ## 4 逐段对照：v1 的 MXNet 代码 → PyTorch
 
-### 4.1 书上例子的逐段翻译
+### 4.1 v1 的 MXNet 例子与 torch 写法对照
 
 v1 2.3 的代码：
 

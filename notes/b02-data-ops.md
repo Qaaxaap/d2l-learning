@@ -35,13 +35,18 @@ torch.zeros(2, 3, 4); torch.ones(3, 4); torch.randn(3, 4)   # randn 是标准正
 torch.tensor([[2, 1, 4, 3], [1, 2, 3, 4]])
 ```
 
-`torch.arange(12)` 给出整数张量，这个差别会一路传下去：后面几章会看到更硬的报错，
-B02 里能直接观察到的是类型提升带来的意外结果。
+**`arange` 的默认元素类型是整数**：`torch.arange(12)` 给出 `int64`。要浮点必须显式写出来：
 
-第一版书上的 `nd.arange(12)` 默认给出 **float32**（MXNet 的默认浮点类型 `mx_real_t`），
-所以照书翻译时别照抄 `torch.arange(12)`，那得到的是 int64，后面按浮点用会出问题。
-写 `torch.arange(12, dtype=torch.float32)` 才和书上那行等价。
-（依据：MXNet 源码 `ndarray.py` 中 `def arange(..., dtype=mx_real_t)`；v2 电子版的 MXNet tab 也把 `np.arange` 写成浮点。）
+```python
+torch.arange(12, dtype=torch.float32)
+```
+
+为什么不能省：整数张量后面按浮点用会出问题。B02 里能直接观察到的是类型提升带来的意外结果
+（`int64 + float32` 悄悄变成 `float32`，结果类型和你写下的不一样），后面几章会遇到更硬的报错。
+
+一处对照：MXNet 的 `nd.arange(12)` 默认给 `float32`（它的默认浮点类型叫 `mx_real_t`），
+和 torch 不一样。**判断依据是你需要什么类型，不是书上写没写 `dtype`。**
+（依据：MXNet 源码 `ndarray.py` 的 `def arange(..., dtype=mx_real_t)`。）
 
 ### 2.2 `torch.tensor` 与 `torch.Tensor`
 
