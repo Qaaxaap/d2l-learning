@@ -14,7 +14,7 @@
 | `log/` | AI | 每次交互的记录。格式契约见 [log/README.md](log/README.md) |
 | `notes/` | AI | 讲义。每章一份，含公式推导、MXNet→PyTorch 对照、易错点 |
 | `exercises/<单元>/` | AI | `READING.md` 阅读任务书、`oral.md` 口试题、`code.md` 代码题 |
-| `solutions/` | AI | 参考答案（做题期间别看） |
+| `solutions/` | AI | 参考答案 |
 | `work/<单元>/` | **你** | 你的实现。这是你的地盘，AI 不会覆盖 |
 | `tools/` | AI | 验收断言、同步脚本 |
 | `PROGRESS.md` | AI | 进度、掌握度、错题本、复习队列 |
