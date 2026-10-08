@@ -1,18 +1,18 @@
 # A0 环境与工作流
 
-这一单元不涉及深度学习。目的是让你能在这台机器上顺畅地写代码、跑代码、看图、提交。
-做完这一单元，你应该能自己回答"我的代码在哪、环境怎么进、报错去哪看"。
+这一单元不涉及深度学习。目的是让你能顺畅地写代码、跑代码、看图、提交。
+做完这一单元，你应该能自己回答"我的代码在哪、环境怎么用、报错去哪看"。
 
-## 1. 机器和目录
+## 1. 代码在哪
 
-代码全部在远程：
+所有代码在开发机上，登录后进入仓库目录即可：
 
+```bash
+cd <仓库目录>
 ```
-ssh -p 2222 Qaaxaap@192.168.1.155
-cd ~/Projects/d2l
-```
 
-远程配置：Arch Linux，i9-14900K（32 线程），62G 内存，RTX 4070 SUPER（12G 显存）。
+机器规格：Linux，i9-14900K（32 线程），62G 内存，RTX 4070 SUPER（12G 显存）。
+连接方式和路径你自己清楚，仓库里不写。
 
 仓库目录分工：
 
@@ -22,29 +22,27 @@ cd ~/Projects/d2l
 | `notes/` | AI 写的讲义 |
 | `exercises/` | AI 出的题 |
 | `tools/` | 验收脚本、同步脚本 |
-| `refs/` | 参考资料，做题时别看 |
 
 ## 2. 环境分层
 
-这台机器上 Python 环境分三层，搞清每层管什么，后面的报错才好定位：
+Python 环境分三层，搞清每层管什么，后面的报错才好定位：
 
 | 层 | 谁提供 | 内容 |
 |---|---|---|
-| 解释器 | Arch pacman | `/usr/bin/python3`，版本 3.14 |
-| 科学计算包 | Arch pacman | `python-pytorch-cuda`（torch 2.14.0）、`python-numpy`、`python-matplotlib`、`python-pandas`、`python-tqdm`、`python-requests` |
+| 解释器 | 系统包管理器 | `/usr/bin/python3`，版本 3.14 |
+| 科学计算包 | 系统包管理器 | `python-pytorch-cuda`（torch 2.14.0）、`python-numpy`、`python-matplotlib`、`python-pandas`、`python-tqdm`、`python-requests` |
 | 工具链 | nix flake | `uv`、`just`、`git` |
 
 先看一眼实际状态：
 
 ```bash
-cd ~/Projects/d2l
 just env
 ```
 
 应该看到 torch 2.14.0、CUDA 可用、RTX 4070 SUPER。
 
 **为什么不用 conda**：conda 会往 shell 启动脚本里塞钩子，每次开终端都要跑一遍初始化。
-这里解释器和包由 pacman 管，nix 只补工具链，你在任何目录 `python3 xxx.py` 都能跑。
+这里解释器和包由系统包管理器管，nix 只补工具链，在任何目录 `python3 xxx.py` 都能跑。
 
 **需要额外包时**（比如第二版官方的 `d2l` 包）才用到 uv：
 
@@ -86,7 +84,7 @@ just run work/a0/hello_tensor.py
 
 ## 4. 怎么看图
 
-远程没有显示器，`plt.show()` 会卡住或者报错。**每个画图的脚本开头都要切到 Agg 后端**：
+开发机没有显示器，`plt.show()` 会卡住或者报错。**每个画图的脚本开头都要切到 Agg 后端**：
 
 ```python
 import matplotlib
@@ -106,10 +104,10 @@ print("已保存 work/a0/sin.png")
 
 图存成 PNG 之后，两种看法：
 
-1. 本地终端拉下来看：
+1. 用 `scp` 把文件从开发机拉到本地看：
 
 ```bash
-scp -P 2222 Qaaxaap@192.168.1.155:~/Projects/d2l/work/a0/sin.png /tmp/
+scp <开发机>:<仓库目录>/work/a0/sin.png /tmp/
 ```
 
 2. 用 VSCodium 的 Remote-SSH 连上去，直接点开文件。
@@ -118,18 +116,16 @@ scp -P 2222 Qaaxaap@192.168.1.155:~/Projects/d2l/work/a0/sin.png /tmp/
 
 ## 5. 数据集从哪来
 
-`d2l` 包默认的数据源在国内不通（`ap-northeast-1.d2l.ai` 超时，
-`d2l-data.s3-accelerate.amazonaws.com` 返回 403），不要照着书上的下载代码抄。
+`d2l` 包默认的数据源在国内不通，不要照着书上的下载代码抄。
 可用的路子是用 `torchvision.datasets`，具体到 B07 那一章会给能跑通的代码。
 
 数据统一放 `data/`（已在 `.gitignore` 里，不会提交）。
 
 ## 6. git
 
-远程仓库是唯一权威副本。每完成一个小任务提交一次，别攒着：
+开发机上的仓库是权威副本，也是要公开的学习记录。每完成一个小任务提交一次，别攒着：
 
 ```bash
-cd ~/Projects/d2l
 git status
 git add work/a0/hello_tensor.py
 git commit -m "a0: 跑通第一个张量脚本"
@@ -151,25 +147,25 @@ git commit -m "a0: 跑通第一个张量脚本"
 
 ## 自测
 
-1. `python3` 指向哪里？为什么不指向 `/nix/store` 里的某个 Python？
-2. 三层环境各自管什么？我要装 `scikit-learn`，走哪条路？
+1. `python3` 指向哪里？为什么不指向 nix store 里的某个 Python？
+2. 三层环境各自管什么？要装 `scikit-learn`，走哪条路？
 3. 为什么画图脚本必须写 `matplotlib.use("Agg")`，而且必须写在 `import matplotlib.pyplot` 之前？
 4. `just run work/a0/hello_tensor.py` 展开成什么命令？
 5. `python3 xxx.py` 和 `uv run python xxx.py` 有什么区别？
-6. 你在远程改了 `work/a0/hello_tensor.py`，怎么让本地的 AI 看到？
+6. 你在开发机上改了 `work/a0/hello_tensor.py`，怎么让 AI 看到？
 
 <details>
 <summary>做完再看：答案</summary>
 
-1. 指向 `/usr/bin/python3`（Arch 的 3.14）。nix flake 里没有提供 python，
+1. 指向系统包管理器装的 `/usr/bin/python3`（3.14）。nix flake 里没有提供 python，
    免得遮蔽系统解释器，也免得和系统里那份编译好的 torch C 扩展对不上。
-2. 解释器归 pacman，科学计算包归 pacman，工具链归 nix。装 `scikit-learn`
-   先看 pacman 有没有（`pacman -Ss python-scikit-learn`），有就用 pacman；
+2. 解释器归系统包管理器，科学计算包归系统包管理器，工具链归 nix。装 `scikit-learn`
+   先看系统仓库有没有（`pacman -Ss python-scikit-learn`），有就用包管理器装；
    没有就 `uv add scikit-learn` 装进项目 `.venv`。
-3. 远程没有 X/Wayland 显示服务，默认后端（TkAgg/QtAgg）找不到显示目标。
+3. 开发机没有 X/Wayland 显示服务，默认后端（TkAgg/QtAgg）找不到显示目标。
    后端必须在 pyplot 导入时选定，导入之后再改不生效。
 4. `python3 work/a0/hello_tensor.py`。
-5. 前者用系统解释器，只看得到 pacman 装的包；后者用项目 `.venv`，
+5. 前者用系统解释器，只看得到系统包管理器装的包；后者用项目 `.venv`，
    既看得到 `.venv` 里的包，也看得到系统包。
 6. 告诉 AI 一声，AI 用 `tools/sync.sh pull` 拉回去看。
 

@@ -23,21 +23,20 @@
 
 ## 仓库与运行环境
 
-- 权威副本：远程 `Qaaxaap@192.168.1.155:2222` 的 `~/Projects/d2l`。学习者在那边写代码、跑代码。
-- 本地 `/home/Qaaxaap/Projects/d2l-tutor` 是你的写作区。
-- 同步：`tools/sync.sh push`（本地→远程，不碰 `work/`）、`tools/sync.sh pull`（远程→本地，拉 `work/`）。
-- 远程操作一律 `ssh -o BatchMode=yes -p 2222 Qaaxaap@192.168.1.155 '<cmd>'`。
-- 跑远程 Python 直接调系统解释器，**不要**套 `nix develop`：
+权威副本在开发机上，AI 的写作区在本地。**地址、端口、路径、代理一律写在 `LOCAL.md`（不入库）**，
+需要连机器或跑命令时先读它。`tools/sync.sh` 从 `LOCAL.env` 读地址。
+
+- 同步：`tools/sync.sh push`（写作区 → 开发机，不碰 `work/`）、
+  `tools/sync.sh pull`（开发机 → 写作区，拉 `work/` 与 `PROGRESS.md`）。
+- 跑 Python 直接调开发机的系统解释器，**不要**套 `nix develop`：
 
 ```bash
-ssh -p 2222 Qaaxaap@192.168.1.155 'cd ~/Projects/d2l && python3 work/a1/foo.py'
+ssh <开发机> 'cd <仓库目录> && python3 work/b02/b02.py'
 ```
 
   解释器和包都是系统那份（Arch python3.14 + `python-pytorch-cuda` 2.14.0，CUDA 可用）。
   用 nix 的 python 会遮蔽系统解释器，C 扩展对不上。nix 只提供 uv/just/git。
 - 只有装了 `.venv` 里的包才要 `uv run python ...`。
-- 远程访问 github 需要 `export https_proxy=http://127.0.0.1:7890`。本机代理对局域网开放，
-  远程自己的 mihomo 也在 7890。
 
 ## 教学事实
 
@@ -105,15 +104,15 @@ PROGRESS.md                  更新进度、错题
 1. 写 `log/` 文件
 2. 更新 `PROGRESS.md`（状态、掌握度、错题本、复习队列）
 3. `git add` + `git commit`，提交信息格式 `log(<单元>): <结果> <一句话>`
-4. `git push origin main`。仓库在 <https://github.com/Qaaxaap/d2l-learning>，公开。
-   推送要代理：`export https_proxy=http://127.0.0.1:7890`；凭据由 `gh` 的 credential helper 提供。
+4. `git push origin main`。仓库公开在 <https://github.com/Qaaxaap/d2l-learning>。
+   推送要代理，凭据由开发机上 `gh` 的 credential helper 提供，具体命令见 `LOCAL.md`。
 
 ## 仓库会公开
 
 这个仓库是用户的学习记录，要推到 GitHub。因此：
 
-- 不往里写密码、token、私钥路径、内网凭据。
-- SSH 登录信息（`Qaaxaap@192.168.1.155:2222`）是用户自有局域网地址，用户同意公开，可以留在 README。
-  除此之外不要新增任何凭据。
-- 提交前扫一眼 `git status`，别把 `data/`、模型权重、`.venv/` 带进去（`.gitignore` 已覆盖）。
+- **不写机器地址、端口、登录用户名、绝对路径、代理端口。** 这些归 `LOCAL.md` 与 `LOCAL.env`，
+  两者都在 `.gitignore` 里。公开文档里写"开发机"、"仓库目录"就够。
+- 不写密码、token、私钥路径、其他凭据。
+- 提交前扫一遍 `git status`，别把 `data/`、模型权重、`.venv/` 带进去（`.gitignore` 已覆盖）。
 - 日志里不写与学习无关的私人对话。

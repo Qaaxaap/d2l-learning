@@ -8,3 +8,5 @@ data/
 output/
 *.png
 !notes/**/*.png
+LOCAL.md
+LOCAL.env

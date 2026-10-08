@@ -6,8 +6,8 @@
 契约见 [PLAN.md](PLAN.md)，私教（AI）的工作规则见 [AGENTS.md](AGENTS.md)，
 进度见 [PROGRESS.md](PROGRESS.md)，每次交互的记录见 [log/](log/)。
 
-权威副本在远程机器 `Qaaxaap@192.168.1.155:2222` 的 `~/Projects/d2l`，
-本地 `/home/Qaaxaap/Projects/d2l-tutor` 是 AI 的写作区，用 `tools/sync.sh` 同步。
+代码在开发机上跑，AI 的写作区在本地，两边用 `tools/sync.sh` 同步。
+机器地址、路径、代理这些只在本地 `LOCAL.md` 里，不入库。
 
 ## 目录
 
@@ -24,8 +24,7 @@
 ## 开始
 
 ```bash
-ssh -p 2222 Qaaxaap@192.168.1.155
-cd ~/Projects/d2l
+cd <仓库目录>
 just env                    # 看解释器和各包版本、CUDA 是否可用
 just run work/a0/hello_tensor.py
 ```
@@ -61,9 +60,8 @@ uv run python work/xxx.py       # 用 .venv 跑（能看到 .venv 里的包）
 
 其他：
 
-- 升级 `nixpkgs`：`nix flake update`（远程要代理，见下）。
-- 远程访问 github 要代理：`export https_proxy=http://127.0.0.1:7890`。
-  nixpkgs 的二进制缓存已配 USTC 镜像，拉 nix 包不用代理。
+- 升级 `nixpkgs`：`nix flake update`（要代理，地址见 `LOCAL.md`）。
+- nixpkgs 的二进制缓存已配 USTC 镜像，拉 nix 包不用代理。
 
 ## 画图怎么看
 

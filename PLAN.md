@@ -10,7 +10,7 @@
 | 教材 | 《动手学深度学习》**第一版纸质书**（MXNet 代码）为主线 |
 | 电子版 | <https://zh.d2l.ai/>（第二版）作为补充与对照 |
 | 框架 | **PyTorch**，书里的 MXNet 代码自己翻译 |
-| 算力 | 远程 `Qaaxaap@192.168.1.155:2222`，RTX 4070 SUPER 12G |
+| 算力 | 一台带 RTX 4070 SUPER 12G 的 Linux 开发机（连接方式见 `LOCAL.md`，不入库） |
 | 环境 | nix flake devShell + uv 项目级 `.venv`，不用 conda |
 | 编辑器 | nvim，纯 `.py` 文件，不用 notebook |
 | 起点 | Python 不熟 |
