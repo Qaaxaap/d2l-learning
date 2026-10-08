@@ -464,25 +464,14 @@ for v in count_up(3):
 C++ 里要写一个 `begin()/end()` 加迭代器类，Rust 里要 impl 一个 Iterator，
 Python 里一个 `yield` 就够了。这是 Python 最省事的地方。
 
-### 5.3 d2l 里的用法
+### 5.3 后面会用到
 
-```python
-def data_iter(batch_size, features, labels):
-    num_examples = len(features)
-    indices = list(range(num_examples))
-    for i in range(0, num_examples, batch_size):
-        batch_indices = torch.tensor(indices[i: min(i + batch_size, num_examples)])
-        yield features[batch_indices], labels[batch_indices]
+B06 会要你写一个"每次吐一批数据"的函数，那时用 `yield` 实现。这里先记一个坑：
 
+把 `yield` 写成 `return`，函数只返回第一批就结束，`for` 循环跑一次就停，而且不报错。
+这类错误最难查，因为程序看起来是在正常跑的。
 
-for X, y in data_iter(10, features, labels):
-    print(X.shape)     # 每轮拿到一批
-```
-
-B06 要你自己写这个函数。坑：写 `return` 而不是 `yield` 的话，函数只返回第一批就结束了，
-`for` 循环跑一次就停。
-
----
+判断该用哪个：要"一次给一个、可以边算边给"就用 `yield`；要"算完一次性给"就用 `return`。
 
 ## 6. `with`
 
