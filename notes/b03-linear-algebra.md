@@ -213,10 +213,7 @@ torch.linalg.vector_norm(torch.arange(4))
 torch.norm(torch.ones(2, 3, 4))         # tensor(4.8990) = sqrt(24)，把所有元素当一个长向量
 ```
 
-三个坑：范数函数不接受整型张量（上面第四行的输入就会报错），建张量时给 `float32`；`torch.norm` 是历史接口，
-对任意形状的张量都按“全部元素拉平求 $L_2$”处理，上面三轴张量得到 $\sqrt{24}$；torch 2.14 实测
-`torch.norm` 没有弃用警告，但官方文档推荐 `torch.linalg.norm` 与 `torch.linalg.vector_norm`，
-新代码用后者，含义更明确。第一版的 `X.norm()` 求的是元素平方和的平方根（Frobenius 范数），
+三个坑：范数函数不接受整型张量（上面第四行的输入就会报错），建张量时给 `float32`；`torch.norm` 对任意形状的张量都按“全部元素拉平求 $L_2$”处理，上面三轴张量得到 $\sqrt{24}$；`torch.norm` 的 docstring 明确写着 deprecated、未来版本可能移除（torch 2.14 实测运行时没有发警告），求向量范数用 `torch.linalg.vector_norm`，求矩阵范数用 `torch.linalg.matrix_norm`。第一版的 `X.norm()` 求的是元素平方和的平方根（Frobenius 范数），
 `X.norm().asscalar()` 对应 `torch.linalg.vector_norm(X).item()`。
 
 深度学习里用 $L_2$ 范数的平方多于 $L_2$ 本身，因为不必开方，而且梯度形式简单：

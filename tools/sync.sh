@@ -18,7 +18,7 @@ case "${1:-}" in
     # 本地删掉的文件要在远程用 `git rm <文件>` 单独处理。
     rsync -az --chmod=D755,F644 "${SSH_OPTS[@]}" \
       --exclude '.git/' --exclude 'work/' --exclude '.venv/' \
-      --exclude '__pycache__/' --exclude 'solutions/' --exclude 'data/' \
+      --exclude '__pycache__/' --exclude 'data/' \
       "$LDIR"/ "$REMOTE:$RDIR"/
     echo "已推送到 $REMOTE:$RDIR"
     ;;

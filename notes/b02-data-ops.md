@@ -38,7 +38,10 @@ torch.tensor([[2, 1, 4, 3], [1, 2, 3, 4]])
 `torch.arange(12)` 给出整数张量，这个差别会一路传下去：`torch.linalg.vector_norm` 不接受整型输入，
 `torch.dot` 要求两侧 dtype 相同，线性层的权重是 float32，整数输入直接报 dtype 不匹配。
 
-> 待核实：第一版 `nd.arange(12)` 的默认 dtype，v1 原文未说明；v2 的 MXNet tab 写明 `np.arange` 默认浮点。本机与远程都没装 MXNet，未实测。
+第一版书上的 `nd.arange(12)` 默认给出 **float32**（MXNet 的默认浮点类型 `mx_real_t`），
+所以照书翻译时别照抄 `torch.arange(12)`，那得到的是 int64。后面算梯度或送进线性层会直接报 dtype 不匹配。
+写 `torch.arange(12, dtype=torch.float32)` 才和书上那行等价。
+（依据：MXNet 源码 `ndarray.py` 中 `def arange(..., dtype=mx_real_t)`；v2 电子版的 MXNet tab 也把 `np.arange` 写成浮点。）
 
 ### 2.2 `torch.tensor` 与 `torch.Tensor`
 
