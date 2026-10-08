@@ -284,7 +284,10 @@ matplotlib.use("Agg")
 
 ### 骨架
 
-`____` 是你要填的。填不出来回去看第 4 节对应小节，别看提示。
+**先自己写一遍。** 骨架里已经给出了行数、顺序和变量名，对现在这个阶段算是很强的提示，
+展开就等于少了一半练习。卡住再展开。
+
+<details><summary>展开骨架</summary>
 
 ```python
 import torch
@@ -302,6 +305,8 @@ if ____:
     print("搬到显卡上：", ____)
     print("乘 2 再搬回来：", ____)
 ```
+
+</details>
 
 ### 期望输出
 
@@ -336,6 +341,10 @@ x =
 
 ### 骨架
 
+同样，先自己写。
+
+<details><summary>展开骨架</summary>
+
 ```python
 import matplotlib
 ____                    # 4.8 讲了这里填什么、为什么必须在下一行之前
@@ -352,6 +361,8 @@ plt.ylabel("sin(x)")
 plt.savefig("work/a0/sin.png", dpi=120)
 print("已保存 work/a0/sin.png")
 ```
+
+</details>
 
 ### 跑起来
 
