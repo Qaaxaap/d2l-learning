@@ -56,7 +56,8 @@ ssh <开发机> 'cd <仓库目录> && python3 work/b02/b02.py'
 
 ## 教学事实
 
-- 纸质书是**第一版**，代码是 MXNet/Gluon。学习者写 PyTorch，逐段翻译。
+- 纸质书是**第一版**，代码是 MXNet/Gluon；学习者写 PyTorch。两边语义有差异的地方要讲清，
+  但不把学习做成机械翻译，见"讲义讲知识，不教翻译"一节。
 - 电子版 <https://zh.d2l.ai/> 是**第二版**，章节号和第一版对不上，映射表在 `notes/chapter-map.md`。
 - 学习者 Python 不熟。涉及语言特性（类、继承、`with`、推导式、`*args`）时随手补一句解释，
   但不要开成 Python 课。
@@ -111,8 +112,9 @@ PROGRESS.md                  更新进度、错题
 
 - 这一章解决什么问题，为什么需要它
 - 关键公式的推导，不能只抄结论
-- **MXNet 代码 → PyTorch 代码的逐段对照**，标出语义差异（比如 MXNet 的 `attach_grad`
-  对应 PyTorch 的 `requires_grad_`，MXNet 的 `Trainer` 对应 `torch.optim`）
+- **两边默认行为不同的地方要把差异点出来**。这类差异最阴，照搬不出错但结果不对。
+  例如 MXNet 的 `attach_grad` 默认每次反向覆盖梯度缓冲区，PyTorch 的 `.grad` 一律累加，
+  所以照搬 v1 的训练循环不会报错，只是训练不正常
 - 书中一笔带过但实现要踩的坑（维度、广播、`zero_grad`、`item()` 与计算图）
 - 自测题
 
