@@ -9,5 +9,20 @@ class Counter:
     """
     def __init__(self, start=0):
         self.value = start
+        self.calls = 0
         return None
-    def __call__()
+    def __call__(self, step=1):
+        self.calls += 1
+        self.value += step
+        return self.value
+    def __len__(self):
+        return self.calls
+    def __repr__(self):
+        return f"Counter(value={self.value}, calls={self.calls})"
+class Vec2:
+    """二维向量，需要支持：
+        Vec2(1, 2) + Vec2(3, 4)   -> Vec2(4, 6)
+        Vec2(1, 2) == Vec2(1, 2)  -> True
+        print(Vec2(1, 2))         -> 类似 "Vec2(1, 2)"
+        v.x, v.y                  -> 属性可读
+    """

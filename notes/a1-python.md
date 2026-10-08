@@ -427,7 +427,31 @@ for v in ds:         # 有 __getitem__ 和 __len__ 就能被 for 遍历
 所以 `self.weight = nn.Parameter(...)` 这一句不只是赋值，还会被拦截、分类、登记。
 这也解释了一个现象：给模块赋一个 `nn.Module` 类型的属性，它会自动出现在 `children()` 里。
 
-### 4.4 你不需要会写 dunder
+### 4.4 `__eq__` 遇到别的类型该返回什么
+
+```python
+Vec2(1, 2) == "abc"
+```
+
+直接返回 `False` 看起来能用，但更正确的是返回一个特殊的常量 `NotImplemented`：
+
+```python
+def __eq__(self, other):
+    if not isinstance(other, Vec2):
+        return NotImplemented
+    return (self.x, self.y) == (other.x, other.y)
+```
+
+`NotImplemented` **不是** `False`。它的意思是"我不认识对面这个东西，你（解释器）去问问对面"。
+解释器收到它之后会去试 `other.__eq__(self)`（反射比较），两边都说不认识，
+才落到默认行为——同一个对象才相等，于是最终得到 `False`。
+
+区别在于：直接返回 `False` 会堵死对面类的机会。以后如果你写了另一个类，
+它声明"我能和 `Vec2` 比较"，`Vec2` 这边一口回绝，对面就永远没机会参与。
+
+（`NotImplemented` 和 `NotImplementedError` 是两个东西，后者是个异常，用途不同。）
+
+### 4.5 你不需要会写 dunder
 
 除了 `__init__` 一定要会写，其余的在 d2l 学习期间**只需要认识**。
 你会在 d2l 的代码里看到 `def forward(self, X)`，那是普通方法不是 dunder；

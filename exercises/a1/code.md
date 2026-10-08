@@ -36,46 +36,64 @@ Counter(start=10)()      # 返回 11
 
 ## T2 一个支持运算符的类
 
-```python
-class Vec2:
-    """二维向量，需要支持：
-        Vec2(1, 2) + Vec2(3, 4)   -> Vec2(4, 6)
-        Vec2(1, 2) == Vec2(1, 2)  -> True
-        print(Vec2(1, 2))         -> 类似 "Vec2(1, 2)"
-        v.x, v.y                  -> 属性可读
-    """
-```
+`Vec2` 表示二维向量，两个属性 `x`、`y`。
 
-这一题考的就是讲义第 4 节。实现 `__init__`、`__add__`、`__eq__`、`__repr__`。
+| 表达式 | 做什么 | 返回 |
+|---|---|---|
+| `Vec2(1, 2)` | 构造 | 对象，`v.x == 1`、`v.y == 2` |
+| `Vec2(1, 2) + Vec2(3, 4)` | 逐分量相加，**不修改两个操作数** | 新的 `Vec2`，`x == 4`、`y == 6` |
+| `Vec2(1, 2) == Vec2(1, 2)` | 逐分量比较 | `True` |
+| `Vec2(1, 2) == Vec2(1, 3)` | 同上 | `False` |
+| `Vec2(1, 2) == "abc"` | 与别的类型比较 | `False`，**不能抛异常** |
+| `repr(Vec2(1, 2))` | 字符串表示 | 形如 `Vec2(1, 2)` |
 
-`__eq__` 要能和不同类型的对象比较而不炸（比如 `Vec2(1, 2) == "abc"` 应该返回 `False`，
-不是抛异常）。
+要实现的 dunder：`__init__`、`__add__`、`__eq__`、`__repr__`。
+
+`__eq__` 遇到类型不对的东西，讲义第 4 节末尾讲了该返回什么（不是 `False`，也不是抛异常，
+是一个特殊的常量，交给 Python 去处理）。这是本题的一个考点。
 
 ## T3 生成器
 
 ```python
 def batch_indices(n: int, batch_size: int):
-    """按 batch_size 切分 range(n)，逐批产出索引列表。
-
-    n=5, batch_size=2 时依次产出 [0, 1]、[2, 3]、[4]。
-    必须用 yield 实现，不许返回一个列表。
-    """
+    """把 0 到 n-1 这 n 个索引按 batch_size 分批，逐批产出。"""
 ```
+
+| 调用 | 产出 |
+|---|---|
+| `list(batch_indices(5, 2))` | `[[0, 1], [2, 3], [4]]` |
+| `list(batch_indices(4, 2))` | `[[0, 1], [2, 3]]`，整除时不多出空批 |
+| `list(batch_indices(0, 2))` | `[]` |
+| `batch_indices(5, 2)` | 必须是**生成器对象**，不是 list |
+
+每一批是 Python 的 `list`（不是 `range`，也不是张量）。
+
+必须用 `yield` 实现。验收会检查它返回的是生成器对象。
 
 ## T4 继承 nn.Module
 
 ```python
 class ScaledLinear(nn.Module):
-    """带缩放系数的线性层。
-    构造：ScaledLinear(in_features, out_features, scale=1.0)
-    权重初始化为 torch.randn(in_features, out_features) * scale
-    偏置初始化为全零
-    forward(X) 返回 X @ weight + bias
-    """
+    """带缩放系数的线性层。"""
 ```
 
-这一题要把讲义第 3 节的三条都做对：调 `super().__init__()`、参数用 `nn.Parameter` 包起来。
-验收断言会检查 `parameters()` 里恰好有两个张量。
+| 项 | 要求 |
+|---|---|
+| 构造签名 | `ScaledLinear(in_features, out_features, scale=1.0)` |
+| 属性名 | 权重叫 `self.weight`，偏置叫 `self.bias` |
+| 权重初值 | `torch.randn(in_features, out_features) * scale` |
+| 偏置初值 | 全零 |
+| `forward(X)` | 返回 `X @ weight + bias` |
+| `net.parameters()` | 恰好两个张量，形状分别是 `(in_features, out_features)` 与 `(out_features,)` |
+| 输入形状 | `(batch, in_features)` |
+| 输出形状 | `(batch, out_features)` |
+| 反向传播 | `net(X).sum().backward()` 之后 `weight.grad` 不为 `None` |
+
+讲义第 3 节讲了三条规矩：调 `super().__init__()`、参数用 `nn.Parameter` 包起来、
+调用时用 `net(X)`。三条都要做对。
+
+最后一行的断言能抓住"忘了初始化父类"和"忘了包成 Parameter"两种情况——那两种写法训练时
+参数不会更新，而且不报错。
 
 ## T5 上下文管理器
 
@@ -89,16 +107,19 @@ class Timer:
     """
 ```
 
-需要实现 `__enter__` 和 `__exit__`。
+| 项 | 要求 |
+|---|---|
+| `__enter__` | 记下起始时刻。返回值就是 `with ... as x` 里的 `x`，按惯例返回 `self` |
+| `__exit__` | 记下结束时刻，算出 `self.elapsed` |
+| `elapsed` | 单位秒的 float，退出 `with` 之后可读 |
+| 块内抛异常 | `elapsed` 仍然要被赋值，异常照常往外抛 |
 
-`__enter__` 的返回值就是 `with ... as x` 里的那个 `x`。测试用的是 `t = Timer(); with t:`
-这种写法，所以它返回什么不影响判分，但按惯例应当返回 `self`。
-
-`elapsed` 在退出之后可读，单位秒。
+计时起点放在 `__enter__` 里，不是 `__init__` 里。`Timer()` 创建到进入 `with` 之间可能有间隔。
 
 ## T6 改错
 
-下面这段代码有四类问题。把代码抄进 `a1.py` 顶部的注释里，每处标出位置、说明为什么错、怎么改。
+下面这段代码有四类问题。把代码抄进 `work/a1/a1.py` 顶部的注释里，
+每处标出三样：**位置**（第几行）、**为什么错**、**怎么改**。
 
 ```python
 import torch
@@ -124,5 +145,6 @@ print(len(list(net.parameters())))
 print(net(torch.randn(2, 3)))
 ```
 
-提示：四处分别关于父类初始化、参数登记、`return` 与 `yield`、以及可变默认参数。
-先把四处找齐再看答案。
+四处分别关于父类初始化、参数登记、`return` 与 `yield`、可变默认参数。先把四处找齐再看。
+
+这一题不跑代码，只写分析。
