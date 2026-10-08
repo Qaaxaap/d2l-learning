@@ -50,4 +50,9 @@ def batch_indices(n: int, batch_size: int):
 class ScaledShift(nn.Module):
     """把输入逐元素乘一个可学习的系数，再逐元素加一个可学习的偏置。"""
     def __init__(self, size):
-        self.scale = nn.Parameter(torch.ones(size,)))
+        super().__init__()
+        self.scale = nn.Parameter(torch.ones(size,))
+        self.bias = nn.Parameter(torch.zeros(size,)) 
+    def forward(self, X):
+        return X * self.scale + self.bias
+    

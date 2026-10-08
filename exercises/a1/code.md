@@ -75,21 +75,28 @@ def batch_indices(n: int, batch_size: int):
 写一个 `nn.Module` 子类，练讲义第 3 节的三条规矩。它算什么不重要，按规格实现即可——
 矩阵乘法、线性层那些是 B03 与 B06 的内容，现在不用管。
 
-```python
-class ScaledShift(nn.Module):
-    """把输入逐元素乘一个可学习的系数，再逐元素加一个可学习的偏置。"""
-```
+### 你要定义的
 
 | 项 | 要求 |
 |---|---|
-| 构造签名 | `ScaledShift(size)` |
-| 属性名 | 系数叫 `self.scale`，偏置叫 `self.bias` |
-| `self.scale` | 形状 `(size,)` 的参数（一维，长度 size），初值全 1 |
-| `self.bias` | 形状 `(size,)` 的参数（一维，长度 size），初值全 0 |
-| 两者的类型 | 必须是 `nn.Parameter`，不是普通张量 |
-| `forward(X)` | 返回 `X * self.scale + self.bias`。`*` 是逐元素乘法，不是矩阵乘法 |
-| `net.parameters()` | 恰好两个张量，形状都是一维、长度 size |
-| 反向传播 | `net(X).sum().backward()` 之后两个参数的 `.grad` 都不为 `None` |
+| 类名 | `ScaledShift`，继承 `nn.Module` |
+| 构造签名 | `def __init__(self, size)` |
+| 属性 `self.scale` | 一维、长度 `size` 的 `nn.Parameter`，初值全 1 |
+| 属性 `self.bias` | 一维、长度 `size` 的 `nn.Parameter`，初值全 0 |
+| 方法 `forward(self, X)` | 返回 `X * self.scale + self.bias`。`*` 是逐元素乘法，不是矩阵乘法 |
+
+### 验收会检查的
+
+这些是从外面看这个对象时应该成立的事，不是你额外要写的代码。
+
+| 检查 | 期望 |
+|---|---|
+| `ScaledShift(3)` 是 `nn.Module` 的实例 | `True` |
+| `net.scale`、`net.bias` 的类型 | 都是 `nn.Parameter`，不是普通张量 |
+| `len(list(net.parameters()))` | `2` |
+| 两个参数的形状 | 都是一维、长度 `size` |
+| `net(X)` 的输出形状 | 与输入 `X` 相同 |
+| `net(X).sum().backward()` 之后 | 两个参数的 `.grad` 都不为 `None` |
 
 讲义第 3 节的三条规矩都要做对：调 `super().__init__()`、参数用 `nn.Parameter` 包起来、
 调用时写 `net(X)` 而不是 `net.forward(X)`。
