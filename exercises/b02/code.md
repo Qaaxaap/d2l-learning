@@ -84,6 +84,9 @@ def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
 
 测试用的 CSV 由 `tools/check_b02.py` 生成，你不用管路径。
 
+要用的 pandas 工具在讲义 8.1 到 8.3 节：读文件、填缺失、独热编码、拿列名、
+判断某列是不是数值列、统计各取值的个数。
+
 ## T5 改错
 
 下面这段代码有三处问题。把代码抄进 `work/b02/b02.py` 顶部的注释里，

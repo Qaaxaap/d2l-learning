@@ -1,4 +1,5 @@
 import torch
+import pandas as pd
 
 def tensor_info(x: torch.Tensor):
     """返回关于 x 的一份描述，键固定为：
@@ -58,4 +59,5 @@ def clone_is_copy() -> bool:
 
 def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
     """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。"""
-
+    data = pd.read_csv(path)
+    

@@ -261,6 +261,45 @@ y = torch.tensor(outputs.to_numpy(dtype=float))
 得到的 `X` 是 `torch.float64`、形状 `(4, 3)`，喂给模型前通常再转一次 `float32`。电子版这里的
 MXNet 写法是 `np.array(inputs.to_numpy(dtype=float))`，对应 torch 的 `torch.tensor(...)`。
 
+### 8.3 读懂一张表的三个工具
+
+T4 要从一份 CSV 里自动分出数值列与字符串列，还要统计每列各取值的个数。需要三样东西。
+
+**列名**：`data.columns` 给出所有列名，可以当列表遍历。
+
+```python
+for col in data.columns:
+    print(col)
+```
+
+**每列的类型**：`data.dtypes` 一次列出全部。字符串列的类型显示为 `object`。
+
+```python
+data.dtypes
+# NumRooms    float64
+# Alley        object
+# Price       float64
+```
+
+判断某一列是不是数值列，用 pandas 提供的函数，别拿类型名去比字符串：
+
+```python
+pd.api.types.is_numeric_dtype(data["NumRooms"])   # True
+pd.api.types.is_numeric_dtype(data["Alley"])      # False
+```
+
+**各取值的个数**：`value_counts()` 返回一个 Series，索引是取值，值是该取值出现的次数。
+
+```python
+data["Alley"].value_counts()
+# Pave    1
+# NaN     3
+```
+
+转成普通字典用 `.to_dict()`。
+
+注意 `value_counts()` 默认**不统计缺失值**。T4 的列统计信息要不要含缺失值，题目里怎么写的就怎么来。
+
 ## 自测题
 
 1. `torch.arange(6)` 的 dtype 是什么？要让它变成 `float32` 有哪两种写法？把一个 `int64` 张量和一个 `float32` 张量相加，结果的 dtype 是什么？这个行为为什么值得注意？
