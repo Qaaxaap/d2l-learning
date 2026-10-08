@@ -46,14 +46,15 @@
 
 </details>
 
-**Q5** 书上的 `nd.arange(12)` 和 torch 的 `torch.arange(12)` 得到的 dtype 一样吗？这个差异会导致什么后果？
+**Q5** `torch.arange(12)` 的 dtype 是什么？写数据处理代码时为什么常要显式指定 `dtype=torch.float32`？不指定会出什么问题？
 
 <details><summary>参考答点</summary>
 
-不一样。torch 的 `arange` 默认 int64；MXNet 的 `nd.arange` 默认 float32（`mx_real_t`），两边不同。
-要浮点就得显式写 `dtype`，判断依据是你需要什么类型，不是书上写没写。
-不写的后果，B02 里能直接看到的是**类型提升**：`int64 + float32` 悄悄得到 `float32`，
-结果类型与你写下的不一样。这类错误不报错，最难查。
+`int64`，整数。
+
+后续要求浮点的运算会出问题。B02 里能直接看到的是**类型提升**：
+`int64 + float32` 悄悄得到 `float32`，结果类型与你写下的不一样；
+求均值一类的操作也要求浮点输入。这类错误不报错，最难查。
 
 </details>
 
