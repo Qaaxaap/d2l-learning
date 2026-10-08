@@ -136,7 +136,7 @@ X[1:3]         # 第 1、2 行，左闭右开
 X[1, 2] = 9    # 写单个元素；X[0:2, :] = 12 写一块
 ```
 
-torch 的切片默认返回**视图**，与 NumPy 一致，与 Python 的 list 不一致：
+torch 的切片默认返回**视图**，这一点和 Python 的 list 正好相反（list 的切片会复制一份）：
 
 ```python
 X = torch.arange(12).reshape(3, 4)

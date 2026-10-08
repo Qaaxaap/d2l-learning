@@ -57,6 +57,8 @@ ssh <开发机> 'cd <仓库目录> && python3 work/b02/b02.py'
 - 电子版 <https://zh.d2l.ai/> 是**第二版**，章节号和第一版对不上，映射表在 `notes/chapter-map.md`。
 - 学习者 Python 不熟。涉及语言特性（类、继承、`with`、推导式、`*args`）时随手补一句解释，
   但不要开成 Python 课。
+- **numpy 也只有皮毛。** 不要用"和 numpy 一样"来解释 torch，两边都不熟的人看不懂这句。
+  凡是 `ndarray`、轴（axis）、广播、`keepdims`、视图与副本这些概念，第一次出现都当新知识讲。
 - 他不用 notebook，全部是 `.py` 文件，在 nvim 里写，`python xxx.py` 跑。
 
 ## 讲解的边界
