@@ -1,6 +1,6 @@
 # B03 线性代数
 
-纸质书没有这一章，第一版把它压缩在附录 A.1 的几行公式里，第二版是 2.3 节（看 PyTorch tab）。
+纸质书没有这一章，第一版把它压缩在附录《数学基础》的几行公式里，第二版是 2.3 节（看 PyTorch tab）。
 本单元要做的是把附录里那几行公式落到张量运算上：标量到张量的层级、`*` 与 `@` 的分工、求和
 降维的形状规则、范数。后面线性回归、softmax、卷积的每一行代码都建立在这套符号与 API 上。
 
@@ -9,7 +9,7 @@
 ## 0. 电子版 MXNet 代码 → PyTorch
 
 第一版没有这一章的代码。电子版 MXNet tab 用的是 numpy 兼容接口 `np`（第一版书里对应的模块是 `nd`）。
-对照如下，注意最后四行是第一版和 torch 差别最大的地方：
+对照如下，其中 `dot` 系列与范数两项的差别最大：
 
 | 电子版 MXNet（`np.`） | PyTorch |
 |---|---|
@@ -26,11 +26,11 @@
 | `np.abs(u).sum()` | `torch.abs(u).sum()` |
 
 MXNet 的 `dot` 一个函数管点积、矩阵向量积、矩阵乘法；torch 把它们拆成 `dot`、`mv`、`mm`、`matmul`。
-用错函数会直接报错，不算坏事。
+用错函数会直接报错，比静默算出错误结果容易排查。
 
 ## 1. 标量、向量、矩阵、张量
 
-v1 附录 A.1 的符号约定：向量写作列向量 $\mathbf{x}\in\mathbb{R}^n$，矩阵 $\mathbf{A}\in\mathbb{R}^{m\times n}$，
+v1 附录《数学基础》的符号约定：向量写作列向量 $\mathbf{x}\in\mathbb{R}^n$，矩阵 $\mathbf{A}\in\mathbb{R}^{m\times n}$，
 元素记 $a_{ij}$（第 $i$ 行第 $j$ 列）。代码里轴数与数学对象的对应关系：
 
 ```python
@@ -59,7 +59,7 @@ X.dim(), X.shape[0], X.shape            # (3, 2, torch.Size([2, 3, 4]))
 
 ```python
 A = torch.arange(20).reshape(5, 4)
-A.T.shape                     # (4, 5)；A.T 是视图，不是拷贝
+A.T.shape                     # (4, 5)；A.T 是视图，与 A 共享内存
 
 B = torch.tensor([[1, 2, 3], [2, 0, 4], [3, 4, 5]])
 B == B.T                      # 逐元素比较，返回 bool 张量
@@ -86,7 +86,8 @@ X.permute(2, 0, 1).shape   # (4, 2, 3)，按给定顺序重排
 ## 3. 按元素乘法与矩阵乘法
 
 标量、向量、矩阵到高阶张量有一批共用的性质：一元按元素运算不改变形状，同形状的两个张量做
-二元按元素运算，结果也是同形状。逐元素相乘叫 Hadamard 积（符号 $\odot$，v1 附录 A.1 有定义）：
+二元按元素运算，结果也是同形状。逐元素相乘叫 Hadamard 积（符号 $\odot$，v1 附录《数学基础》有定义）；
+电子版的 `A * B` 与 `np.dot(A, B)` 正好对应 torch 的 `A * B` 与 `A @ B`：
 
 ```python
 A = torch.arange(20, dtype=torch.float32).reshape(5, 4)
@@ -188,7 +189,7 @@ torch.mv(A, x)           # (5,)
 A @ x                    # 同上；torch.dot(A, x) 会报错，它不处理矩阵
 ```
 
-写成数学形式是 $\mathbb{R}^n\to\mathbb{R}^m$ 的映射，形状检查只看 $\mathbf{A}$ 的列数是否等于
+矩阵-向量积是 $\mathbb{R}^n\to\mathbb{R}^m$ 的线性映射，形状检查只看 $\mathbf{A}$ 的列数是否等于
 $\mathbf{x}$ 的长度。深度学习里每一层的前向计算就是一次矩阵-向量积（一个 batch 时是矩阵-矩阵乘法）。
 
 ## 7. 范数
@@ -212,20 +213,20 @@ torch.linalg.vector_norm(torch.arange(4))
 torch.norm(torch.ones(2, 3, 4))         # tensor(4.8990) = sqrt(24)，把所有元素当一个长向量
 ```
 
-三个坑：范数函数不接受整型张量（上面第二段报错），建张量时给 `float32`；`torch.norm` 是历史接口，
+三个坑：范数函数不接受整型张量（上面第四行的输入就会报错），建张量时给 `float32`；`torch.norm` 是历史接口，
 对任意形状的张量都按“全部元素拉平求 $L_2$”处理，上面三轴张量得到 $\sqrt{24}$；torch 2.14 实测
 `torch.norm` 没有弃用警告，但官方文档推荐 `torch.linalg.norm` 与 `torch.linalg.vector_norm`，
-新代码用后者，含义更明确。第一版的 `X.norm().asscalar()` 对应
-`torch.linalg.vector_norm(X).item()`。
+新代码用后者，含义更明确。第一版的 `X.norm()` 求的是元素平方和的平方根（Frobenius 范数），
+`X.norm().asscalar()` 对应 `torch.linalg.vector_norm(X).item()`。
 
 深度学习里用 $L_2$ 范数的平方多于 $L_2$ 本身，因为不必开方，而且梯度形式简单：
-v1 附录 A.1 给出 $\nabla_{\mathbf{x}}\|\mathbf{x}\|^2=2\mathbf{x}$。$L_1$ 范数的梯度是
+v1 附录《数学基础》给出 $\nabla_{\mathbf{x}}\|\mathbf{x}\|^2=2\mathbf{x}$。$L_1$ 范数的梯度是
 $\mathrm{sign}(\mathbf{x})$，每个分量的梯度幅度固定为 1，不随偏差放大，所以 $L_1$ 对异常值不如
 $L_2$ 敏感（v2 原文提到这一点）。
 
 ## 8. 广播在矩阵运算中的语义、按轴求和与拼接
 
-广播规则本身在 B02 第 4 节，这里只看它在矩阵运算里的三种常见形态：
+广播规则本身在 B02 第 4 节，这里只看它在矩阵运算里的几种常见形态：
 
 ```python
 A = torch.arange(20, dtype=torch.float32).reshape(5, 4)
@@ -264,7 +265,7 @@ torch.stack([A, A], dim=0).shape              # (2, 5, 4)，新增一个轴
 ## 答案（做完再看）
 
 1. `s` 是 `dim() == 0`、`shape == torch.Size([])`，`len(s)` 报 `TypeError: len() of a 0-d tensor`；`x` 是 `dim() == 1`、`shape == torch.Size([4])`、`len(x) == 4`。
-2. `A.T` 是 `(4, 5)`。`X.T` 是 `(4, 3, 2)`，因为 torch 的 `.T` 对非二维张量翻转所有轴，且实测会抛弃用警告；电子版的 `np.transpose` 与 MXNet 的 `A.T` 在低维上一致，但按轴交换应当用 `X.transpose(0, 2)` 或 `X.permute(2, 0, 1)`。
+2. `A.T` 是 `(4, 5)`。`X.T` 是 `(4, 3, 2)`，因为 torch 的 `.T` 对非二维张量翻转所有轴，且实测会抛 UserWarning；电子版的 `np.transpose` 与 MXNet 的 `A.T` 在低维上一致，但按轴交换应当用 `X.transpose(0, 2)` 或 `X.permute(2, 0, 1)`。
 3. `A * C` 触发广播规则，`(5, 4)` 与 `(4, 3)` 从右对齐后第 0 维 5 与 3 都不为 1，报形状错误；`A @ C` 正常得到 `(5, 3)`。`torch.dot(A, C)` 报 `1D tensors expected, but got 2D and 2D tensors`；`torch.mv(A, C)` 报 `vector + matrix @ vector expected, got 1, 2, 2`，它要求第二个参数是一维。
 4. 固定 $j$，对每个 $i$ 有 $c_{ij}=\mathbf{a}_i^\top\mathbf{b}_j$，这正是 $\mathbf{A}$ 与 $\mathbf{B}$ 第 $j$ 列做矩阵-向量积得到的第 $i$ 个分量；$j$ 取遍 $n$ 个值就得到 $\mathbf{AB}$ 的全部列，所以整体上是 $n$ 次矩阵-向量积的拼接。
 5. 分别是 `(4,)`、`(5,)`、`(5, 1)`。`A.sum(dim=1)` 得到 `(5,)`，广播时右对齐到最后一维与 4 冲突，报 `The size of tensor a (4) must match the size of tensor b (5) at non-singleton dimension 1`；`keepdim=True` 得到 `(5, 1)`，第 1 维长度为 1，可广播成 `(5, 4)`。

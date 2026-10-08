@@ -2,7 +2,7 @@
 
 对应 v1 第 2.2 节（纸质书，MXNet）与 v2 第 2.1、2.2 节（电子版，看 PyTorch tab）。
 本单元解决数据怎么进程序、怎么改形状、怎么算；后面每一章都在写张量运算，这里的形状规则和
-内存语义没弄明白，之后的维度错误只能靠试错凑。
+内存语义没弄明白，之后的维度错误只能靠试错定位。
 
 torch 行为在 torch 2.14 上跑过（CPU 与远程 4070S 各测一遍），pandas 在 2.3.3 上跑过，报错文本照抄实测输出。
 
@@ -114,7 +114,7 @@ torch.ones(3, 4) + torch.ones(3)           # RuntimeError: The size of tensor a 
 
 最后一行是常见错误：长度为 3 的一维张量右对齐到最后一维，与长度 4 冲突；想按行运算，长度 3 的量必须先变成 `(3, 1)`。
 
-广播不复制数据，`t.expand(3, 4)` 的 stride 实测是 `(1, 0)`，第 0 步长为 0 表示同一份数据被重复读，所以改扩展结果会改回原张量：
+广播不复制数据，`t.expand(3, 4)` 的 stride 实测是 `(1, 0)`，第 0 步长为 0 表示同一份数据被重复读，所以改扩展结果等于改原张量：
 
 ```python
 t = torch.ones(3, 1); e = t.expand(3, 4)
@@ -142,7 +142,7 @@ s[0, 0] = 99
 X              # 第 1 行第 0 列变成 99，原张量被改了
 ```
 
-只要后面还要用原张量，任何"取一部分改一改"的写法都要先 `.clone()`，实测 `X[1:3].clone()` 之后的修改不影响 `X`。返回副本的只有布尔索引 `X[X > 5]` 和整数数组索引 `X[[0, 2]]`，它们的结果在内存里不连续，无法用 stride 描述。
+只要后面还要用原张量，任何“取一部分改一改”的写法都要先 `.clone()`，实测 `X[1:3].clone()` 之后的修改不影响 `X`。返回副本的只有布尔索引 `X[X > 5]` 和整数数组索引 `X[[0, 2]]`，它们的结果在内存里不连续，无法用 stride 描述。
 
 ## 6. 内存复用与 in-place 操作
 
@@ -161,10 +161,12 @@ Y[:] = X + Y              # id 不变，写回原内存；Y += X 也是原地；
 x = torch.tensor([1.0, 2.0], requires_grad=True)
 x.add_(1)     # 1) 叶子上原地改：RuntimeError: a leaf Variable that requires grad is being used
 x[0] = 5.0    #    或 a view of a leaf Variable ... in an in-place operation
+
 x = torch.tensor([1.0, 2.0], requires_grad=True)
 y = x.exp(); y.add_(1.0); y.sum().backward()
 # 2) 反向需要用到被改动的中间结果：RuntimeError: one of the variables needed for gradient
 #    computation has been modified by an inplace operation: ... is at version 1; expected version 0
+
 x = torch.tensor([1.0, 2.0], requires_grad=True)
 y = x * x; y.add_(1); y.sum().backward()   # 3) 反向用不到那个量：正常算出 tensor([2., 4.])
 ```
@@ -193,7 +195,7 @@ D = torch.tensor(np.ones((2, 3)))   # 对应书上的 nd.array(P)
 D.numpy()                           # 对应书上的 D.asnumpy()
 ```
 
-两版书在这里的描述相反：v2 的 MXNet 段落写"转换后的结果不共享内存"，PyTorch 段落写"torch 张量和 numpy 数组将共享它们的底层内存"。torch 侧实测：
+两版书在这里的描述相反：v2 的 MXNet 段落写“转换后的结果不共享内存”，PyTorch 段落写“torch 张量和 numpy 数组将共享它们的底层内存”。torch 侧实测：
 
 ```python
 T = torch.arange(6, dtype=torch.float32).reshape(2, 3)
@@ -259,7 +261,8 @@ y = torch.tensor(outputs.to_numpy(dtype=float))
 
 `dummy_na=True` 把缺失值本身当作一个类别，`Alley` 生成 `Alley_Pave` 和 `Alley_nan` 两列。
 当前 pandas 的 `get_dummies` 返回 bool 列，`to_numpy(dtype=float)` 把 True/False 转成 1.0/0.0。
-得到的 `X` 是 `torch.float64`、形状 `(4, 3)`，喂给模型前通常再转一次 `float32`。
+得到的 `X` 是 `torch.float64`、形状 `(4, 3)`，喂给模型前通常再转一次 `float32`。电子版这里的
+MXNet 写法是 `np.array(inputs.to_numpy(dtype=float))`，对应 torch 的 `torch.tensor(...)`。
 
 ## 自测题
 
@@ -281,4 +284,4 @@ y = torch.tensor(outputs.to_numpy(dtype=float))
 5. 报 `RuntimeError: The size of tensor a (4) must match the size of tensor b (5) at non-singleton dimension 1`。`A.sum(axis=1)` 形状是 `(5,)`，右对齐到最后一维与 4 冲突；`keepdims=True` 得 `(5, 1)`，第 1 维长度为 1，可广播到 `(5, 4)`。三条规则见第 4 节。
 6. 第二段报错。`exp` 的反向需要用到前向输出，反向时检查到该输出的版本号被 in-place 操作改过，抛 `modified by an inplace operation`；`mul` 的反向只需要输入，第一段中被改的 `y` 不参与梯度计算。
 7. `B = A / A.sum(dim=1, keepdim=True)`。要点是 `keepdim=True`（或先 `A.sum(1).reshape(-1, 1)`）、输入已是 `float32`、`/` 产生新张量不改 `A`。
-8. 用 `total += loss.item()`。直接写会让 `total` 变成张量并带着计算图（实测 `grad_fn` 是 `AddBackward0`），每一轮的中间结果都被这份引用留住。
+8. 用 `total += loss.item()`。直接写会让 `total` 变成张量并带着计算图（实测 `grad_fn` 是 `AddBackward0`），每一轮的中间结果都会被这份引用留住。
