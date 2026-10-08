@@ -59,6 +59,19 @@ ssh <开发机> 'cd <仓库目录> && python3 work/b02/b02.py'
   但不要开成 Python 课。
 - 他不用 notebook，全部是 `.py` 文件，在 nvim 里写，`python xxx.py` 跑。
 
+## 讲解的边界
+
+学习者是 LFS 用户，写过 Rust 与 C++ 项目。**Linux 与 shell 层面不用解释**：
+命令行工具、git、PATH、权限、进程、SSH、nix 这些都当他熟，直接给结论。
+解释这些会浪费他的时间，也显得没读他的背景。
+
+**要解释的是 Python 语言本身和整个 Python 生态**：语法、对象模型、内置类型的行为，
+以及 torch、matplotlib、pandas、numpy 这些库的 API。他基本没写过 Python，
+也没有任何一个 Python 库的使用经验。每一个 API 第一次出现都要交代它是什么、参数是什么。
+
+例外：与系统核心无关的专业工具可以带一句，例如 openssl 用法、VSCodium 扩展机制、
+CUDA 工具链、nix 里某些冷门特性。
+
 ## d2l 封装的解锁规则
 
 第一版书里写 `# 本函数已保存在d2lzh包中方便以后使用` 的地方，就是解锁点。
