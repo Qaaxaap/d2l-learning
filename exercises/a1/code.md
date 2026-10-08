@@ -82,7 +82,7 @@ class ScaledLinear(nn.Module):
 | 构造签名 | `ScaledLinear(in_features, out_features, scale=1.0)` |
 | 属性名 | 权重叫 `self.weight`，偏置叫 `self.bias` |
 | 权重初值 | `torch.randn(in_features, out_features) * scale` |
-| 偏置初值 | 全零 |
+| 偏置初值 | 形状 `(out_features,)` 的一维全零张量（不是数值 0，也不是 1×1 矩阵） |
 | `forward(X)` | 返回 `X @ weight + bias` |
 | `net.parameters()` | 恰好两个张量，形状分别是 `(in_features, out_features)` 与 `(out_features,)` |
 | 输入形状 | `(batch, in_features)` |
