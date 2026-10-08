@@ -462,6 +462,22 @@ def __eq__(self, other):
 
 （`NotImplemented` 和 `NotImplementedError` 是两个东西，后者是个异常，用途不同。）
 
+**怎么判断类型**：上面的 `isinstance(other, Vec2)` 是 Python 内置函数，
+判断一个对象是不是某个类的实例（**子类的实例也算**）。
+
+和 `type(other) is Vec2` 的区别：
+
+```python
+class Sub(Vec2): pass
+
+isinstance(Sub(1, 2), Vec2)   # True，子类实例也算
+type(Sub(1, 2)) is Vec2       # False，严格比较类型
+```
+
+`__eq__` 里两种写法都有人用，区别就是"子类实例算不算同一类"。
+标准库的惯例偏 `isinstance`（宽松），严格类型比较也有它的道理（避免父子类实例判等）。
+自己决定用哪个，但要清楚它们的差别。
+
 ### 4.5 你不需要会写 dunder
 
 除了 `__init__` 一定要会写，其余的在 d2l 学习期间**只需要认识**。

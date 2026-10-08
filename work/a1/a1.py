@@ -1,3 +1,30 @@
+"""
+import torch
+import torch.nn as nn
+
+
+class Net(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        # 没有调用父类的__init__, 加上 super().__init__()即可。
+        self.weight = torch.randn(in_dim, out_dim) # 没有用 nn.Parameter 登记, 用它包裹即可。
+        self.bias = torch.zeros(out_dim) # 同上
+
+    def forward(self, X):
+        return X @ self.weight + self.bias 
+
+
+def batches(data=[]): # 仅在定义时初始化一次, 多次调用会串上次的data, 应该用 None + 判断。
+    for i in range(len(data)):
+        return data[i] # 应该是 yield, 因为 return 的话该函数仅仅输出 data 的第一个元素, 应该是一个能遍历元素的生成器才对, 换成 yield 即可。
+
+
+net = Net(3, 1)
+print(len(list(net.parameters())))
+print(net(torch.randn(2, 3)))
+"""
+
+import time
+
 import torch
 import torch.nn as nn
 class Counter:
@@ -12,7 +39,6 @@ class Counter:
     def __init__(self, start=0):
         self.value = start
         self.calls = 0
-        return None
     def __call__(self, step=1):
         self.calls += 1
         self.value += step
@@ -29,8 +55,8 @@ class Vec2:
         v.x, v.y                  -> 属性可读
     """
     def __init__(self, x, y):
-       self.x = x
-       self.y = y
+        self.x = x
+        self.y = y
     def __add__(self, vb):
         vc = Vec2(self.x + vb.x, self.y + vb.y)
         return vc 
@@ -55,4 +81,19 @@ class ScaledShift(nn.Module):
         self.bias = nn.Parameter(torch.zeros(size,)) 
     def forward(self, X):
         return X * self.scale + self.bias
-    
+class Timer:
+    """用法：
+        t = Timer()
+        with t:
+            time.sleep(0.05)
+        print(t.elapsed)     # 大约 0.05
+    """
+    def __init__(self):
+        self.start = 0
+        self.elapsed = 0
+    def __enter__(self):
+        self.start= time.time()
+        return self
+    def __exit__(self, *args):
+        self.elapsed = time.time() - self.start
+        return False
