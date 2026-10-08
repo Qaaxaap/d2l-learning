@@ -15,6 +15,7 @@ def tensor_info(x: torch.Tensor):
     d["device"] = str(x.device)
     d["is_contiguous"] = x.is_contiguous()
     return d
+
 def safe_broadcast_add(a: torch.Tensor, b: torch.Tensor):
     da = tensor_info(a)
     db = tensor_info(b)
@@ -32,12 +33,13 @@ def safe_broadcast_add(a: torch.Tensor, b: torch.Tensor):
         first += 1
         if (ia == ib):
             continue
-        if ((ia <= 1) or (ib <= 1)):
+        if ((ia == 1) or (ib == 1)):
             continue
         flag = False
     if (flag):
         return a + b;
     raise ValueError(f"第{first}位不可广播")
+
 def slice_is_view() -> bool:
     """构造一个张量，取它的一个切片，修改切片，返回原张量是否跟着变。"""
     x = torch.arange(12).reshape(3,4)
@@ -55,4 +57,5 @@ def clone_is_copy() -> bool:
     return int((cx == x).sum()) != x.numel()
 
 def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
-    """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。
+    """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。"""
+

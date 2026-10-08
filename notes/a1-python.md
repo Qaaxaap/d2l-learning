@@ -184,6 +184,17 @@ print(f"loss = {loss:.3f}")              # 保留三位小数
 print(f"{x=}")                           # 调试用，打印 x=3
 ```
 
+去掉前缀或后缀用这两个方法（Python 3.9 起）：
+
+```python
+"torch.float32".removeprefix("torch.")   # 'float32'
+"a.txt".removesuffix(".txt")             # 'a'
+"abc".removeprefix("xyz")                # 'abc'，前缀不存在就原样返回
+```
+
+比切片更该用的场合：意图是"去掉这个前缀"而不是"丢掉前 N 个字符"。
+切片在前缀长度变了之后会静默切错，这两个方法不会。
+
 多行字符串用三个引号，docstring 也用它：
 
 ```python
