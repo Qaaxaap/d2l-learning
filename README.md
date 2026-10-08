@@ -1,6 +1,8 @@
 # d2l 学习仓库
 
 《动手学深度学习》**第一版纸质书** + **PyTorch** 实现的学习记录。
+公开仓库：<https://github.com/Qaaxaap/d2l-learning>
+
 契约见 [PLAN.md](PLAN.md)，私教（AI）的工作规则见 [AGENTS.md](AGENTS.md)，
 进度见 [PROGRESS.md](PROGRESS.md)，每次交互的记录见 [log/](log/)。
 

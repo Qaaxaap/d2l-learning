@@ -105,6 +105,8 @@ PROGRESS.md                  更新进度、错题
 1. 写 `log/` 文件
 2. 更新 `PROGRESS.md`（状态、掌握度、错题本、复习队列）
 3. `git add` + `git commit`，提交信息格式 `log(<单元>): <结果> <一句话>`
+4. `git push origin main`。仓库在 <https://github.com/Qaaxaap/d2l-learning>，公开。
+   推送要代理：`export https_proxy=http://127.0.0.1:7890`；凭据由 `gh` 的 credential helper 提供。
 
 ## 仓库会公开
 
