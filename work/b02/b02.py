@@ -60,4 +60,6 @@ def clone_is_copy() -> bool:
 def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
     """读取 CSV，返回 (特征张量, 特征名列表, 列统计信息)。"""
     data = pd.read_csv(path)
-    
+    for col in data.columns:
+        if (pd.api.types.is_numeric_dtype(col)):
+            

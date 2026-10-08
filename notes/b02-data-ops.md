@@ -226,27 +226,69 @@ B02 的张量都不求导，用不上它；B04 学完自动微分再回来看。
 
 ## 8. 数据预处理
 
-这一节 v1 没有对应内容，看 v2 的 2.2 节。
+真实数据很少能直接送进模型：有缺失值、有非数值列、格式五花八门。这一节把这些处理掉。
+
+### 8.0 两个对象与读文件
+
+- **`DataFrame`** 是一张表，有行有列，每列有自己的名字和类型
+- **`Series`** 是表里的一列（或一行），带索引的一维数据
 
 ```python
 import pandas as pd
 
-with open('house_tiny.csv', 'w') as f:   # 每行一个样本，NA 表示缺失
-    f.write('NumRooms,Alley,Price\nNA,Pave,127500\n2,NA,106000\n4,NA,178100\nNA,NA,140000\n')
-
-data = pd.read_csv('house_tiny.csv')
-inputs, outputs = data.iloc[:, 0:2], data.iloc[:, 2]
+data = pd.read_csv("house_tiny.csv")
 ```
 
-`pd.read_csv` 把 `NA` 识别成缺失值，数值列 `NumRooms` 是 `float64`，字符串列 `Alley` 是 `object`。
+`pd.read_csv(path)` 读一个 CSV 文件，返回 `DataFrame`。空字段以及 `NA`、`NaN` 这类字符串会被识别成缺失值。
 
-### 8.1 书中这一句在新版 pandas 上会失败
+取数据有两种方式，用途不同：
+
+```python
+data["Alley"]        # 按列名取，返回 Series
+data.iloc[:, 0:2]    # 按位置取前两列，返回 DataFrame
+data.iloc[:, 2]      # 按位置取第三列，返回 Series
+```
+
+`iloc` 的两个维度用逗号隔开，写作 `行选择, 列选择`。冒号表示"全要"，`0:2` 是切片，左闭右开。
+按列名取还可以一次取多列：`data[["NumRooms", "Price"]]`，注意里面是一个列表。
+
+### 8.1 缺失值：填还是删
+
+**`DataFrame.fillna(value)`** 把缺失值替换成 `value`，返回一张新表，原表不动。
+
+```python
+data.fillna(0)             # 所有缺失值填 0
+data["NumRooms"].fillna(0) # 只填这一列
+```
+
+`value` 也可以是一个 Series。这时 pandas 按**列名**对齐：列名能对上的用 Series 里的值填，
+对不上的列保持原样。实测 `pd.Series({"A": 100.0})` 只影响 A 列。
+
+**`DataFrame.mean()`** 对每一列求均值，返回 Series。
+默认连字符串列也会尝试求均值，在 pandas 2.x 上直接报错，所以传 `numeric_only=True` 只算数值列：
+
+```python
+means = data.mean(numeric_only=True)   # Series，索引是列名
+data.fillna(means)                      # 按列名把均值填回去
+```
+
+删掉缺失值是另一个方法：
+
+```python
+data.dropna()                      # 默认删掉含缺失值的行
+data.dropna(axis=1, how="any")     # 删掉含缺失值的列
+```
+
+填还是删要看缺失比例。盲目填均值会把分布压窄，缺得多时反而引入偏差。
+
+### 8.1.1 书上那一句在新版 pandas 上会失败
 
 v2 原文写 `inputs = inputs.fillna(inputs.mean())`，在 pandas 2.3.3 上实测报
 `TypeError: can only concatenate str (not "int") to str`：`inputs` 里同时有数值列和字符串列，
-`mean()` 会去对字符串列求均值。改成 `inputs.fillna(inputs.mean(numeric_only=True))` 即可。
+`mean()` 会去对字符串列求均值。加上 `numeric_only=True` 即可。
 
-`fillna` 收到 Series 时按**列名**对齐，Series 里没有的列保持原样，所以这一句只填了 `NumRooms`，`Alley` 的缺失值留给下一步；实测 `pd.Series({'A': 100.0})` 只影响 A 列。删除法对应 `data.dropna()`（删行）与 `data.dropna(axis=1, how='any')`（删列）；插值还是删除要看缺失比例，盲目填均值会把分布压窄。
+`fillna` 收到 Series 时按列名对齐，Series 里没有的列保持原样，所以这一句只填了 `NumRooms`，
+`Alley` 的缺失值留给下一步处理。
 
 ### 8.2 类别列与独热编码
 
