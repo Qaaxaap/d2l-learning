@@ -1,3 +1,3 @@
 import torch
-print("torch 版本：", ____)
-print("CUDA 可用：", ____)
+print("torch 版本：", torch.__version__)
+print("CUDA 可用：", )

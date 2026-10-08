@@ -3,7 +3,7 @@
 这一单元不涉及深度学习。目的是让你能顺畅地写代码、跑代码、看图、提交。
 做完这一单元，你应该能自己回答"我的代码在哪、环境怎么用、报错去哪看"。
 
-**讲义里不会给你可以直接粘贴的完整代码。** 给的是要求、骨架、文档链接和分级提示。
+**讲义里不会给你可以直接粘贴的完整代码。** 给的是要求、骨架、**该读哪一段材料**和分级提示。
 自己写出来才算过。
 
 ---
@@ -70,7 +70,7 @@ uv run python work/a0/hello_tensor.py    # 用 .venv 跑
 
 ## 3. 先认识四件事
 
-写第一个脚本之前，有四个 Python 的基本约定。都不难，但不认识就会处处卡。
+写第一个脚本之前，有四个 Python 的约定。都不难，但不认识就会处处卡。
 
 ### 3.1 import：用库之前先加载
 
@@ -113,22 +113,66 @@ x.numel()      # 方法，调用它，返回一个值
 
 `#` 到行尾。写"为什么这样写"，不写"这行在做什么"。
 
-## 4. 查文档
+## 4. 该读什么
 
-这一单元的 API 都在这些页面里。**先查文档，再动手**，不要猜参数。
+### 4.1 从官方教程入手，别从 API 文档入手
 
-| 想查什么 | 去哪 |
-|---|---|
-| Python 语法本身 | <https://docs.python.org/zh-cn/3/tutorial/> |
-| 张量怎么造 | [torch.arange](https://pytorch.org/docs/stable/generated/torch.arange.html) |
-| 张量怎么变形 | [Tensor.reshape](https://pytorch.org/docs/stable/generated/torch.Tensor.reshape.html) |
-| 张量有哪些属性和方法 | [Tensors 总览](https://pytorch.org/docs/stable/tensors.html) |
-| 怎么搬到显卡、怎么看它在哪 | [Tensor.to](https://pytorch.org/docs/stable/generated/torch.Tensor.to.html)、[CUDA 语义](https://pytorch.org/docs/stable/notes/cuda.html) |
-| 画图 | [pyplot 教程](https://matplotlib.org/stable/tutorials/pyplot.html) |
-| 存图 | [pyplot.savefig](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html) |
+API 文档是给已经知道自己在找什么的人查的。你现在需要的是有人按顺序讲一遍的材料。
 
-文档页里的 **Parameters** 一节告诉你每个参数叫什么、什么类型、默认值是什么。
-看到 `dtype=None` 就说明这个参数可以不传。
+PyTorch 官方的入门系列在这里：
+
+<https://docs.pytorch.org/tutorials/beginner/basics/intro.html>
+
+那一页自己写了读法（原文）：
+
+> If you're familiar with other deep learning frameworks, check out the 0. Quickstart first
+> to quickly familiarize yourself with PyTorch's API. If you're new to deep learning frameworks,
+> head right into the first section of our step-by-step guide: 1. Tensors.
+
+你没有别的框架经验，所以**跳过 0. Quickstart，从 1. Tensors 读起**：
+
+<https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html>
+
+（Quickstart 会把下载数据、建模型、训练、保存整套流程一次过完，现在看信息量太大。
+B06 学完线性回归之后回来读它正合适。）
+
+Tensors 那一页里和 A0 有关的小节：
+
+| 小节 | 讲什么 | 用在 |
+|---|---|---|
+| Initializing a Tensor | 造张量的四种方式：从数据、从 NumPy、从另一个张量、用随机数或常量 | 任务一第 3 步 |
+| Attributes of a Tensor | 三个属性：`shape`、`dtype`、`device` | 任务一第 4 步 |
+| Operations on Tensors 开头几段 | 张量默认在 CPU；用 `.to()` 搬到加速器 | 任务一第 5 步 |
+| Bridge with NumPy | 张量与 NumPy 数组共享内存，`.numpy()` | 任务二 |
+
+再往后的 Datasets & DataLoaders、Transforms、Build Model、Autograd、Optimization、
+Save & Load Model 现在不用看，那对应 B06 到 B07。
+
+一处提醒：教程里搬设备写的是 `torch.accelerator`，那是新 API，泛指 CUDA / MPS / XPU 各类
+加速器。本机只有 NVIDIA 显卡，写 `torch.cuda` 更直接，两种都对。
+
+### 4.2 教程没讲到的三个，查 API 文档
+
+Tensors 那页没有 `arange`、`reshape`、`numel`。这三个查 API：
+
+| 查什么 | 去哪 | 重点看 |
+|---|---|---|
+| 怎么造一串连续数字 | [torch.arange](https://pytorch.org/docs/stable/generated/torch.arange.html) | Parameters 里 `dtype` 的默认值 |
+| 怎么改形状 | [Tensor.reshape](https://pytorch.org/docs/stable/generated/torch.Tensor.reshape.html) | 参数能不能写成一个 tuple |
+| 怎么看元素个数 | [Tensor.numel](https://pytorch.org/docs/stable/generated/torch.Tensor.numel.html) | 返回值是什么类型 |
+
+API 文档的读法：先看签名和第一句话，再看 Parameters 表。表里写了默认值的参数可以不传。
+
+### 4.3 任务二的材料
+
+- `plt.plot`、`plt.xlabel`、`plt.ylabel`：看
+  [Pyplot tutorial](https://matplotlib.org/stable/tutorials/pyplot.html) 的
+  **Introduction to pyplot** 那一节。再往后的 "Formatting the style of your plot" 讲颜色和线型，
+  现在用不上
+- `plt.figure`：[figure 文档](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html)，
+  只需要 `figsize`
+- `plt.savefig`：[savefig 文档](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html)，
+  只需要 `fname` 和 `dpi`
 
 ## 5. 任务一：确认环境活着
 
@@ -144,7 +188,7 @@ x.numel()      # 方法，调用它，返回一个值
 
 ### 骨架
 
-`____` 是你要填的。填不出来先看提示，别直接搜答案。
+`____` 是你要填的。先读第 4.1、4.2 节的材料，再回来填。
 
 ```python
 import torch
@@ -205,15 +249,18 @@ CUDA 能不能用，是 `torch.cuda` 下面一个函数返回的布尔值，函�
 
 <details><summary>提示 3：形状与元素个数</summary>
 
-一个不加括号，一个加括号。去 [Tensors 总览](https://pytorch.org/docs/stable/tensors.html)
-页面里搜 `shape` 和 `numel`，看它们的写法有什么区别。
+一个不加括号，一个加括号。去 Tensors 教程的 **Attributes of a Tensor** 一节，
+对照 `shape` 和 `dtype` 的写法，再看 `numel` 的 API 文档。
 
 </details>
 
 <details><summary>提示 4：搬显卡</summary>
 
-`张量.to("cuda")` 返回一个在显卡上的新张量，原来的不变。
-它现在在哪，看它的 `.device` 属性。
+Tensors 教程的 **Operations on Tensors** 开头有 `.to()` 的用法。
+在它基础上把"当前加速器"换成 `"cuda"`。
+
+它现在在哪，看 `.device` 属性——这个属性在 **Attributes of a Tensor** 一节里出现过。
+
 搬回内存用 `.cpu()`。
 
 注意 `(g * 2).cpu()` 里的括号：先算乘法，再搬回来，最后打印。
@@ -255,14 +302,16 @@ print("已保存 work/a0/sin.png")
 这台机器没有显示器。matplotlib 默认会去开一个窗口，开不了就报错或者卡住。
 要换成 `Agg` 后端，它只往内存里的位图渲染，最后由 `savefig` 写进文件。
 
-后端必须在 `import matplotlib.pyplot` **之前**选定。pyplot 在导入的那一刻就把后端定下来了，
-导入之后再改不生效。
+后端必须在 `import matplotlib.pyplot` **之前**选定。pyplot 在导入的那一刻就把后端定下来，
+导入之后再改不生效。要填的那个词是后端名字，三个字母。
 
 ### 提示
 
 <details><summary>提示 1：横坐标</summary>
 
 `torch.linspace(起点, 终点, 点的个数)`，linspace 是 "linear space"。
+它没出现在第 4 节的表里，可以顺手查一下它的 API 文档。
+
 2π 可以写 `2 * 3.14159`，也可以 `import math` 之后用 `math.pi`。
 
 </details>
@@ -276,8 +325,7 @@ print("已保存 work/a0/sin.png")
 <details><summary>提示 3：为什么不能把张量直接交给 plot</summary>
 
 matplotlib 不认识 torch 张量，只认 numpy 数组。
-Tensor 上有个方法能转过去，在 [Tensors 总览](https://pytorch.org/docs/stable/tensors.html)
-的 "Bridge with NumPy" 一节里找。
+Tensor 上有个方法能转过去，看 Tensors 教程的 **Bridge with NumPy** 一节。
 
 转换要求张量在 CPU 上、且不连着计算图。这里两个条件都满足，不会有问题。
 
@@ -334,7 +382,7 @@ git commit -m "a0: 跑通第一个张量脚本"
 2. `x.shape` 和 `x.numel()` 一个不加括号一个加，怎么判断该不该加？
 3. `torch.arange(12)` 造出来的张量是什么类型？为什么这里要显式写 `dtype=torch.float32`？
 4. `x.to("cuda")` 之后，`x` 本身变了吗？
-5. 为什么 `(g * 2).cpu()` 要加括号？不加会怎样？
+5. 为什么 `(g * 2).cpu()` 要加括号？
 6. 画图那行 `matplotlib.use("Agg")` 为什么必须写在 `import matplotlib.pyplot` 之前？
 7. 为什么不能把 torch 张量直接传给 `plt.plot`？
 8. `just run work/a0/sin.py` 展开成什么命令？
@@ -348,8 +396,7 @@ git commit -m "a0: 跑通第一个张量脚本"
    拿不准就看文档，或者打印出来看：是 `<built-in method ...>` 就是漏了括号。
 3. `torch.arange(12)` 默认 `int64`。浮点运算和梯度要求浮点类型，整数张量送进线性层会报 dtype 不匹配。
 4. 没变。`.to()` 返回新张量，`x` 还是原来那个在 CPU 上的。
-5. `.cpu()` 作用于 `g * 2` 的结果。不加括号写成 `g * 2.cpu()` 会先对 2 取 `.cpu()`，
-   或者直接语法错误，取决于写法；总之运算顺序变了。
+5. `.cpu()` 作用于 `g * 2` 的结果。不加括号会改变运算顺序。
 6. pyplot 在导入时就把后端定下来并创建相关对象，之后再调 `use()` 不生效。
 7. matplotlib 只认 numpy 数组，torch 张量要先 `.numpy()` 转过去。
 8. `python3 work/a0/sin.py`。
