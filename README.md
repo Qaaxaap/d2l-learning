@@ -1,84 +1,53 @@
 # d2l 学习仓库
 
-《动手学深度学习》**第一版纸质书** + **PyTorch** 实现的学习记录。
-公开仓库：<https://github.com/Qaaxaap/d2l-learning>
+跟着《动手学深度学习》**第一版纸质书**学深度学习，书上给的 MXNet 代码全部用 **PyTorch** 自己重写一遍。
 
-契约见 [PLAN.md](PLAN.md)，私教（AI）的工作规则见 [AGENTS.md](AGENTS.md)，
-进度见 [PROGRESS.md](PROGRESS.md)，每次交互的记录见 [log/](log/)。
+| | |
+|---|---|
+| 教材 | 《动手学深度学习》第一版（书上代码是 MXNet） |
+| 电子版 | <https://zh.d2l.ai/>（第二版，有 PyTorch 代码，章节号与纸质书不同） |
+| 框架 | PyTorch 2.14 + CUDA |
+| 记录 | 每次学习的过程在 [`log/`](log/)，进度在 [`PROGRESS.md`](PROGRESS.md) |
 
-代码在开发机上跑，AI 的写作区在本地，两边用 `tools/sync.sh` 同步。
-机器地址、路径、代理这些只在本地 `LOCAL.md` 里，不入库。
+## 怎么学
+
+每个单元走这五步，完整约定见 [PLAN.md](PLAN.md)：
+
+1. 看 `exercises/<单元>/READING.md`，知道读纸质书哪几页、读的时候要能回答什么问题
+2. 读纸质书，做批注
+3. 把实现写进 `work/<单元>/`
+4. `just check <单元>` 跑验收断言，红了就改
+5. 找 AI 做口试，题目在 `exercises/<单元>/oral.md`
+
+答不上来、写不出来就不进下一个单元。
 
 ## 目录
 
-| 路径 | 谁写 | 内容 |
-|---|---|---|
-| `log/` | AI | 每次交互的记录。格式契约见 [log/README.md](log/README.md) |
-| `notes/` | AI | 讲义。每章一份，含公式推导、MXNet→PyTorch 对照、易错点 |
-| `exercises/<单元>/` | AI | `READING.md` 阅读任务书、`oral.md` 口试题、`code.md` 代码题 |
-| `solutions/` | AI | 参考答案 |
-| `work/<单元>/` | **你** | 你的实现。这是你的地盘，AI 不会覆盖 |
-| `tools/` | AI | 验收断言、同步脚本 |
-| `PROGRESS.md` | AI | 进度、掌握度、错题本、复习队列 |
+| 路径 | 内容 |
+|---|---|
+| `notes/` | 讲义。含公式推导、MXNet→PyTorch 对照、易错点 |
+| `exercises/` | 每个单元的阅读任务书、口试题、代码题 |
+| `work/` | 学习者的实现 |
+| `solutions/` | 参考答案 |
+| `log/` | 每次交互的记录，格式见 [log/README.md](log/README.md) |
+| `tools/` | 验收断言 |
+| `PROGRESS.md` | 进度、掌握度、错题本、复习队列 |
 
-## 开始
+## 环境
 
-```bash
-cd <仓库目录>
-just env                    # 看解释器和各包版本、CUDA 是否可用
-just run work/a0/hello_tensor.py
-```
-
-跑脚本不需要先进任何环境。系统那份 `python3`（Arch 的 3.14）已经装好
-torch 2.14.0、torchvision、numpy、matplotlib、pandas、tqdm、requests，CUDA 实测可用。
-`nix develop` 是可选的，只为拿到固定版本的 `uv` / `just` / `git`：
+解释器和科学计算包用系统那份，nix flake 只管工具链。常用命令：
 
 ```bash
-nix develop                 # 可选
+just env                            # 看各包版本与 CUDA 状态
+just run work/a0/hello_tensor.py    # 跑一个脚本
+just check b02                      # 跑某单元的验收断言
+just --list                         # 看全部命令
 ```
 
-## 环境设计
+搭环境、跑脚本、看图、git 的细节见 [`notes/a0-setup.md`](notes/a0-setup.md)。
 
-原则：**能复用系统包就复用**，这样同一份代码在别的项目、别的目录下也能直接跑。
+## 参考材料
 
-| 层 | 谁提供 | 内容 |
-|---|---|---|
-| 解释器 | Arch pacman | `/usr/bin/python3`（3.14） |
-| 科学计算包 | Arch pacman | `python-pytorch-cuda`、`python-numpy`、`python-matplotlib`、`python-pandas` 等 |
-| 工具链 | nix flake | `uv`、`just`、`git`，版本锁在 `flake.lock` |
-| 额外 Python 包 | uv（按需） | 装进项目内 `.venv`，带 `--system-site-packages`，和系统包共存 |
-
-平时就是 `python3 xxx.py`。只有当某个包系统里没有（比如第二版官方的 `d2l` 包）才需要：
-
-```bash
-just setup                      # 建 .venv（只在第一次）
-uv add d2l                      # 装进 .venv，同时写进 pyproject.toml
-uv run python work/xxx.py       # 用 .venv 跑（能看到 .venv 里的包）
-```
-
-注意 `python3 xxx.py` 看不到 `.venv` 里的包，`uv run python xxx.py` 才能。
-
-其他：
-
-- 升级 `nixpkgs`：`nix flake update`（要代理，地址见 `LOCAL.md`）。
-- nixpkgs 的二进制缓存已配 USTC 镜像，拉 nix 包不用代理。
-
-## 画图怎么看
-
-远程没显示器，脚本里必须先切后端：
-
-```python
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-...
-plt.savefig("out.png", dpi=150)
-```
-
-然后二选一：本地终端 `scp` 拉下来看，或用 VSCodium 的 Remote-SSH 直接打开 PNG。
-
-## 数据集
-
-`d2l` 包默认的几个下载源在国内不通（`ap-northeast-1.d2l.ai` 超时，
-`d2l-data.s3-accelerate.amazonaws.com` 403）。所以数据管道要自己写，
-用 `torchvision.datasets` 或原始镜像地址，具体见 `notes/a0-setup.md`。
+- [`notes/chapter-map.md`](notes/chapter-map.md) 纸质书与第二版电子版的逐节对照，第二版多出来的章节都标了
+- [`notes/d2lzh-unlock-table.md`](notes/d2lzh-unlock-table.md) 书上"已封装好、以后直接用"的完整清单
+- [`AGENTS.md`](AGENTS.md) AI 私教的工作规则
