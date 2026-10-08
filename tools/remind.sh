@@ -17,6 +17,11 @@ set -euo pipefail
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
 
+# paplay 的音量是 0-65536 的相对值，跟播放器的 100% 对齐。
+# 学习者系统音量常驻 50%，这里给足，否则提醒声太小压不过别的声音。
+VOL_SOUND="${D2L_VOL_SOUND:-45000}"   # 提示音，约 69%
+VOL_VOICE="${D2L_VOL_VOICE:-60000}"   # 语音，约 92%
+
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL="$HOME/.local/share/piper/zh_CN-huayan-medium.onnx"
 SOUND=/usr/share/sounds/freedesktop/stereo/complete.oga
@@ -30,7 +35,7 @@ fi
 MSG="${1:-}"
 
 for _ in $(seq "$TIMES"); do
-  paplay --volume=18000 "$SOUND" 2>/dev/null || true
+  paplay --volume="$VOL_SOUND" "$SOUND" 2>/dev/null || true
   sleep 1
 done
 
@@ -38,7 +43,7 @@ if [ -n "$MSG" ] && [ -f "$MODEL" ]; then
   # 别把 stderr 丢掉，合成或播放失败时要看得见
   if printf '%s\n' "$MSG" | nix develop "$REPO#tts" --command piper \
       --model "$MODEL" --output_file "$WAV"; then
-    paplay --volume=26000 "$WAV" || echo "警告：语音播放失败" >&2
+    paplay --volume="$VOL_VOICE" "$WAV" || echo "警告：语音播放失败" >&2
   else
     echo "警告：piper 合成失败" >&2
   fi
