@@ -51,8 +51,9 @@
 <details><summary>参考答点</summary>
 
 不一样。MXNet 的 `nd.arange` 默认 float32（`mx_real_t`），torch 的 `arange` 默认 int64。
-照书翻译时若不显式指定 dtype，后面算梯度和送进线性层都会报 dtype 不匹配；
-矩阵乘法两侧 dtype 必须一致，整数张量也不能求 L2 范数。
+照书翻译时若不显式指定 dtype，后面把整数张量当浮点用会出问题。
+B02 里能直接看到的证据是**类型提升**：`int64 + float32` 悄悄得到 `float32`，
+结果类型与你写下的不一样，而这类错误不报错，最难查。更硬的报错在后面的单元。
 
 </details>
 

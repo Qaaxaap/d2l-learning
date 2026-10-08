@@ -68,26 +68,30 @@ def load_csv(path: str) -> tuple[torch.Tensor, list[str], dict]:
 
 ## T5 改错
 
-下面这段代码有三个 bug。把这段代码抄进 `b02.py` 顶部的注释里，用行内注释标出每个 bug 的位置，
-并各写一句为什么错、怎么改。
+下面这段代码有三处问题。把代码抄进 `work/b02/b02.py` 顶部的注释里，
+每处标出三样：**位置**（第几行）、**为什么错**、**怎么改**。
 
 ```python
 import torch
 
+# 造一批数据，准备拿去做浮点运算
 x = torch.arange(12)
-X = x.view(3, 4)
+
+# 变形成 3 行 4 列
+X = x.reshape(3, 4)
+
+# 打印它的形状
 print(X.size)
 
-Y = X.reshape(4, 3)
-Y[0, 0] = 100.0
-
-w = torch.randn(4, 1, requires_grad=True)
-loss = (X @ w).sum()
-loss.backward()
-X[0, 0] += 1.0
-loss.backward()
-print(w.grad.mean())
+# 取第一行改一改，认为 X 不会受影响
+row = X[0]
+row[0] = 100.0
+print(X[0, 0])
 ```
 
-提示：三个 bug 分别关于属性与方法、视图语义、以及梯度与 in-place 操作的相互作用。
-不要改代码去跑通，先把三个 bug 写清楚。
+三处分别关于：**元素类型**、**属性与方法的区别**、**切片是视图还是副本**。
+
+最后一处给的是"作者的预期"，你要指出实际结果与预期差在哪。
+
+可以先跑一遍验证自己的判断，但先把三处分析写下来再跑。
+

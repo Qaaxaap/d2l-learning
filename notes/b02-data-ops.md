@@ -35,11 +35,11 @@ torch.zeros(2, 3, 4); torch.ones(3, 4); torch.randn(3, 4)   # randn 是标准正
 torch.tensor([[2, 1, 4, 3], [1, 2, 3, 4]])
 ```
 
-`torch.arange(12)` 给出整数张量，这个差别会一路传下去：`torch.linalg.vector_norm` 不接受整型输入，
-`torch.dot` 要求两侧 dtype 相同，线性层的权重是 float32，整数输入直接报 dtype 不匹配。
+`torch.arange(12)` 给出整数张量，这个差别会一路传下去：后面几章会看到更硬的报错，
+B02 里能直接观察到的是类型提升带来的意外结果。
 
 第一版书上的 `nd.arange(12)` 默认给出 **float32**（MXNet 的默认浮点类型 `mx_real_t`），
-所以照书翻译时别照抄 `torch.arange(12)`，那得到的是 int64。后面算梯度或送进线性层会直接报 dtype 不匹配。
+所以照书翻译时别照抄 `torch.arange(12)`，那得到的是 int64，后面按浮点用会出问题。
 写 `torch.arange(12, dtype=torch.float32)` 才和书上那行等价。
 （依据：MXNet 源码 `ndarray.py` 中 `def arange(..., dtype=mx_real_t)`；v2 电子版的 MXNet tab 也把 `np.arange` 写成浮点。）
 
@@ -158,36 +158,9 @@ Y = Y + X                 # id 变了，新内存
 Y[:] = X + Y              # id 不变，写回原内存；Y += X 也是原地；torch.add(X, Y, out=Y) 返回 Y 本身
 ```
 
-带 `requires_grad` 的张量上做 in-place，会出现三类结果：
-
-```python
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-x.add_(1)     # 1) 叶子上原地改：RuntimeError: a leaf Variable that requires grad is being used
-x[0] = 5.0    #    或 a view of a leaf Variable ... in an in-place operation
-
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-y = x.exp(); y.add_(1.0); y.sum().backward()
-# 2) 反向需要用到被改动的中间结果：RuntimeError: one of the variables needed for gradient
-#    computation has been modified by an inplace operation: ... is at version 1; expected version 0
-
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-y = x * x; y.add_(1); y.sum().backward()   # 3) 反向用不到那个量：正常算出 tensor([2., 4.])
-```
-
-第 2、3 段的区别不在写法，在被改的张量是否被反向用到。torch 给每个张量维护版本号，in-place 操作让版本号加一，反向时发现某个算子的输出已被改过就抛错：`exp` 与 `sigmoid` 的反向需要用到输出本身，`mul` 的反向只需要输入，所以第 3 段能过；实测 `y = torch.sigmoid(x); y.mul_(2)` 报与第 2 段相同的错。
-
-`.data` 能绕过版本计数，但不会给出正确答案：
-
-```python
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-y = x.exp(); y.data.add_(1.0)     # 不报错
-y.sum().backward()
-x.grad               # tensor([3.7183, 8.3891])，正确结果是 tensor([2.7183, 7.3891])
-```
-
-每个分量正好差 1.0，也就是被加进去的那部分。梯度算错却没有任何提示。
-
-参数是叶子，更新要写在 `torch.no_grad()` 里：`with torch.no_grad(): p -= 0.1 * p.grad`。`backward()` 累加梯度，不清零会叠加：实测连续两次 `(x * x).sum().backward()` 得到 `tensor([4., 8.])`。完整规则在 B04。
+**这里有一个坑，现在只要知道，B04 会展开**：如果张量是用 `requires_grad=True` 造出来的
+（也就是之后要参与求导的），在它上面做 in-place 操作有风险，轻则报错，重则静默算错梯度。
+B02 这一章的张量都不求导，暂时碰不到。完整规则与实测数据在 B04 讲义第 5.6 节。
 
 ## 7. 与 NumPy 互转
 
@@ -207,28 +180,31 @@ T[0, 0]        # tensor(99.)，numpy 侧的修改进了张量
 ```
 
 反方向是否共享取决于函数：`torch.tensor(N)` 复制，`torch.from_numpy(N)` 与 `torch.as_tensor(N)` 共享。
-`.numpy()` 还有两个硬条件，张量不能带梯度，且必须在 CPU 上：
+`.numpy()` 有一个硬条件：张量必须在 CPU 上。
 
 ```python
-x = torch.tensor([1.0, 2.0], requires_grad=True); y = x * 2
-y.numpy()          # RuntimeError: Can't call numpy() on Tensor that requires grad.
-                   # Use tensor.detach().numpy() instead.
-y.detach().numpy() # OK
-torch.arange(3, device=0).numpy()   # TypeError: can't convert cuda:0 device type tensor to numpy.
-                                    # Use Tensor.cpu() to copy the tensor to host memory first.（GPU 机器实测）
+torch.arange(3, device=0).numpy()
+# TypeError: can't convert cuda:0 device type tensor to numpy.
+# Use Tensor.cpu() to copy the tensor to host memory first.（开发机实测）
 ```
 
-dtype 跟着 NumPy 走：`to_numpy(dtype=float)` 给出 `float64`，转成 torch 张量就是 `torch.float64`，而 `torch.nn` 的层默认 `float32`，两者相乘会报 dtype 错，需要时用 `.float()` 显式转。
+还有一个条件与"梯度"有关，B04 学完自动微分才会碰到，那时再回来看这一段。
 
-### 7.1 `.item()`、`.detach()`、`.numpy()` 什么时候必须用
+dtype 跟着 NumPy 走：`to_numpy(dtype=float)` 给出 NumPy 的 `float64`，转回 torch 张量就是 `torch.float64`。
+想统一到 `float32`，用 `.float()` 显式转。
+
+### 7.1 `.item()` 与 `.numpy()` 什么时候用
 
 | 场景 | 用法 |
 |---|---|
-| 打印、断言、累加到 Python 变量 | `.item()` |
-| 交给 NumPy、pandas、matplotlib | `.detach().cpu().numpy()` |
-| 只要值、不断开内存共享 | `.detach()` |
+| 把一个单元素张量取成 Python 数值 | `.item()` |
+| 交给 NumPy、pandas、matplotlib | `.cpu().numpy()` |
 
-`.item()` 要求张量只有一个元素，0 维和 `(1,)`、`(1, 1)` 都可以，`torch.tensor([1, 2]).item()` 报 `RuntimeError: a Tensor with 2 elements cannot be converted to Scalar`。`.detach()` 断开计算图但仍共享内存，实测 `d = y.detach(); d[0] = 123.0` 之后 `y` 的第一个元素也是 123，既要断开梯度又要独立副本就写 `y.detach().clone()`。统计 loss 写 `total += loss.item()`，直接写 `total += loss` 会让 `total` 变成带计算图的张量（实测 `grad_fn` 为 `AddBackward0`），每一轮的中间结果都被引用住。
+`.item()` 要求张量只有一个元素：0 维、`(1,)`、`(1, 1)` 都可以，
+`torch.tensor([1, 2]).item()` 报 `RuntimeError: a Tensor with 2 elements cannot be converted to Scalar`。
+
+`.detach()` 与这两个方法有关，它断开张量与"计算图"的联系、但共享内存。
+B02 的张量都不求导，用不上它；B04 学完自动微分再回来看。
 
 ## 8. 数据预处理
 
@@ -269,22 +245,25 @@ MXNet 写法是 `np.array(inputs.to_numpy(dtype=float))`，对应 torch 的 `tor
 
 ## 自测题
 
-1. `torch.arange(6)` 与 `torch.arange(6, dtype=torch.float32)` 在 `torch.dot(a, a)`、`torch.linalg.vector_norm(a)`、`a / 2` 三处分别发生什么？
+1. `torch.arange(6)` 的 dtype 是什么？要让它变成 `float32` 有哪两种写法？把一个 `int64` 张量和一个 `float32` 张量相加，结果的 dtype 是什么？这个行为为什么值得注意？
 2. `torch.tensor([1, 2])` 与 `torch.Tensor([1, 2])` 的 dtype 各是什么？`torch.Tensor(2, 3)` 造出来的张量内容是什么？为什么讲义建议统一用 `torch.tensor`？
 3. `X = torch.arange(12).reshape(3, 4)`，执行 `s = X[1:3]; s[0, 0] = 99` 之后 `X` 是什么？写成 `s = X[1:3].clone()` 呢？`X[X > 5]` 返回视图还是副本，为什么？
 4. 为什么 `Y.t().view(-1)` 报错而 `Y.t().reshape(-1)` 不报错？两者的返回值与 `Y` 共享内存吗？
-5. `A` 的形状是 `(5, 4)`。`A / A.sum(axis=1)` 报什么错？加上 `keepdims=True` 之后为什么就对了？把广播的三条规则写出来。
-6. 下面两段只有中间的函数不同，一段能跑完，另一段报 inplace 相关的错。指出哪段报错并解释原因：`y = x * x; y.add_(1); y.sum().backward()` 与 `y = x.exp(); y.add_(1); y.sum().backward()`（`x` 都是 `torch.tensor([1.0, 2.0], requires_grad=True)`）。
+5. `A` 的形状是 `(5, 4)`。`A / A.sum(dim=1)` 报什么错？加上 `keepdim=True` 之后为什么就对了？把广播的三条规则写出来。
+6. `Y = torch.ones(3, 4)`。`Z = Y + 1`、`Y[:] = Y + 1`、`Y += 1` 三种写法里，哪些会新建张量、哪些是原地写回？`id(Y)` 在哪几种写法之后不变？
 7. 写一段代码把形状 `(3, 4)` 的 `float32` 张量每一行除以该行元素之和，结果仍是 `float32`，且不修改原张量，不用循环。
-8. `loss` 是带梯度的单元素张量，要把它累加进一个 Python `float` 变量并打印。需要调用哪个方法？直接写 `total += loss` 会得到什么？
+8. 一个 0 维张量、一个形状 `(1,)` 的张量、一个形状 `(1, 1)` 的张量，`.item()` 都能用吗？形状 `(2,)` 的呢？
 
 ## 答案（做完再看）
 
-1. `int64` 下 `torch.dot` 可行并返回 int64；`torch.linalg.vector_norm` 报 `Expected a floating point or complex tensor as input. Got Long`；`a / 2` 提升为 `float32`。
+1. `int64`。写成 `torch.arange(6, dtype=torch.float32)`，或者生成之后调 `.float()`。
+结果是 `float32`，规则是取两者里"更宽"的那个。值得注意是因为它不报错就悄悄换了类型，
+后面依赖具体 dtype 的地方会出问题。
 2. 分别是 `int64`（从数据推断）和 `float32`。`torch.Tensor(2, 3)` 给未初始化张量，内容是内存残留值，该构造器还不接受 `dtype` 关键字。
 3. `X` 第 1 行第 0 列变成 99，基本切片返回视图；`clone()` 之后 `X` 不变。`X[X > 5]` 是副本，布尔索引的结果在内存里不连续，无法用 stride 描述。
 4. `Y.t()` 不连续，stride 变成 `(1, 4)`，`view` 无法描述展平后的下标；`reshape` 在不能重新解释时复制一份，返回值与 `Y` 不共享内存（`data_ptr()` 不同）。
-5. 报 `RuntimeError: The size of tensor a (4) must match the size of tensor b (5) at non-singleton dimension 1`。`A.sum(axis=1)` 形状是 `(5,)`，右对齐到最后一维与 4 冲突；`keepdims=True` 得 `(5, 1)`，第 1 维长度为 1，可广播到 `(5, 4)`。三条规则见第 4 节。
-6. 第二段报错。`exp` 的反向需要用到前向输出，反向时检查到该输出的版本号被 in-place 操作改过，抛 `modified by an inplace operation`；`mul` 的反向只需要输入，第一段中被改的 `y` 不参与梯度计算。
+5. 报 `RuntimeError: The size of tensor a (4) must match the size of tensor b (5) at non-singleton dimension 1`。`A.sum(dim=1)` 形状是 `(5,)`，右对齐到最后一维与 4 冲突；`keepdim=True` 得 `(5, 1)`，第 1 维长度为 1，可广播到 `(5, 4)`。三条规则见第 4 节。
+6. `Z = Y + 1` 新建张量，`Y` 不变；`Y[:] = Y + 1` 与 `Y += 1` 都是原地写回，
+    `id(Y)` 在这两种写法之后不变。判断依据是"有没有把结果写回同一块内存"。
 7. `B = A / A.sum(dim=1, keepdim=True)`。要点是 `keepdim=True`（或先 `A.sum(1).reshape(-1, 1)`）、输入已是 `float32`、`/` 产生新张量不改 `A`。
-8. 用 `total += loss.item()`。直接写会让 `total` 变成张量并带着计算图（实测 `grad_fn` 是 `AddBackward0`），每一轮的中间结果都会被这份引用留住。
+8. 前三个都能用，它们的元素总数都是 1；`(2,)` 报 `RuntimeError: a Tensor with 2 elements cannot be converted to Scalar`。

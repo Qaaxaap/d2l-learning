@@ -303,6 +303,39 @@ $$f'(x)\approx\frac{f(x+h)-f(x-h)}{2h},\qquad \text{截断误差 } O(h^2),$$
 
 记录训练损失时常写成 `total_loss += loss`。`loss` 是张量，累加结果仍连着图，整条链路无法释放。实测按张量累加 1、5、20 次后，变量可达的计算图节点数为 5、21、81，随迭代次数线性增长；换成 `total_loss += loss.item()` 后只剩当前这一步的图。取标量用 `loss.item()`，返回 Python 浮点数，不连图。`float(loss)` 也能用，但会触发警告 `Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior`，它等价于隐式 detach。对多元素张量调用 `item()` 报 `RuntimeError: a Tensor with 4 elements cannot be converted to Scalar`。
 
+### 5.6 in-place 操作与版本计数
+
+带 `requires_grad` 的张量上做 in-place，会出现三类结果：
+
+```python
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+x.add_(1)     # 1) 叶子上原地改：RuntimeError: a leaf Variable that requires grad is being used
+x[0] = 5.0    #    或 a view of a leaf Variable ... in an in-place operation
+
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+y = x.exp(); y.add_(1.0); y.sum().backward()
+# 2) 反向需要用到被改动的中间结果：RuntimeError: one of the variables needed for gradient
+#    computation has been modified by an inplace operation: ... is at version 1; expected version 0
+
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+y = x * x; y.add_(1); y.sum().backward()   # 3) 反向用不到那个量：正常算出 tensor([2., 4.])
+```
+
+第 2、3 段的区别不在写法，在被改的张量是否被反向用到。torch 给每个张量维护版本号，in-place 操作让版本号加一，反向时发现某个算子的输出已被改过就抛错：`exp` 与 `sigmoid` 的反向需要用到输出本身，`mul` 的反向只需要输入，所以第 3 段能过；实测 `y = torch.sigmoid(x); y.mul_(2)` 报与第 2 段相同的错。
+
+`.data` 能绕过版本计数，但不会给出正确答案：
+
+```python
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+y = x.exp(); y.data.add_(1.0)     # 不报错
+y.sum().backward()
+x.grad               # tensor([3.7183, 8.3891])，正确结果是 tensor([2.7183, 7.3891])
+```
+
+每个分量正好差 1.0，也就是被加进去的那部分。梯度算错却没有任何提示。
+
+参数是叶子，更新要写在 `torch.no_grad()` 里：`with torch.no_grad(): p -= 0.1 * p.grad`。`backward()` 累加梯度，不清零会叠加：实测连续两次 `(x * x).sum().backward()` 得到 `tensor([4., 8.])`。参数更新要写在 `no_grad()` 里，见 5.5 节。
+
 ## 6 自测题
 
 1. 写出 $y=\mathbf{x}^\top\mathbf{x}$ 的梯度推导（$\mathbf{x}\in\mathbb{R}^n$），再写出 $y=5\mathbf{x}^\top\mathbf{x}$ 的结果。
