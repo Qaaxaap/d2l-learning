@@ -38,7 +38,8 @@ def safe_broadcast_add(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 举例：`a.shape == (3, 4)`、`b.shape == (2, 4)` 时，不匹配的是倒数第二维。
 形状不同长度的对齐规则按讲义第 4 节。
 
-允许用 `torch.broadcast_shapes` 帮你算目标形状，但不许直接把两个张量相加就了事，判断逻辑要你自己写。
+这一题**不许用** `torch.broadcast_shapes` 这类现成的形状工具，也不许直接把两个张量相加了事。
+形状对齐、逐维判断、报错信息全部自己写——这道题考的就是广播规则本身。
 
 ## T3 视图还是副本
 
