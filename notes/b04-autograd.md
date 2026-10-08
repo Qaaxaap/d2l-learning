@@ -2,6 +2,8 @@
 
 对应原文：v1 2.3“自动求梯度”、v1 附录“数学基础·微分”；v2 2.4“微积分”、2.5“自动微分”。
 
+文中所有 PyTorch 行为与报错文本都在 torch 2.14.0 上实测（本机 CPU 与远程 4070S 的版本一致），MXNet 侧结论来自 MXNet 源码与两版原文的相互印证。
+
 ## 0 这一单元解决什么问题
 
 训练模型就是找一组参数 $\boldsymbol{\theta}$，让损失 $L(\boldsymbol{\theta})$ 尽量小。损失是复合函数，从输入到输出要经过矩阵乘法、softmax、对数、求和。想知道“把 $w_{ij}$ 调大一点，损失变多少”，就要对复合函数求导。
@@ -148,6 +150,8 @@ assert torch.allclose(x.grad, 4 * x)
 
 `autograd.is_training()` 那一行值得单独记：v1 用它区分训练与预测模式，因为 dropout 在两种模式下行为不同。PyTorch 没有对应的全局开关，`torch.is_grad_enabled()` 只反映是否建图，决定 dropout 与 BN 行为的是模块自己的 `.training` 属性。
 
+> 待核实：`autograd.is_training()` 的具体返回值随 MXNet 版本变化，v1 书里只说明 `record()` 默认把运行模式切到训练模式。本机没有 MXNet 环境，这一条未实测，PyTorch 侧的结论均已上机验证。
+
 ## 5 书中没写但实现一定会踩的坑
 
 ### 5.1 叶子张量、非叶子张量，`.grad` 为什么是 `None`
@@ -196,7 +200,7 @@ def sgd(params, lr, batch_size):   # v1 linear-regression-scratch
         param[:] = param - lr * param.grad / batch_size
 ```
 
-原因是 `attach_grad` 的默认参数。MXNet 的 `attach_grad(grad_req='write')` 中 `'write'` 表示每次反向覆盖梯度缓冲区，`'add'` 才累加，v1 用的是默认值。PyTorch 没有这个开关，`Tensor.grad` 一律累加。把 v1 的循环照搬过来不会报错，只是训练不正常，这类错误比崩溃更难发现。版本差异：本地与远程的 torch 均为 2.14.0，`nn.Module.zero_grad` 的默认参数是 `set_to_none=True`，效果是把 `.grad` 置回 `None`；张量级的 `p.grad.zero_()` 仍把已有缓冲区填 0，v2 的示例用的是后者。
+原因是 `attach_grad` 的默认参数。MXNet 的 `attach_grad(grad_req='write')` 中 `'write'` 表示每次反向覆盖梯度缓冲区，`'add'` 才累加，v1 用的是默认值。PyTorch 没有这个开关，`Tensor.grad` 一律累加。把 v1 的循环照搬过来不会报错，只是训练不正常，这类错误比崩溃更难发现。这一结论由三处相互印证：MXNet 源码中 `attach_grad` 的文档、v2 书中 mxnet 代码块旁的注释、v1 训练代码不清零仍能收敛。版本差异：本地与远程的 torch 均为 2.14.0，`nn.Module.zero_grad` 的默认参数是 `set_to_none=True`，效果是把 `.grad` 置回 `None`；张量级的 `p.grad.zero_()` 仍把已有缓冲区填 0，v2 的示例用的是后者。
 
 ### 5.3 非标量输出调用 `backward` 必须给 `gradient`
 
@@ -291,7 +295,7 @@ $$f'(x)\approx\frac{f(x+h)-f(x-h)}{2h},\qquad \text{截断误差 } O(h^2),$$
 
 单侧差分的截断误差是 $O(h)$，同样步长下精度差一个量级。不可导点附近这一点会暴露得很直接：$f(x)=|x|$ 在 $x=0$ 处没有导数，$h=10^{-4}$ 时单侧差分给 1，中心差分给 0。
 
-步长要实测。取 $f(\mathbf{v})=\sum_i v_i^3+2\sum_i v_i^2$、$\mathbf{v}=[0.5,-1.5,2.0,0.25]^\top$，与 `backward()` 的结果比较，float32 下 eps 取 $10^{-3}$ 时最大绝对误差为 5.0e-4，取 $10^{-6}$ 时升到 1.19；float64 下 eps 取 $10^{-6}$ 时误差在 1e-9 量级。默认 float32 的模型要先转 float64 再检验。框架提供现成实现：`torch.autograd.gradcheck(func, inputs, eps=1e-6, atol=1e-4)`。`func` 接收张量并返回张量，`inputs` 需要 `requires_grad=True` 且为 float64。实测对 $f(\mathbf{v})=\sum v_i^2$ 的 float64 输入返回 `True`，float32 输入抛 `GradcheckError: Jacobian mismatch`。大模型跑 `gradcheck` 太慢，可以随机抽几个参数手写差分比较。
+步长要实测。取 $f(\mathbf{v})=\sum_i v_i^3+2\sum_i v_i^2$、$\mathbf{v}=[0.5,-1.5,2.0,0.25]^\top$，与 `backward()` 的结果比较，float32 下 eps 取 $10^{-3}$ 时最大绝对误差为 5.0e-4，取 $10^{-6}$ 时升到 1.19；float64 下 eps 取 $10^{-6}$ 时误差在 1e-9 量级。默认 float32 的模型要先转 float64 再检验。框架提供现成实现：`torch.autograd.gradcheck(func, inputs, eps=1e-6, atol=1e-4)`。`func` 接收张量并返回张量，`inputs` 需要 `requires_grad=True` 且为 float64。实测对 $f(\mathbf{v})=\sum v_i^2$ 的 float64 输入返回 `True`，float32 输入抛 `GradcheckError: Jacobian mismatch`。大模型跑 `gradcheck` 太慢，可以随机抽几个参数手写差分比较。本单元的代码题要求自己写差分检验，`gradcheck` 只能用来给自己的实现做交叉验证，不作为交付物。
 
 检验代码有三类误报要提前排除：被检验的函数含随机性（dropout、随机采样），两次调用结果不同；函数含不可导点（`relu`、`abs`、`max`），差分跨过了折点；函数含原地操作，前向就改了输入。数值梯度与解析梯度对不上时，先排除这三种。
 

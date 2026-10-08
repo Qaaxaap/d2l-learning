@@ -14,9 +14,11 @@ usage() { echo "用法: $0 {push|pull}"; exit 1; }
 
 case "${1:-}" in
   push)
+    # 不用 --delete：远程可能有学习者手工建的文件，宁可不一致也不误删。
+    # 本地删掉的文件要在远程用 `git rm <文件>` 单独处理。
     rsync -az --chmod=D755,F644 "${SSH_OPTS[@]}" \
       --exclude '.git/' --exclude 'work/' --exclude '.venv/' \
-      --exclude '__pycache__/' --exclude 'solutions/' \
+      --exclude '__pycache__/' --exclude 'solutions/' --exclude 'data/' \
       "$LDIR"/ "$REMOTE:$RDIR"/
     echo "已推送到 $REMOTE:$RDIR"
     ;;
