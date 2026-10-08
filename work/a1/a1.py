@@ -46,6 +46,6 @@ def batch_indices(n: int, batch_size: int):
         ret = list(range(end, min(end + batch_size, n)))
         end += batch_size
         yield ret
-class ScaledLinear(nn.Module):
-    def __init__(self, in_features, out_features, scale=1.0):
-        super().__init__()
+class ScaledShift(nn.Module):
+    """把输入逐元素乘一个可学习的系数，再逐元素加一个可学习的偏置。"""
+    
