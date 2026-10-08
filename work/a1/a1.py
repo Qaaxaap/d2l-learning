@@ -47,8 +47,5 @@ def batch_indices(n: int, batch_size: int):
         end += batch_size
         yield ret
 class ScaledLinear(nn.Module):
-    """带缩放系数的线性层。"""
     def __init__(self, in_features, out_features, scale=1.0):
         super().__init__()
-        self.weight = torch.randn(in_features, out_features) * scale
-        self.bias = 

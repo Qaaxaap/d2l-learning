@@ -82,23 +82,29 @@ def main() -> int:
 
     @case("T4 继承 nn.Module")
     def _t4():
-        net = mod.ScaledLinear(3, 2, scale=0.5)
-        assert isinstance(net, nn.Module), "ScaledLinear 必须继承 nn.Module"
+        net = mod.ScaledShift(3)
+        assert isinstance(net, nn.Module), "ScaledShift 必须继承 nn.Module"
+        assert hasattr(net, "scale"), "参数名必须是 self.scale"
+        assert hasattr(net, "bias"), "参数名必须是 self.bias"
+        assert isinstance(net.scale, nn.Parameter), (
+            "self.scale 必须是 nn.Parameter，普通张量不会被 parameters() 收集"
+        )
+        assert isinstance(net.bias, nn.Parameter), "self.bias 必须是 nn.Parameter"
+        assert tuple(net.scale.shape) == (3,), f"scale 形状应是 (3,)，得到 {tuple(net.scale.shape)}"
+        assert tuple(net.bias.shape) == (3,), f"bias 形状应是 (3,)，得到 {tuple(net.bias.shape)}"
+        assert torch.allclose(net.scale, torch.ones(3)), "scale 初值应为全 1"
+        assert torch.allclose(net.bias, torch.zeros(3)), "bias 初值应为全 0"
         params = list(net.parameters())
         assert len(params) == 2, (
             f"parameters() 应有 2 个张量，得到 {len(params)} 个——"
-            "多半是漏了 super().__init__() 或者没用 nn.Parameter 包起来"
+            "多半是漏了 super().__init__()，或者没用 nn.Parameter 包起来"
         )
-        shapes = sorted(tuple(p.shape) for p in params)
-        assert shapes == [(2,), (3, 2)], f"参数形状应是 (3,2) 与 (2,)，得到 {shapes}"
-        bias = [p for p in params if tuple(p.shape) == (2,)][0]
-        assert torch.allclose(bias, torch.zeros(2)), "偏置应初始化为全零"
-        X = torch.randn(4, 3)
+        X = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
         y = net(X)
-        assert tuple(y.shape) == (4, 2), f"forward 输出形状应是 (4, 2)，得到 {tuple(y.shape)}"
+        assert tuple(y.shape) == (2, 3), f"输出形状应与输入相同，得到 {tuple(y.shape)}"
         y.sum().backward()
-        w = [p for p in params if tuple(p.shape) == (3, 2)][0]
-        assert w.grad is not None, "参数没拿到梯度，检查权重是不是没包成 nn.Parameter"
+        assert net.scale.grad is not None, "scale 没拿到梯度"
+        assert net.bias.grad is not None, "bias 没拿到梯度"
 
     @case("T5 上下文管理器")
     def _t5():

@@ -50,14 +50,14 @@ def batch_indices(n: int, batch_size: int):
         yield list(range(i, min(i + batch_size, n)))
 
 
-class ScaledLinear(nn.Module):
-    def __init__(self, in_features, out_features, scale=1.0):
+class ScaledShift(nn.Module):
+    def __init__(self, size):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(in_features, out_features) * scale)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.scale = nn.Parameter(torch.ones(size))
+        self.bias = nn.Parameter(torch.zeros(size))
 
     def forward(self, X):
-        return X @ self.weight + self.bias
+        return X * self.scale + self.bias
 
 
 class Timer:

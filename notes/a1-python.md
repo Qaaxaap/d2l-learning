@@ -284,14 +284,14 @@ print(m.forward(3.0))
 ```python
 import torch.nn as nn
 
-class MyLayer(nn.Module):
-    def __init__(self, in_dim, out_dim):
+class MyModule(nn.Module):
+    def __init__(self, size):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(in_dim, out_dim) * 0.01)
-        self.bias = nn.Parameter(torch.zeros(out_dim))
+        self.weight = nn.Parameter(torch.randn(size) * 0.01)
+        self.bias = nn.Parameter(torch.zeros(size))
 
     def forward(self, X):
-        return X @ self.weight + self.bias
+        return X * self.weight + self.bias
 ```
 
 `class MyLayer(nn.Module)` 表示继承 `nn.Module`，对应 C++ 的 `: public nn::Module`。
@@ -304,8 +304,8 @@ class MyLayer(nn.Module):
 ### 3.3 `nn.Parameter` 的作用
 
 ```python
-self.weight = torch.randn(3, 4)                  # 只是普通属性，优化器看不见
-self.weight = nn.Parameter(torch.randn(3, 4))    # 登记成参数，会被收集、搬运、保存
+self.weight = torch.randn(3)                  # 只是普通属性，优化器看不见
+self.weight = nn.Parameter(torch.randn(3))    # 登记成参数，会被收集、搬运、保存
 ```
 
 为什么赋个值就能"登记"？因为 `nn.Module` 重写了 `__setattr__`（见第 4 节），
@@ -614,7 +614,7 @@ print(a)            # [[1, 2, 99], [3, 4]]  内层还是共享的
 4. 什么是 dunder？用 C++ 或 Rust 的术语解释 `__add__` 是什么。
 5. `__init__` 和 `__call__` 分别在什么时候被调用？
 6. `nn.Module` 子类里漏掉 `super().__init__()` 会怎样？为什么不报错？
-7. `self.w = torch.randn(3, 4)` 和 `self.w = nn.Parameter(torch.randn(3, 4))` 有什么区别？
+7. `self.w = torch.randn(3)` 和 `self.w = nn.Parameter(torch.randn(3))` 有什么区别？
 8. `net(X)` 和 `net.forward(X)` 有什么区别？
 9. `yield` 是什么？`data_iter(...)` 被调用后立刻发生了什么？
 10. `@property` 装饰器做了什么？它和第 4 节的哪个 dunder 有关？

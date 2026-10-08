@@ -72,28 +72,29 @@ def batch_indices(n: int, batch_size: int):
 
 ## T4 继承 nn.Module
 
+写一个 `nn.Module` 子类，练讲义第 3 节的三条规矩。它算什么不重要，按规格实现即可——
+矩阵乘法、线性层那些是 B03 与 B06 的内容，现在不用管。
+
 ```python
-class ScaledLinear(nn.Module):
-    """带缩放系数的线性层。"""
+class ScaledShift(nn.Module):
+    """把输入逐元素乘一个可学习的系数，再逐元素加一个可学习的偏置。"""
 ```
 
 | 项 | 要求 |
 |---|---|
-| 构造签名 | `ScaledLinear(in_features, out_features, scale=1.0)` |
-| 属性名 | 权重叫 `self.weight`，偏置叫 `self.bias` |
-| 权重初值 | `torch.randn(in_features, out_features) * scale` |
-| 偏置初值 | 形状 `(out_features,)` 的一维全零张量（不是数值 0，也不是 1×1 矩阵） |
-| `forward(X)` | 返回 `X @ weight + bias` |
-| `net.parameters()` | 恰好两个张量，形状分别是 `(in_features, out_features)` 与 `(out_features,)` |
-| 输入形状 | `(batch, in_features)` |
-| 输出形状 | `(batch, out_features)` |
-| 反向传播 | `net(X).sum().backward()` 之后 `weight.grad` 不为 `None` |
+| 构造签名 | `ScaledShift(size)` |
+| 属性名 | 系数叫 `self.scale`，偏置叫 `self.bias` |
+| `self.scale` | 形状 `(size,)` 的参数，初值全 1 |
+| `self.bias` | 形状 `(size,)` 的参数，初值全 0 |
+| 两者的类型 | 必须是 `nn.Parameter`，不是普通张量 |
+| `forward(X)` | 返回 `X * self.scale + self.bias`。`*` 是逐元素乘法，不是矩阵乘法 |
+| `net.parameters()` | 恰好两个张量，形状都是 `(size,)` |
+| 反向传播 | `net(X).sum().backward()` 之后两个参数的 `.grad` 都不为 `None` |
 
-讲义第 3 节讲了三条规矩：调 `super().__init__()`、参数用 `nn.Parameter` 包起来、
-调用时用 `net(X)`。三条都要做对。
+讲义第 3 节的三条规矩都要做对：调 `super().__init__()`、参数用 `nn.Parameter` 包起来、
+调用时写 `net(X)` 而不是 `net.forward(X)`。
 
-最后一行的断言能抓住"忘了初始化父类"和"忘了包成 Parameter"两种情况——那两种写法训练时
-参数不会更新，而且不报错。
+这个模块的意义是让你亲手把参数交给框架管理。真正会用上它的场景在 B06。
 
 ## T5 上下文管理器
 
