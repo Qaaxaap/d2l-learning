@@ -2,18 +2,18 @@
 import torch
 
 # 造一批数据，准备拿去做浮点运算
-x = torch.arange(12) 
+x = torch.arange(12) dtype错误，加个dtype=torch.float32
 
 # 变形成 3 行 4 列
 X = x.reshape(3, 4)
 
 # 打印它的形状
-print(X.size)
+print(X.size) size是方法不是属性，需要括号。
 
 # 取第一行改一改，认为 X 不会受影响
 row = X[0]
-row[0] = 100.0
-print(X[0, 0])
+row[0] = 100.0 这个切片是视图不是副本，不想受影响在上一行加.clone()
+print(X[0, 0]) 
 
 """
 import torch
