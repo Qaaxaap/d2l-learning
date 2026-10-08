@@ -10,21 +10,29 @@
 
 ## T1 可调用的计数器
 
+写一个类 `Counter`，它同时维护两个状态：**当前值**和**被调用次数**。
+
 ```python
-class Counter:
-    """用法：
-        c = Counter()         # 从 0 开始
-        c()                   # 返回 1，调用次数变 1
-        c(5)                  # 返回 6，调用次数变 2
-        len(c)                # 返回 2
-        repr(c)               # 类似 "Counter(value=6, calls=2)"
-        Counter(start=10)     # 从 10 开始
-    """
+c = Counter()            # 当前值从 0 开始
+c()                      # 返回 1
+c(5)                     # 返回 6
+len(c)                   # 返回 2
+repr(c)                  # 形如 "Counter(value=6, calls=2)"
+Counter(start=10)()      # 返回 11
 ```
 
-需要实现 `__init__`、`__call__`、`__len__`、`__repr__`。
+逐条讲清楚，别猜：
 
-提示：`__call__(self, step=1)` 的默认值必须是每次调用都安全的那种，参考讲义 2.4。
+| 调用 | 做什么 | 返回 |
+|---|---|---|
+| `Counter(start=0)` | 当前值设为 `start`，调用次数设为 0 | 对象本身 |
+| `c(step=1)` | 当前值**加上** `step`（不是设为 step），调用次数加 1 | 加完之后的当前值 |
+| `len(c)` | 不改任何状态 | 调用次数 |
+| `repr(c)` | 不改任何状态 | 形如 `Counter(value=<当前值>, calls=<调用次数>)` 的字符串，`value=` 和 `calls=` 后面跟正确的数字即可 |
+
+要实现的四个 dunder：`__init__`、`__call__`、`__len__`、`__repr__`。
+
+`step` 要有默认值，这样 `c()` 和 `c(1)` 等价。
 
 ## T2 一个支持运算符的类
 
@@ -81,8 +89,12 @@ class Timer:
     """
 ```
 
-需要实现 `__enter__`（返回什么由你定，但 `with t:` 也要能用）、`__exit__`。
-`elapsed` 在退出后可用，单位秒。
+需要实现 `__enter__` 和 `__exit__`。
+
+`__enter__` 的返回值就是 `with ... as x` 里的那个 `x`。测试用的是 `t = Timer(); with t:`
+这种写法，所以它返回什么不影响判分，但按惯例应当返回 `self`。
+
+`elapsed` 在退出之后可读，单位秒。
 
 ## T6 改错
 
