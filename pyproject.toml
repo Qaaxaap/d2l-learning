@@ -1,0 +1,17 @@
+[project]
+name = "d2l-work"
+version = "0.0.0"
+description = "动手学深度学习（torch 版）练习仓库"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch",
+    "torchvision",
+    "numpy",
+    "matplotlib",
+    "pandas",
+    "tqdm",
+    "requests",
+]
+
+[tool.uv]
+package = false
