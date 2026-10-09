@@ -364,6 +364,7 @@ for epoch in range(num_epochs):
 | 更新参数没包 `no_grad` | `a leaf Variable that requires grad is being used in an in-place operation` | 4.6 |
 | 学习率取 0.5 | 损失越来越大 | 步子跨过最优（3.2） |
 | 用 `MSELoss` 却按书上的损失比较数值 | 差一个因子 2 | `MSELoss` 不乘 $\frac12$（5.1） |
+| 内层循环变量与数据集同名 | 不报错，参数收敛到一半停住 | 变量遮蔽：`for X, y in data_iter(...)` 跑完一轮后数据集被最后一个批量覆盖（A1 第 8 节） |
 
 ## 命令速查
 

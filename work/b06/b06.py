@@ -1,5 +1,5 @@
 import torch
-from torch._dynamo.variables import nn_module
+import torch.nn as nn
 def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
               seed: int = 0) -> tuple:
     """生成线性回归的人造数据。
@@ -59,3 +59,31 @@ def sgd(params: list, lr: float, batch_size: int) -> None:
         for p in params:
             p -= lr * p.grad / batch_size
             p.grad = None
+
+def train_scratch(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
+                  num_epochs: int = 3, batch_size: int = 10,
+                  seed: int = 0) -> tuple:
+    """用手写的零件训练线性回归。
+
+    用 T2 的 data_iter 取批、T3 的 linreg 与 squared_loss 算损失、T4 的 sgd 更新参数。
+    参数自己初始化：w 用均值 0、标准差 0.01 的正态随机数，形状 (d, 1)；b 用全零，形状 (1,)。
+    两者都要开 requires_grad。
+
+    返回 (w, b, losses)：
+    - w、b 是训练完的参数
+    - losses 是每个 epoch 结束时的训练损失，Python 浮点数组成的列表，长度 num_epochs
+    """
+    w = torch.normal(0., 0.01, size=(X.numel() // X.size(0), 1), requires_grad=True)
+    b = torch.zeros(1 , requires_grad=True)
+    losses = []
+    for i in range(num_epochs):
+        for Xi, yi in data_iter(batch_size, X, y, seed):
+            y_hat = linreg(X, w, b)
+            loss = squared_loss(y_hat, y).sum()
+            loss.backward()
+            sgd([w, b], lr, batch_size)
+        y_hat = linreg(X, w, b)
+        loss = squared_loss(y_hat, y).sum()
+        losses.append(loss)
+    return w, b, losses
+
