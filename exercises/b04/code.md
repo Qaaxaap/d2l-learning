@@ -79,6 +79,31 @@ def descend_step(w: torch.Tensor, step: float) -> None:
 |---|---|
 | `w = [1., 2.]`，`step = 0.1` | `w` 变成 `[0.8, 1.6]`（`y` 对 `w` 的梯度是 `2w`） |
 
+### 分四步做
+
+上面那个 `w ← w - step * dy/dw` 是个数学式，落到代码上要拆成四步：
+
+1. 先清掉上一次调用留下的梯度（第一次调用时 `w.grad` 是 `None`）
+2. 算目标 `y = (w * w).sum()`
+3. 对 `y` 反传，梯度累加到 `w.grad`
+4. 用 `w.grad` 就地更新 `w`，而且这一步不能产生新的计算图
+
+第 1 步和第 4 步的后半句是这道题的两个考点，讲义第 5.2、5.5 节讲过原理。
+先自己写，卡住再展开骨架。
+
+<details><summary>展开骨架</summary>
+
+```python
+def descend_step(w: torch.Tensor, step: float) -> None:
+    ____                      # 1
+    y = ____                  # 2
+    ____                      # 3
+    with torch.no_grad():
+        ____                  # 4
+```
+
+</details>
+
 **不许用 `torch.optim` 里的任何优化器。** 两个原因：优化器是 B06 的内容；
 更重要的是这道题练的正是优化器内部替你做的事——清梯度、在 `no_grad` 下原地更新。
 调一次 `optimizer.step()`，那三个坑全被封装掉，题目就没意义了。
