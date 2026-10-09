@@ -289,6 +289,8 @@ torch 里是 `train_l.mean().item()`——`.item()` 把单元素张量取成 Pyt
 
 ## 5 简洁实现
 
+上面那 60 行，框架里都有现成的。第二版 3.3 节把同一件事用 `nn` 与 `optim` 重写了一遍。
+
 ### 5.0 先看要导入什么
 
 框架版的导入：
@@ -312,7 +314,6 @@ from torch.utils.data import DataLoader, TensorDataset
 
 第 4 节自己写的那版只需要 `import torch`。
 
-上面那 60 行，框架里都有现成的。第二版 3.3 节把同一件事用 `nn` 与 `optim` 重写了一遍。
 
 ### 5.1 四个替换
 
