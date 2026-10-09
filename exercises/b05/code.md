@@ -88,6 +88,7 @@ def cumulative_means(n_max: int, seed: int = 0) -> torch.Tensor:
 ```python
 import torch
 
+# 假设事件 A 与事件 B 相互独立
 p_a = 0.3
 p_b = 0.4
 

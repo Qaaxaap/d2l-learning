@@ -1,9 +1,12 @@
 """
 import torch
+import torch
 
-PA = 0.3
-PB = 0.4
-PAB = PA + PB 
+p_a = 0.3
+p_b = 0.4
+
+# 下面这行想算出 P(A 且 B)，也就是联合概率
+p_a_and_b = p_a + p_b
 
 counts = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
 probs = counts
@@ -11,6 +14,7 @@ probs = counts
 values = torch.tensor([1.0, 2.0, 3.0])
 weights = torch.tensor([0.2, 0.3, 0.5])
 E = values.mean()
+
 
 """
 
