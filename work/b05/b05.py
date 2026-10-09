@@ -2,18 +2,19 @@
 import torch
 import torch
 
+# 假设事件 A 与事件 B 相互独立
 p_a = 0.3
 p_b = 0.4
 
 # 下面这行想算出 P(A 且 B)，也就是联合概率
-p_a_and_b = p_a + p_b
+p_a_and_b = p_a + p_b 应该是乘，ab是独立不是互斥。
 
 counts = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
-probs = counts
+probs = counts 应该 / counts.sum()
 
 values = torch.tensor([1.0, 2.0, 3.0])
 weights = torch.tensor([0.2, 0.3, 0.5])
-E = values.mean()
+E = values.mean() 应该是 values * weights 并 .sum()
 
 
 """

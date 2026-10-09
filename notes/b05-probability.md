@@ -244,6 +244,27 @@ rolls = torch.multinomial(probs, 100, replacement=True, generator=g)
 
 **注意**：不传 `generator` 的调用走的是全局随机状态，不受这里的 `g` 影响。
 
+### 9.2 全局种子与局部发生器
+
+9.1 那种写法是**局部**的：只有传了 `generator=g` 的调用受它影响。
+
+另一种更常见的写法是设**全局**种子：
+
+```python
+torch.manual_seed(0)
+rolls = torch.multinomial(probs, 100, replacement=True)   # 不必传 generator
+```
+
+它把全局随机状态固定下来，之后所有没指定 `generator` 的随机调用都按这个种子产生序列。
+
+| 写法 | 作用范围 | 什么时候用 |
+|---|---|---|
+| `torch.manual_seed(s)` | 全局，影响所有未指定 generator 的调用 | 脚本开头设一次，简单直接 |
+| `torch.Generator().manual_seed(s)` | 只影响传了 `generator=g` 的调用 | 需要几路互不干扰的随机流，或不想影响别处 |
+
+注意两个 `manual_seed` 不是同一个东西：`torch.manual_seed(s)` 是模块级函数，
+`torch.Generator().manual_seed(s)` 里的那个是发生器对象的方法。
+
 （v2 的 MXNet tab 用 `np.random.multinomial`，返回次数向量，与 torch 的分布对象写法不同。）
 
 ## 命令速查
