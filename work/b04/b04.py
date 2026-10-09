@@ -44,4 +44,4 @@ def descend_step(w: torch.Tensor, step: float) -> None:
     - 更新完之后 w 必须仍然是叶子，且 requires_grad 仍为 True
     - 更新过程中不许产生新的计算图，也不许残留上一轮的梯度
     """
-    
+    y = (w * w)
