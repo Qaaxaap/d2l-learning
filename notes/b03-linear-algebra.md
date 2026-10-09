@@ -6,27 +6,45 @@
 
 本文的 torch 行为在 torch 2.14 上实测，报错文本照抄输出。
 
-## 0. 电子版 MXNet 代码 → PyTorch
+## 0. 这一章要用的 torch API
 
-第一版没有这一章的代码。电子版 MXNet tab 用的是 numpy 兼容接口 `np`（第一版书里对应的模块是 `nd`）。
-对照如下，其中 `dot` 系列与范数两项的差别最大：
+第一版把线性代数压缩在附录《数学基础》的几行公式里，没有代码；第二版的代码在 2.3 节。
+先把这一章的 API 认全，后面几节用到时不再重复交代。
 
-| 电子版 MXNet（`np.`） | PyTorch |
+| 要做什么 | torch 写法 |
 |---|---|
-| `np.array(3.0)` | `torch.tensor(3.0)` |
-| `np.arange(4)`、`np.arange(20).reshape(5, 4)` | 同名同义 |
-| `A.T` | `A.T`，二维一致；三维以上语义不同，见第 2 节 |
-| `A.copy()` | `A.clone()` |
-| `A.sum(axis=0)`、`A.sum(axis=1, keepdims=True)` | `A.sum(dim=0)`、`A.sum(dim=1, keepdim=True)`，`axis` 与 `keepdim` 在 torch 里也能用 |
-| `A.mean(axis=0)`、`A.cumsum(axis=0)` | `A.mean(dim=0)`、`A.cumsum(dim=0)` |
-| `np.dot(x, y)` | `torch.dot(x, y)`，只接受两个一维向量 |
-| `np.dot(A, x)` | `torch.mv(A, x)` 或 `A @ x` |
-| `np.dot(A, B)` | `torch.mm(A, B)` 或 `A @ B` |
-| `np.linalg.norm(u)`、`np.linalg.norm(X)` | `torch.linalg.vector_norm(u)`、`torch.linalg.norm(X)` |
-| `np.abs(u).sum()` | `torch.abs(u).sum()` |
+| 造标量 | `torch.tensor(3.0)`，0 维 |
+| 造向量、矩阵 | `torch.arange(4)`、`torch.arange(20).reshape(5, 4)` |
+| 转置 | `A.T`。二维所见即所得，三维以上语义不同，见第 2 节 |
+| 复制一份 | `A.clone()` |
+| 按轴求和 / 求均值 / 累加和 | `A.sum(dim=0)`、`A.mean(dim=0)`、`A.cumsum(dim=0)` |
+| 保留被消掉的那一维 | 上面几个都接受 `keepdim=True` |
+| 点积 | `torch.dot(x, y)`，只接受两个一维向量 |
+| 矩阵乘向量 | `torch.mv(A, x)` 或 `A @ x` |
+| 矩阵乘矩阵 | `torch.mm(A, B)` 或 `A @ B` |
+| 向量范数 | `torch.linalg.vector_norm(u)` |
+| 矩阵范数 | `torch.linalg.norm(X)`，Frobenius 范数 |
+| 绝对值再求和 | `torch.abs(u).sum()` |
 
-MXNet 的 `dot` 一个函数管点积、矩阵向量积、矩阵乘法；torch 把它们拆成 `dot`、`mv`、`mm`、`matmul`。
-用错函数会直接报错，比静默算出错误结果容易排查。
+### 四个乘法函数怎么选
+
+这一章最容易用错的地方。torch 把它们拆开，每个只干一件事：
+
+| 函数 | 接受的形状 | 结果 |
+|---|---|---|
+| `torch.dot(a, b)` | 两个一维、长度相同 | 标量 |
+| `torch.mv(A, x)` | 矩阵、一维向量 | 一维 |
+| `torch.mm(A, B)` | 两个二维 | 二维 |
+| `torch.matmul(A, B)` | 任意可广播的形状 | 高维时按最后两维做矩阵乘 |
+
+`@` 运算符是 `torch.matmul` 的简写。所以 `A @ x` 与 `torch.mv(A, x)` 在一维情形下结果相同，
+但 `@` 还能处理更高维与广播。
+
+用错函数会直接报错（形状不匹配），比静默算出错误结果容易排查。
+
+电子版的 MXNet tab 用的是 numpy 兼容接口 `np`（第一版书里是 `nd`）。它的 `dot` 一个函数同时
+管点积、矩阵向量积、矩阵乘法三件事，torch 拆成上面四个——这是两边差别最大的地方，
+读 v2 的 MXNet 代码时留意。
 
 ## 1. 标量、向量、矩阵、张量
 
@@ -158,6 +176,28 @@ A / A.sum(dim=1)                     # RuntimeError: The size of tensor a (4) mu
 长度为 1 的那一维可以广播到 4。实测 `keepdims=True` 与 `keepdim=True`、`axis=` 与 `dim=`
 在 torch 2.14 上都可用（电子版 pytorch tab 写的是 `keepdims`），为与官方文档一致，新代码写 `keepdim`。
 
+### 4.1 `torch.where`：按条件在两个张量之间选择
+
+```python
+torch.where(condition, a, b)
+```
+
+三个参数的形状要能广播到一起。逐元素判断：`condition` 为真取 `a` 的对应元素，否则取 `b` 的。
+
+```python
+x = torch.tensor([1.0, -2.0, 3.0])
+torch.where(x > 0, x, torch.zeros_like(x))   # tensor([1., 0., 3.])
+```
+
+`torch.zeros_like(x)` 给出一个形状与 dtype 都和 `x` 一样的全零张量，用在这里当"否则"分支。
+
+常见的用法是避开除零：算 `a / b` 时若 `b` 可能是 0，写
+`torch.where(b == 0, torch.zeros_like(a), a / b)`。
+
+注意它**先把两个分支都算出来再挑**，不做短路。上面那句里 `a / b` 照样会执行，
+`b` 为 0 的位置确实算出了 `inf` 或 `nan`，只是最后没被选中。所以结果是对的，
+但如果这类计算很多，性能上并不省。这一点在 T4 里会碰到。
+
 ## 5. 点积
 
 两个向量 $\mathbf{x},\mathbf{y}\in\mathbb{R}^d$ 的点积是相同位置元素乘积之和：
@@ -216,10 +256,10 @@ torch.norm(torch.ones(2, 3, 4))         # tensor(4.8990) = sqrt(24)，把所有�
 三个坑：范数函数不接受整型张量（上面第四行的输入就会报错），建张量时给 `float32`；`torch.norm` 对任意形状的张量都按“全部元素拉平求 $L_2$”处理，上面三轴张量得到 $\sqrt{24}$；`torch.norm` 的 docstring 明确写着 deprecated、未来版本可能移除（torch 2.14 实测运行时没有发警告），求向量范数用 `torch.linalg.vector_norm`，求矩阵范数用 `torch.linalg.matrix_norm`。第一版的 `X.norm()` 求的是元素平方和的平方根（Frobenius 范数），
 `X.norm().asscalar()` 对应 `torch.linalg.vector_norm(X).item()`。
 
-深度学习里用 $L_2$ 范数的平方多于 $L_2$ 本身，因为不必开方，而且梯度形式简单：
-v1 附录《数学基础》给出 $\nabla_{\mathbf{x}}\|\mathbf{x}\|^2=2\mathbf{x}$。$L_1$ 范数的梯度是
-$\mathrm{sign}(\mathbf{x})$，每个分量的梯度幅度固定为 1，不随偏差放大，所以 $L_1$ 对异常值不如
-$L_2$ 敏感（v2 原文提到这一点）。
+深度学习里用 $L_2$ 范数的平方多于 $L_2$ 本身，因为不必开方，求导的结果也更简洁。
+v1 附录《数学基础》给出 $\nabla_{\mathbf{x}}\|\mathbf{x}\|^2=2\mathbf{x}$，这个式子现在看不懂没关系，
+B04 讲完自动微分再回来看。$L_1$ 范数的导数每个分量幅度固定为 1，不随偏差放大，
+所以 $L_1$ 对异常值不如 $L_2$ 敏感（v2 原文提到这一点）。
 
 ## 8. 广播在矩阵运算中的语义、按轴求和与拼接
 
