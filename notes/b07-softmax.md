@@ -13,7 +13,8 @@ B06 解决的是"预测一个数"，这一章解决"预测是哪一类"。改动
 | 4 数据集：Fashion-MNIST | 3.5 图像分类数据集 | [3.5 图像分类数据集](https://zh.d2l.ai/chapter_linear-networks/image-classification-dataset.html) |
 | 5 从零实现 | 3.6 softmax 回归的从零开始实现 | [3.6 从零开始实现](https://zh.d2l.ai/chapter_linear-networks/softmax-regression-scratch.html) |
 | 6 简洁实现 | 3.7 softmax 回归的简洁实现 | [3.7 简洁实现](https://zh.d2l.ai/chapter_linear-networks/softmax-regression-concise.html) |
-| 7 评估：精度与混淆矩阵 | 3.6 的"训练模型"与"预测" | 3.6 的"预测"、3.7 的"预测" |
+| 7 评估：精度 | 3.4 的"模型预测及评价"、3.6 的"计算分类准确率" | 3.4 的"模型预测和评估"、3.6 的"分类精度" |
+| 7.1 混淆矩阵 | 无，本节补充 | 无，本节补充 |
 | 8 实现会踩的坑 | 散在两版正文里，本节汇总 | 同上 |
 | 自测题 | 无 | 无 |
 
@@ -376,9 +377,34 @@ nn.NLLLoss()(nn.LogSoftmax(dim=1)(logits), t)                 # 0.41703
 `torchvision` 的 `FashionMNIST` 返回的标签就是整数，可以直接用。
 如果手里有独热标签，要用 `argmax(dim=1)` 转成下标。
 
-## 7 评估：精度与混淆矩阵
+**标签类型要留意的两处**（实测 torch 2.14.0）：
+
+- float32 且形状 $(n,)$：直接报 `expected target dtype to be Long or Byte, but got Float`
+- float32 且形状 $(n,q)$：**不报错**，被当成"软标签"（每个样本一个概率分布）走另一条计算路径。
+  手滑把独热标签转成浮点传进去就会落到这里，数值对不上却查不出原因
+
+## 7 评估：精度
 
 **精度**（accuracy）是最常用的分类指标：预测正确的比例。
+
+**两版书里这个函数的签名与返回值都不一样**，读的时候留意：
+
+| | 纸质书（v1） | 电子版（v2） |
+|---|---|---|
+| 定义 | `accuracy(y_hat, y)` | `accuracy(y_hat, y)` |
+| 返回 | **比例**（正确数除以总数） | **正确个数** |
+| 在整个数据集上评估 | `evaluate_accuracy(data_iter, net)` | `evaluate_accuracy(net, data_iter)` |
+
+后一行是参数顺序相反，照抄会报错或者算出莫名结果。本讲义统一用 v1 的顺序
+（数据在前、模型在后），返回值用比例。
+
+### 7.1 混淆矩阵
+
+**这一节是补充，两版书里都没有。** 全仓库里"混淆矩阵"只出现在第二版讲分布偏移的那一章。
+
+**它解决什么**：精度只给一个数，看不出错在哪。
+
+
 
 **它不够用**的情况：类别不平衡时。设想 99% 的样本是 A 类，
 一个"永远预测 A"的模型精度是 99%，但毫无用处。所以看精度要同时看各类别的分布。
@@ -402,6 +428,8 @@ nn.NLLLoss()(nn.LogSoftmax(dim=1)(logits), t)                 # 0.41703
 | 评估时没包 `no_grad` | 结果对，但慢且吃内存 | 白建了一张计算图（5.5） |
 | 用测试集调超参数 | 测试精度虚高 | 测试集只能用来看最终结果（4 节） |
 | 学习率沿用 B06 的 0.03 | 收敛慢 | 批量从 10 变成 256，学习率要跟着调（5.4） |
+| 电子版里 `y_hat` 一会儿是概率一会儿是 logits | 损失不降 | v2 的 3.6 让 `net` 返回概率、3.7 让 `net` 返回 logits，同名不同义，读代码要看它传给谁 |
+| 标签是 float32 | `RuntimeError: expected target dtype to be Long or Byte` | 整数标签要 int64；形状为 $(n,q)$ 的浮点标签会被当成软标签，静默走另一条路径（6.3） |
 
 ## 命令速查
 
