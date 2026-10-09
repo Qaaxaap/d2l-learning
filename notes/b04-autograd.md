@@ -4,6 +4,21 @@
 
 文中所有 PyTorch 行为与报错文本都在 torch 2.14.0 上实测（本机 CPU 与远程 4070S 的版本一致），MXNet 侧结论来自 MXNet 源码与两版原文的相互印证。
 
+## 与书对应
+
+| 讲义小节 | 纸质书（第一版） | 电子版（第二版） |
+|---|---|---|
+| 1 导数、偏导数、梯度、链式法则 | 附录《数学基础》，"导数和微分"到"梯度" | [2.4 微积分](https://zh.d2l.ai/chapter_preliminaries/calculus.html) |
+| 2 手工推导 | 附录"梯度"一节的例子 | 2.4 的例题 |
+| 3 计算图与反向模式自动微分 | 无，本节补充 | [2.5 自动微分](https://zh.d2l.ai/chapter_preliminaries/autograd.html) 的第一节 |
+| 4 读 MXNet 代码时要留意的差异 | 2.3 节的全部代码 | 2.5 |
+| 5 实现一定会踩的坑 | 无，本节补充 | 2.5.2 到 2.5.4 |
+| 6 自测题 | 无 | 无 |
+
+纸质书那两章只有公式没有代码；电子版两节有代码，但用的是 `d2l` 包的封装（`d2l.plt`、
+`d2l.use_svg_display`、`numerical_lim`），那些封装按仓库的解锁规则现在还不能用，
+讲义里用等价的裸 torch 与 matplotlib 写法代替。
+
 ## 0 这一单元解决什么问题
 
 训练模型就是找一组参数 $\boldsymbol{\theta}$，让损失 $L(\boldsymbol{\theta})$ 尽量小。损失是复合函数，从输入到输出要经过矩阵乘法、softmax、对数、求和。想知道“把 $w_{ij}$ 调大一点，损失变多少”，就要对复合函数求导。
@@ -360,6 +375,32 @@ a.grad == d / a          # tensor(True)
 提供的特殊算子来表达，Python 的 `if` 在图里不起作用。torch 不需要，因为图是边跑边建的。
 
 代价是每次前向都要重新搭一次图，没有"图复用"这回事。
+
+## 命令速查
+
+这一章用到的全部接口，按第一次出现的位置列。
+
+| 命令 | 作用 | 讲义哪一节 |
+|---|---|---|
+| `torch.arange(4.0, requires_grad=True)` | 建张量并打开求导记录 | 3 |
+| `x.requires_grad_(True)` | 事后打开求导记录 | 3 |
+| `x.is_leaf` | 判断是不是叶子张量 | 5.1 |
+| `y.backward()` | 从 `y` 反向传播，梯度累加到叶子 | 3 |
+| `y.backward(torch.ones_like(y))` | 非标量输出的反传，显式给出权重 | 5.3 |
+| `y.backward(retain_graph=True)` | 保留计算图，允许再反传一次 | 5.4 |
+| `x.grad` | 累积在 `x` 上的梯度 | 3 |
+| `x.grad.zero_()` | 就地清零某个张量的梯度 | 5.2 |
+| `p.grad = None` | 另一种清零写法，把梯度置空 | 5.2 |
+| `optimizer.zero_grad()` | 清零优化器里全部参数的梯度 | 5.2 |
+| `x.retain_grad()` | 让非叶子张量也保存梯度 | 5.1 |
+| `y.detach()` | 从计算图上摘下来，共享内存 | 5.5 |
+| `y.detach().clone()` | 摘下来并复制一份 | 5.5 |
+| `with torch.no_grad():` | 这一段不建图 | 5.5 |
+| `torch.autograd.gradcheck(f, x)` | 数值梯度检验 | 5.6 |
+| `torch.is_grad_enabled()` | 当前是否在建图 | 4 |
+
+电子版 2.5 节反复用的 `x.grad.zero_()` 就是上表里那一行。它与 `optimizer.zero_grad()`
+效果相同，区别是前者只清一个张量，后者遍历优化器里登记的全部参数。
 
 ## 6 自测题
 
