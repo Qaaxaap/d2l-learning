@@ -289,6 +289,29 @@ torch 里是 `train_l.mean().item()`——`.item()` 把单元素张量取成 Pyt
 
 ## 5 简洁实现
 
+### 5.0 先看要导入什么
+
+框架版用到三个模块：
+
+```python
+import torch
+import torch.nn as nn
+from torch.optim import SGD
+from torch.utils.data import DataLoader, TensorDataset
+```
+
+| 模块 | 里面有什么 | 这一章用到的 |
+|---|---|---|
+| `torch` | 张量与基础运算 | `torch.normal`、`torch.no_grad` |
+| `torch.nn` | 层、损失函数、模型基类 | `nn.Linear`、`nn.MSELoss` |
+| `torch.optim` | 优化器 | `SGD` |
+| `torch.utils.data` | 数据集与分批工具 | `TensorDataset`、`DataLoader` |
+
+习惯上 `torch.nn` 导入时起别名 `nn`，所以代码里写 `nn.Linear` 而不是 `torch.nn.Linear`。
+后两个也可以写全路径（`torch.optim.SGD`、`torch.utils.data.DataLoader`），效果一样。
+
+第 4 节自己写的那版只需要 `import torch`。
+
 上面那 60 行，框架里都有现成的。第二版 3.3 节把同一件事用 `nn` 与 `optim` 重写了一遍。
 
 ### 5.1 四个替换

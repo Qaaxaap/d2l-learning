@@ -159,6 +159,12 @@ PROGRESS.md                  更新进度、错题
 判断方法：搜一下这个 API 在讲义里出现的位置，如果它只出现在某个别的小节的举例里，
 就该单独拎出来。
 
+**导入路径是 API 的一部分。** 讲义里第一次用到某个库时，要写明它从哪个模块来
+（`from torch.utils.data import DataLoader`），以及习惯上的别名（`import torch.nn as nn`）。
+学习者没写过 Python，不知道 `TensorDataset` 藏在 `torch.utils.data` 底下——
+这类信息在书里是默认的，在讲义里不能省。发生过一次：B06 讲义用了 `TensorDataset` 与
+`DataLoader`，一处 `import` 都没有，学习者直接问"TensorDataset 是啥底下的"。
+
 ### 公式用 KaTeX 认得的命令
 
 讲义要在编辑器的 markdown 预览里能正常渲染，那个预览用的是 KaTeX，它支持的宏是 LaTeX 的子集。

@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
 def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
               seed: int = 0) -> tuple:
     """生成线性回归的人造数据。
@@ -78,12 +80,23 @@ def train_scratch(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
     losses = []
     for i in range(num_epochs):
         for Xi, yi in data_iter(batch_size, X, y, seed):
-            y_hat = linreg(X, w, b)
-            loss = squared_loss(y_hat, y).sum()
+            y_hat = linreg(Xi, w, b)
+            loss = squared_loss(y_hat, yi).sum()
             loss.backward()
             sgd([w, b], lr, batch_size)
         y_hat = linreg(X, w, b)
-        loss = squared_loss(y_hat, y).sum()
+        loss = squared_loss(y_hat, y).mean()
         losses.append(loss)
     return w, b, losses
 
+def train_concise(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
+                  num_epochs: int = 3, batch_size: int = 10,
+                  seed: int = 0) -> tuple:
+    """用框架的封装重写一遍，返回 (net, losses)。
+
+    - net 是 nn.Sequential(nn.Linear(d, 1)) 这样的模块
+    - 数据用 TensorDataset 包起来，交给 DataLoader 分批
+    - 损失用 nn.MSELoss()
+    - 优化器用 torch.optim.SGD
+    """
+    dataset = 
