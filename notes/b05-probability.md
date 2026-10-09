@@ -64,7 +64,7 @@ $$\begin{aligned}
 
 $$\mathrm{Var}[aX+b]=E\left[(aX+b-E[aX+b])^2\right]=E\left[a^2(X-E[X])^2\right]=a^2\mathrm{Var}[X].$$
 
-加常数不改变方差，乘 $a$ 把方差放大 $a^2$ 倍。学习率缩放梯度时更新量的方差按学习率平方变化，Xavier 初始化要求各层输出方差保持不变（v2 4.8），都用这两条规则。
+加常数不改变方差，乘 $a$ 把方差放大 $a^2$ 倍。这两条规则后面会反复用：B08 讲参数初始化时会问"每一层的输出方差应当保持多大"，靠的就是它们。
 
 ### 3.3 独立随机变量之和的方差
 
@@ -157,6 +157,9 @@ $$\frac{\bar X-\mu}{\sigma/\sqrt{n}}\xrightarrow{d}\mathcal{N}(0,1).$$
 
 ## 8 这些结论后面用在哪
 
+下表右边那些单元都是**后面才会学的**。现在只需要建立"这个结论将来在哪儿用得上"的印象，
+不用看懂那列的公式细节。等学到对应单元时再回来对一遍。
+
 | 结论 | 用在哪 | 怎么用 |
 |---|---|---|
 | 概率之和为 1 | B07 softmax 回归（v2 3.4.4） | softmax 输出经过归一化，$\sum_j\hat y_j=1$，原文称其为合法的概率分布 |
@@ -172,20 +175,37 @@ $$\frac{\bar X-\mu}{\sigma/\sqrt{n}}\xrightarrow{d}\mathcal{N}(0,1).$$
 
 权重衰减与高斯先验的关系不在原文正文里。v2 4.5 的练习提到“在贝叶斯统计中，使用先验和似然的乘积 $P(w\mid x)\propto P(x\mid w)P(w)$ 得到后验，如何得到带正则化的 $P(w)$”，需要时按这道练习补。
 
-## 9 采样代码的 MXNet → PyTorch 对照
+## 9 采样：用 torch 掷骰子
 
-原文 2.6 用掷骰子演示大数定律，各框架的写法如下。
+原文 2.6 用掷骰子演示大数定律。torch 的写法：
 
-| v2 mxnet tab | v2 pytorch tab | 差异 |
-|---|---|---|
-| `np.random.multinomial(1, fair_probs)` | `multinomial.Multinomial(1, fair_probs).sample()` | MXNet 返回次数向量；PyTorch 用分布对象，`Multinomial` 需要 `torch.distributions` |
-| `np.random.multinomial(10, fair_probs, size=500)` | `multinomial.Multinomial(10, fair_probs).sample((500,))` | 样本形状作为 `sample()` 的参数传入，返回 (500, 6) 张量，每行之和为 10 |
-| `counts.astype(np.float32)` | 无需转换 | `Multinomial.sample()` 返回 float32 |
-| `counts.cumsum(axis=0)` | `counts.cumsum(dim=0)` | 参数名从 `axis` 换成 `dim` |
-| `cum_counts.sum(axis=1, keepdims=True)` | `cum_counts.sum(dim=1, keepdims=True)` | 同上；`keepdims` 保留被约简的维度，用于广播除法 |
-| `estimates[:, i].asnumpy()` | `estimates[:, i].numpy()` | 取值方法不同 |
+| 要做什么 | 写法 |
+|---|---|
+| 掷一次六面骰子 | `multinomial.Multinomial(1, fair_probs).sample()` |
+| 掷 10 次、重复 500 轮 | `multinomial.Multinomial(10, fair_probs).sample((500,))`，返回 `(500, 6)` 张量，每行之和为 10 |
+| 累加计数 | `counts.cumsum(dim=0)` |
+| 按行归一化成频率 | 先 `cum_counts.sum(dim=1, keepdim=True)`，再相除广播成 `(500, 6)` |
+| 取第 i 列的估计值 | `estimates[:, i].numpy()` |
 
-两个实测的坑。`Multinomial` 的 `total_count` 必须是整数，传 `1.0` 会报 `NotImplementedError: inhomogeneous total_count is not supported`。需要可复现的随机数时用底层的 `torch.multinomial(probs, num_samples, replacement=True, generator=g)`，`g = torch.Generator().manual_seed(0)`。
+`Multinomial` 在 `torch.distributions` 下，要先导入：`from torch.distributions import multinomial`。
+
+统计每个面出现多少次用 **`torch.bincount(x, minlength=n)`**：它返回一个长度为 `n` 的张量，
+第 `i` 个元素是 `x` 里等于 `i` 的个数（`x` 必须是非负整数张量）。
+`minlength` 保证即使某个面一次没出现也会占一个位置。
+
+```python
+rolls = torch.tensor([0, 2, 2, 5])       # 掷了四次，面编号从 0 开始
+torch.bincount(rolls, minlength=6)       # tensor([1, 0, 2, 0, 0, 1])
+```
+
+注意编号从 0 开始，而骰子的面是 1 到 6，换算时要留意。
+
+两个实测的坑。`total_count` 必须是整数，传 `1.0` 会报
+`NotImplementedError: inhomogeneous total_count is not supported`。需要可复现的随机数时用底层的
+`torch.multinomial(probs, num_samples, replacement=True, generator=g)`，其中
+`g = torch.Generator().manual_seed(0)`。
+
+（v2 的 MXNet tab 用 `np.random.multinomial`，返回次数向量，与 torch 的分布对象写法不同。）
 
 ## 10 自测题
 
