@@ -1,5 +1,8 @@
+from pyexpat import features
+
 import torch
 import torch.nn as nn
+from torch.nn.modules import loss
 from torch.utils.data import DataLoader, TensorDataset
 
 def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
@@ -99,4 +102,10 @@ def train_concise(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
     - 损失用 nn.MSELoss()
     - 优化器用 torch.optim.SGD
     """
-    dataset = 
+    torch.manual_seed(seed)
+    dataset = TensorDataset(X, y)
+    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
+    for epoch in range(num_epochs):
+        for Xi, yi in loader:
+            l = loss()
+

@@ -291,7 +291,7 @@ torch 里是 `train_l.mean().item()`——`.item()` 把单元素张量取成 Pyt
 
 ### 5.0 先看要导入什么
 
-框架版用到三个模块：
+框架版的导入：
 
 ```python
 import torch
