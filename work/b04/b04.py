@@ -1,3 +1,22 @@
+"""
+import torch
+
+x = torch.tensor([1.0, 2.0, 3.0])
+y = (x * 2).sum()
+y.backward()
+print(x.grad) 未请求计算图，需要requires_grad=True
+
+w = torch.tensor([1.0, 2.0])
+z = w * 3
+z.backward() 反向传播的起点应为标量，括号里写 torch.ones_like(z)或者给z.sum()反向传播。
+
+p = torch.tensor([1.0], requires_grad=True)
+y = (p * 2).sum()
+y.backward()
+p = p - 0.1 * p.grad 没有清零，并且产出了新的计算图，用no_grad,并且在每次backward之前清零grad。
+
+"""
+
 import torch
 
 def grad_of_quadratic(A: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
@@ -44,6 +63,8 @@ def descend_step(w: torch.Tensor, step: float) -> None:
     - 更新完之后 w 必须仍然是叶子，且 requires_grad 仍为 True
     - 更新过程中不许产生新的计算图，也不许残留上一轮的梯度
     """
+    w.grad = None
     y = (w * w).sum()
+    y.backward()
     with torch.no_grad():
-        w - step * 
+        w -= step * w.grad
