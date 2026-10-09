@@ -88,9 +88,11 @@ def cumulative_means(n_max: int, seed: int = 0) -> torch.Tensor:
 ```python
 import torch
 
-PA = 0.3
-PB = 0.4
-PAB = PA + PB
+p_a = 0.3
+p_b = 0.4
+
+# 下面这行想算出 P(A 且 B)，也就是联合概率
+p_a_and_b = p_a + p_b
 
 counts = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
 probs = counts
@@ -101,3 +103,5 @@ E = values.mean()
 ```
 
 三处分别关于：**独立事件**、**概率的归一化**、**期望的定义**。
+
+第一处里的 `p_a_and_b` 是**联合概率**（两者同时发生），不是条件概率。
