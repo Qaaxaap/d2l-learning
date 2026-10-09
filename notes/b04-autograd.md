@@ -109,52 +109,40 @@ $$\mathbf{v}^\top \mathbf{J},\qquad \mathbf{J}=\frac{\partial \mathbf{y}}{\parti
 
 反向模式适合深度学习的形状：一次反向就拿到标量损失对所有参数的偏导，代价约为一次前向的常数倍，与参数个数无关。若用前向模式，百万参数就要前向百万次。
 
-## 4 逐段对照：v1 的 MXNet 代码 → PyTorch
+## 4 读 MXNet 代码时要留意的差异
 
-### 4.1 v1 的 MXNet 例子与 torch 写法对照
+纸质书用的是 MXNet。这一节只讲两边**默认行为不同**的地方——这类差异最阴，照搬不会报错，
+只是结果不对。
 
-v1 2.3 的代码：
-
-```python
-from mxnet import autograd, nd
-
-x = nd.arange(4).reshape((4, 1))
-x.attach_grad()
-with autograd.record():
-    y = 2 * nd.dot(x.T, x)
-y.backward()
-assert (x.grad - 4 * x).norm().asscalar() == 0
-```
-
-PyTorch 的对应写法：
-
-```python
-import torch
-
-x = torch.arange(4.0, requires_grad=True)   # 形状 (4,)
-y = 2 * torch.dot(x, x)                     # 0 维标量
-y.backward()
-assert torch.allclose(x.grad, 4 * x)
-```
-
-三处必须改。`nd.arange(4)` 在 MXNet 里默认是 float32，所以能直接 `attach_grad()`；`torch.arange(4)` 是 int64，`requires_grad_()` 报 `RuntimeError: only Tensors of floating point dtype can require gradients`，要写 `4.0` 或 `.float()`。`nd.dot` 收矩阵，`torch.dot` 只收一维张量，传二维报 `1D tensors expected`。断言换成 `torch.allclose`，因为 `x.grad == 4 * x` 返回布尔张量，直接放进 `if` 会报 `Boolean value of Tensor with more than one value is ambiguous`。形状 (4,1) 的列向量在 torch 里也能用：`x = torch.arange(4.0).reshape(4,1).requires_grad_(True)` 后 `y = 2 * (x.T @ x)` 得到形状 (1,1)、`numel()==1` 的张量，`y.backward()` 允许省略 `gradient`，`y.item()` 取得到数值。不便之处是梯度形状跟着变成 (4,1)。
-
-### 4.2 语义对照表
-
-| v1（MXNet） | PyTorch | 语义差异 |
+| 事项 | torch | MXNet |
 |---|---|---|
-| `x.attach_grad()` | `x.requires_grad_(True)` | MXNet 同时分配梯度缓冲区并初始化为 0，默认 `grad_req='write'`；PyTorch 只打开记录开关，`.grad` 初始为 `None` |
-| `with autograd.record():` | 无需包裹 | PyTorch 默认就在建图；关掉用 `with torch.no_grad():` |
-| `y.backward()`，$y$ 非标量时自动先求和 | `y.sum().backward()` 或 `y.backward(v)` | MXNet 隐式求和；PyTorch 要求显式提供 $\mathbf{v}$，否则报错 |
-| `x.grad` 每次反传被覆盖 | `.grad` 逐次累加 | 默认设置下的核心差异，见 5.2 |
-| `param[:] = param - lr * param.grad / batch_size` | `with torch.no_grad(): param -= lr * param.grad / batch_size` | 叶子张量在开启梯度的模式下原地修改会报错 |
-| `autograd.is_training()` | `torch.is_grad_enabled()`；模块模式用 `nn.Module.train()/eval()` | MXNet 用一个全局标志切换训练与预测；PyTorch 把“是否建图”和“模块处于哪种模式”拆成两件事 |
-| `y.detach()` | `y.detach()` | 同名同语义 |
-| `Trainer(params, ...)` | `torch.optim.SGD(params, ...)` | B06 展开 |
+| 打开求导 | `x.requires_grad_(True)` 只开记录开关，`.grad` 初始为 `None` | `x.attach_grad()` 顺带分配梯度缓冲区并初始化为 0 |
+| 建图 | 默认就建，关掉写 `with torch.no_grad():` | 要显式写 `with autograd.record():` |
+| 非标量反传 | 必须显式给 `gradient`，否则报错 | 自动先求和 |
+| **梯度累加** | `.grad` **逐次累加** | 每次反向**覆盖**缓冲区（默认 `grad_req='write'`） |
+| 原地更新参数 | 叶子张量在开梯度的模式下原地改会报错，要包 `no_grad()` | 可以写 `param[:] = param - lr * grad` |
+| 训练与预测模式 | 拆成两件事：`torch.is_grad_enabled()` 管建图，`nn.Module.training` 管 dropout 与 BN | `autograd.is_training()` 一个全局开关管两件事 |
 
-`autograd.is_training()` 那一行值得单独记：v1 用它区分训练与预测模式，因为 dropout 在两种模式下行为不同。PyTorch 没有对应的全局开关，`torch.is_grad_enabled()` 只反映是否建图，决定 dropout 与 BN 行为的是模块自己的 `.training` 属性。
+梯度那条在 5.2 节展开，它最容易让训练"看起来在跑，其实不对"。
 
-> 待核实：`autograd.is_training()` 的具体返回值随 MXNet 版本变化，v1 书里只说明 `record()` 默认把运行模式切到训练模式。本机没有 MXNet 环境，这一条未实测，PyTorch 侧的结论均已上机验证。
+`autograd.is_training()` 那一行值得单独记：v1 用它区分训练与预测模式，因为 dropout 在两种模式下
+行为不同。PyTorch 没有对应的全局开关，`torch.is_grad_enabled()` 只反映是否建图，
+决定 dropout 与 BN 行为的是模块自己的 `.training` 属性。
+
+### 4.1 断言怎么写
+
+v1 的例子用 `assert (x.grad - 4 * x).norm().asscalar() == 0`，torch 里不能照写成
+`if x.grad == 4 * x:`——两个张量逐元素比较返回的是**布尔张量**，放进 `if` 会报
+`Boolean value of Tensor with more than one value is ambiguous`。
+
+判断两个张量是否相等用 `torch.allclose(x.grad, 4 * x)`，它返回 Python 布尔值。
+
+另外 `torch.arange(4)` 给的是 int64，开不了 `requires_grad`（报
+`only Tensors of floating point dtype can require gradients`），要写 `4.0` 或 `.float()`。
+这条在 B02 讲过，这里再遇到一次。
+
+> 待核实：`autograd.is_training()` 的具体返回值随 MXNet 版本变化，v1 书里只说明 `record()`
+> 默认把运行模式切到训练模式。本机没有 MXNet 环境，这一条未实测；PyTorch 侧的结论均已上机验证。
 
 ## 5 书中没写但实现一定会踩的坑
 
@@ -378,7 +366,7 @@ a.grad == d / a          # tensor(True)
 1. 写出 $y=\mathbf{x}^\top\mathbf{x}$ 的梯度推导（$\mathbf{x}\in\mathbb{R}^n$），再写出 $y=5\mathbf{x}^\top\mathbf{x}$ 的结果。
 2. 用 $\mathbf{x}^\top\mathbf{A}\mathbf{x}$ 的梯度公式解释：$\mathbf{A}$ 不对称时结果里为什么出现 $\mathbf{A}^\top$，$\mathbf{A}$ 对称时为什么只剩 $2\mathbf{A}\mathbf{x}$。
 3. `x.grad` 返回 `None` 有哪几种原因？分别怎么排查？
-4. 训练循环里为什么每轮都要 `zero_grad()`？忘了写会报错还是继续跑？MXNet 的 v1 代码为什么不用写这一句？
+4. 训练循环里为什么每轮都要清零梯度？忘了写会报错还是继续跑？会有什么症状？
 5. 什么情况下 `backward()` 必须显式传 `gradient`？这个参数在数学上对应什么？`y.sum().backward()` 传的是什么？
 6. `retain_graph=True` 解决什么问题？给出两个必须用它的场景，并说明代价。
 7. `with torch.no_grad():` 与 `.detach()` 分别适合什么场景？各举一个参数更新或截断梯度的例子。
@@ -392,7 +380,7 @@ a.grad == d / a          # tensor(True)
 
 **3.** 三种。不是叶子，用 `is_leaf` 判断，需要时对它调用 `retain_grad()`；是叶子但还没反传过，`.grad` 初值为 `None`；损失不依赖它或它没有打开 `requires_grad`，后者会直接报 `does not require grad`。第三种是“参数不更新”的常见原因，例如用 `torch.tensor` 重新包装了参数，优化器持有旧对象。
 
-**4.** 因为 `backward()` 把梯度加到已有 `.grad` 上，实测同一张 $y=\sum x_i^2$ 的图连传三次，`x.grad` 从 `[0,2,4,6]` 变成 `[0,6,12,18]`。忘记清零不报错，梯度随步数线性增长，训练可能发散或震荡，也可能表面上仍在下降而被忽略。MXNet 的 `attach_grad()` 默认 `grad_req='write'`，每次反向覆盖缓冲区，只有显式改成 `'add'` 才累加，所以 v1 的 `sgd` 不需要清零。
+**4.** 因为 `backward()` 把梯度加到已有 `.grad` 上，实测同一张 $y=\sum x_i^2$ 的图连传三次，`x.grad` 从 `[0,2,4,6]` 变成 `[0,6,12,18]`。忘记清零不报错，梯度随步数线性增长，等效学习率越来越大，训练可能发散或震荡，也可能表面上仍在下降而被忽略。
 
 **5.** 输出不是标量（`numel() > 1`）时必须给，否则报 `grad can be implicitly created only for scalar outputs`。它对应向量-雅可比积 $\mathbf{v}^\top\mathbf{J}$ 里的 $\mathbf{v}$，形状须与输出一致。`y.sum().backward()` 等价于取 $\mathbf{v}$ 为全 1 向量，实测两者得到的 `x.grad` 相同。
 

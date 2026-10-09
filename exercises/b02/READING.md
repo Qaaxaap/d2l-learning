@@ -9,7 +9,7 @@
 | 电子版（纸质书没有） | <https://zh.d2l.ai/chapter_preliminaries/pandas.html> 「数据预处理」 |
 
 纸质书用的是 MXNet，代码块里的 `nd.xxx` 全部要换成 torch 写法。电子版同一页有 PyTorch 标签页，
-但**先自己翻译再看**，翻译完了拿电子版对答案。对照表在 `notes/b02-data-ops.md` 第 1 节。
+但**先自己写一遍再看**，写完了拿电子版对答案。两边的 API 对照在 `notes/b02-data-ops.md` 第 1 节。
 
 讲义 `notes/b02-data-ops.md` 在读完书之后再看。讲义里补了书上没写的坑，先看书再看讲义，
 顺序反了你会以为自己都会。

@@ -78,7 +78,7 @@ def cumulative_means(n_max: int, seed: int = 0) -> torch.Tensor:
 | `cumulative_means(1000, seed=0)` | 形状 `(1000,)`，前几个值波动大，后面稳定在 3.5 附近 |
 | `cumulative_means(1, seed=0)` | 形状 `(1,)`，值就是第一次掷的结果 |
 
-不许用 Python 循环逐个累加，用累积求和一次算完（讲义第 9 节的对照表里有这个函数）。
+不许用 Python 循环逐个累加，用累积求和一次算完（累积求和的函数在讲义第 9 节）。
 
 ## T5 改错
 
