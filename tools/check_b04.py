@@ -100,24 +100,22 @@ def main() -> int:
 
     @case("T4 一次参数更新")
     def _t4():
-        x = torch.tensor([[1.0, 1.0], [1.0, 1.0]])
-        w = torch.tensor([0.0, 0.0], requires_grad=True)
-        mod.train_step(w, x, 0.5)
-        assert torch.allclose(w, torch.tensor([-1.0, -1.0])), (
-            f"梯度是每列之和 [2,2]，w 应变成 [-1,-1]，得到 {w.tolist()}"
+        w = torch.tensor([1.0, 2.0], requires_grad=True)
+        mod.descend_step(w, 0.1)
+        assert torch.allclose(w, torch.tensor([0.8, 1.6])), (
+            f"梯度是 2w = [2,4]，走一步之后 w 应为 [0.8,1.6]，得到 {w.tolist()}"
         )
         assert w.is_leaf, "更新后 w 必须仍是叶子，说明用了 no_grad 或原地写法"
         assert w.requires_grad, "更新后 w 的 requires_grad 应保持 True"
 
     @case("T4 连续两步不带残留")
     def _t4_twice():
-        x = torch.tensor([[1.0, 1.0], [1.0, 1.0]])
-        w = torch.tensor([0.0, 0.0], requires_grad=True)
-        mod.train_step(w, x, 0.5)
-        mod.train_step(w, x, 0.5)
-        assert torch.allclose(w, torch.tensor([-2.0, -2.0])), (
-            f"两步之后 w 应为 [-2,-2]，得到 {w.tolist()}。"
-            "多半是上一轮的梯度没清，第二轮用了叠加后的 [4,4]"
+        w = torch.tensor([1.0, 2.0], requires_grad=True)
+        mod.descend_step(w, 0.1)
+        mod.descend_step(w, 0.1)
+        assert torch.allclose(w, torch.tensor([0.64, 1.28])), (
+            f"两步之后 w 应为 [0.64,1.28]，得到 {w.tolist()}。"
+            "多半是上一轮的梯度没清，第二轮用了叠加后的 [4,8]"
         )
 
     print(f"通过 {len(_passed)} 项")

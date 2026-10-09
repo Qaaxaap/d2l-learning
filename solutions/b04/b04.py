@@ -34,14 +34,14 @@ def grad_after_two_backwards(x: torch.Tensor) -> torch.Tensor:
     return x.grad
 
 
-def train_step(w: torch.Tensor, x: torch.Tensor, lr: float) -> None:
+def descend_step(w: torch.Tensor, step: float) -> None:
     """一次梯度下降。清梯度、反传、在 no_grad 里原地更新。"""
     if w.grad is not None:
         w.grad = None
-    loss = (x @ w).sum()
-    loss.backward()
+    y = (w * w).sum()
+    y.backward()
     with torch.no_grad():
-        w -= lr * w.grad
+        w -= step * w.grad
 
 
 """T5 改错
@@ -78,8 +78,7 @@ if __name__ == "__main__":
     xr = torch.tensor([0.0, 1.0, 2.0, 3.0], requires_grad=True)
     print("two backwards =", grad_after_two_backwards(xr))
 
-    w = torch.tensor([0.0, 0.0], requires_grad=True)
-    data = torch.tensor([[1.0, 1.0], [1.0, 1.0]])
-    train_step(w, data, 0.5)
-    train_step(w, data, 0.5)
+    w = torch.tensor([1.0, 2.0], requires_grad=True)
+    descend_step(w, 0.1)
+    descend_step(w, 0.1)
     print("w after two steps =", w, "is_leaf =", w.is_leaf)

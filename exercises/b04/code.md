@@ -65,10 +65,10 @@ def grad_after_two_backwards(x: torch.Tensor) -> torch.Tensor:
 ## T4 一次参数更新
 
 ```python
-def train_step(w: torch.Tensor, x: torch.Tensor, lr: float) -> None:
-    """用一次梯度下降把 w 更新成 w - lr * dL/dw，其中 L = (x @ w).sum()。
+def descend_step(w: torch.Tensor, step: float) -> None:
+    """对一个标量目标 y = (w * w).sum() 做一次梯度下降：w ← w - step * dy/dw。
 
-    - w 形状 (n,)，是叶子参数，已经开了 requires_grad
+    - w 形状 (n,)，是叶子张量，已经开了 requires_grad
     - 就地修改 w：不要返回新张量，也不要把名字 w 重新绑定到别的张量上
     - 更新完之后 w 必须仍然是叶子，且 requires_grad 仍为 True
     - 更新过程中不许产生新的计算图，也不许残留上一轮的梯度
@@ -77,9 +77,13 @@ def train_step(w: torch.Tensor, x: torch.Tensor, lr: float) -> None:
 
 | 情形 | 期望 |
 |---|---|
-| `w = [0., 0.]`，`x = [[1., 1.], [1., 1.]]`，`lr = 0.5` | `w` 变成 `[-1., -1.]` |
+| `w = [1., 2.]`，`step = 0.1` | `w` 变成 `[0.8, 1.6]`（`y` 对 `w` 的梯度是 `2w`） |
 
-提示：这个函数会被连续调用两次，第二次的初始梯度不能带着第一次的残留。
+**不许用 `torch.optim` 里的任何优化器。** 两个原因：优化器是 B06 的内容；
+更重要的是这道题练的正是优化器内部替你做的事——清梯度、在 `no_grad` 下原地更新。
+调一次 `optimizer.step()`，那三个坑全被封装掉，题目就没意义了。
+
+提示：这个函数会被连续调用两次，第二次开始时不能带着第一次的梯度残留。
 
 ## T5 改错
 
@@ -99,8 +103,8 @@ z = w * 3
 z.backward()
 
 p = torch.tensor([1.0], requires_grad=True)
-loss = (p * 2).sum()
-loss.backward()
+y = (p * 2).sum()
+y.backward()
 p = p - 0.1 * p.grad
 ```
 
