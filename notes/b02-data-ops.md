@@ -6,6 +6,24 @@
 
 torch 行为在 torch 2.14 上跑过（CPU 与远程 4070S 各测一遍），pandas 在 2.3.3 上跑过，报错文本照抄实测输出。
 
+## 与书对应
+
+| 讲义小节 | 纸质书（第一版） | 电子版（第二版） |
+|---|---|---|
+| 1 两版代码的命名差别 | 2.2.1 创建`NDArray`（`nd` 模块） | [2.1 数据操作](https://zh.d2l.ai/chapter_preliminaries/ndarray.html) 的 MXNet tab（先 `npx.set_np()` 再用 `np`） |
+| 2 创建张量与形状 | 2.2.1 创建`NDArray` | 2.1.1 入门 |
+| 3 逐元素运算与拼接 | 2.2.2 运算 | 2.1.2 运算符 |
+| 4 广播机制 | 2.2.3 广播机制 | 2.1.3 广播机制 |
+| 5 索引与切片 | 2.2.4 索引 | 2.1.4 索引和切片 |
+| 6 内存复用与 in-place 操作 | 2.2.5 运算的内存开销 | 2.1.5 节省内存 |
+| 7 与 NumPy 互转 | 2.2.6 `NDArray`和NumPy相互变换 | 2.1.6 转换为其他Python对象 |
+| 8 数据预处理 | 无，本节补充 | [2.2 数据预处理](https://zh.d2l.ai/chapter_preliminaries/pandas.html) |
+| 自测题 | 无 | 无 |
+
+纸质书 2.2 与电子版 2.1、2.2 都有代码，纸质书是 MXNet 的 `nd`，电子版有 PyTorch tab；第 8 节纸质书没有，整节来自电子版 2.2。
+电子版 2.1、2.2 没有用 `d2l` 包的封装（直接 `import torch` 与 `import pandas as pd`），讲义与它一致，全程裸 torch 与 pandas。
+讲义 2.1 的 dtype 默认值、2.2 的 `torch.Tensor` 与 `torch.empty`、2.4 的 `view` 与 `contiguous`、2.5 的形状报错，这四处在两版书里都核不到，属本节补充。
+
 ## 1. 两版代码的命名差别
 
 v1 用 `nd` 模块（`NDArray`），v2 电子版的 MXNet tab 换成 numpy 风格的 `np` 并先调 `npx.set_np()`。
@@ -356,6 +374,66 @@ data["Alley"].value_counts()
 转成普通字典用 `.to_dict()`。
 
 注意 `value_counts()` 默认**不统计缺失值**。T4 的列统计信息要不要含缺失值，题目里怎么写的就怎么来。
+
+## 命令速查
+
+这一章用到的全部接口，按第一次出现的位置列。
+
+| 命令 | 作用 | 讲义哪一节 |
+|---|---|---|
+| `torch.arange(12)` | 建一维张量，默认 `int64` | 2.1 |
+| `torch.zeros(2, 3, 4)` | 全 0 张量 | 2.1 |
+| `torch.ones(3, 4)` | 全 1 张量 | 2.1 |
+| `torch.tensor([[2, 1], [1, 2]])` | 由数据建张量，dtype 从数据推断 | 2.2 |
+| `torch.normal(0., 1., size=(3, 4))` | 指定均值与标准差的正态采样 | 1 |
+| `torch.randn(3, 4)` | 标准正态采样，参数就是形状 | 2.1 |
+| `x.numel()` | 元素总数，对应书上的 `x.size` | 2.3 |
+| `x.size()` | 返回形状的方法；`x.size(0)` 取第 0 轴长度 | 2.3 |
+| `x.reshape(3, 4)` | 改形状，`-1` 表示该维长度由元素总数推断 | 2.4 |
+| `torch.exp(Y)` | 逐元素指数 | 3 |
+| `torch.cat([X, Y], dim=0)` | 沿指定轴拼接 | 3 |
+| `X.numpy()` | 转成 NumPy 数组，与张量共享内存 | 7 |
+| `torch.add(X, Y, out=Z)` | 结果写进 `out` 指定的张量 | 6 |
+| `torch.float32`、`torch.int64`、`torch.float64`、`torch.bool` | 显式指定 dtype 的常量 | 2.1 |
+| `torch.Tensor(2, 3)` | 历史遗留的类构造器，恒为 `float32`，不接受 `dtype` | 2.2 |
+| `torch.empty(2, 3)` | 未初始化的张量，内容是内存残留值 | 2.2 |
+| `x.shape` | 形状，类型是 `torch.Size` | 2.3 |
+| `x.dim()` | 轴数 | 2.3 |
+| `len(x)` | 第 0 轴长度 | 2.3 |
+| `Y.t()` | 转置，结果内存不连续 | 2.4 |
+| `Y.view(-1)` | 只在不复制内存的前提下改形状 | 2.4 |
+| `Y.is_contiguous()` | 判断内存是否连续 | 2.4 |
+| `Y.contiguous()` | 把不连续的张量复制成连续的 | 2.4 |
+| `Y.data_ptr()` | 底层内存地址，用来判断两个张量是否共享内存 | 2.4 |
+| `X == Y` | 逐元素比较，返回 `torch.bool` 张量 | 3 |
+| `X.sum()` | 全部元素求和，返回 0 维张量 | 3 |
+| `t.expand(3, 4)` | 广播成更大形状，不复制数据 | 4 |
+| `t.repeat(1, 4)` | 复制数据地扩展 | 4 |
+| `A.sum(axis=1, keepdims=True)` | 求和后把被压掉的轴留成长度 1，便于广播 | 4 |
+| `X.clone()` | 复制一份，与源张量分开 | 5 |
+| `torch.from_numpy(N)` | 由 NumPy 数组建张量，共享内存 | 7 |
+| `torch.as_tensor(N)` | 能共享内存就共享，否则复制 | 7 |
+| `.cpu()` | 把张量复制到 CPU，`.numpy()` 的前提 | 7 |
+| `.float()` | 转成 `float32` | 7 |
+| `.item()` | 单元素张量取成 Python 数值 | 7.1 |
+| `.cpu().numpy()` | 交给 NumPy、pandas、matplotlib 的标准写法 | 7.1 |
+| `.detach()` | 断开与计算图的联系，仍共享内存 | 7.1 |
+| `pd.read_csv(path)` | 读 CSV 文件，返回 `DataFrame` | 8.0 |
+| `data["Alley"]` | 按列名取一列，返回 `Series`；传列表取多列 | 8.0 |
+| `data.iloc[:, 0:2]` | 按位置取，两个维度用逗号隔开，左闭右开 | 8.0 |
+| `DataFrame.fillna(value)` | 把缺失值替换成 `value`，返回新表 | 8.1 |
+| `pd.Series({"A": 100.0})` | 造 `Series`，填充时按列名对齐 | 8.1 |
+| `DataFrame.mean(numeric_only=True)` | 逐列求均值，跳过非数值列 | 8.1 |
+| `DataFrame.dropna()` | 删掉含缺失值的行，`axis=1` 改成删列 | 8.1 |
+| `pd.get_dummies(inputs, dummy_na=True)` | 独热编码，缺失值也当作一类 | 8.2 |
+| `DataFrame.to_numpy(dtype=float)` | 转成 NumPy 数组，bool 列变成 1.0/0.0 | 8.2 |
+| `data.columns` | 所有列名，可以当列表遍历 | 8.3 |
+| `data.dtypes` | 每列的类型，字符串列显示 `object` | 8.3 |
+| `pd.api.types.is_numeric_dtype(data["NumRooms"])` | 判断一列是不是数值列 | 8.3 |
+| `Series.value_counts()` | 各取值出现的次数，默认不含缺失值 | 8.3 |
+| `Series.to_dict()` | 把 `Series` 转成普通字典 | 8.3 |
+
+`torch.Tensor` 与 `torch.tensor` 是两样东西，前者在上表里只用于说明坑在哪，正常写代码统一用 `torch.tensor`。
 
 ## 自测题
 
