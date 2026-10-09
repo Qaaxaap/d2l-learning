@@ -447,4 +447,4 @@ def grad_check(f, x, eps=1e-6):
     return (analytic - numeric).abs().max().item()
 ```
 
-float64 用来压低相减时的舍入误差；中心差分的截断误差是 $O(\eps^2)$，比单侧差分的 $O(\eps)$ 小一个量级；eps 取 $10^{-5}$ 到 $10^{-6}$，太小会让舍入误差被 eps 除之后放大（实测 float32 下 eps 取 $10^{-6}$ 误差达 1.19，float64 下同样步长是 1e-9 量级）。也可以直接用 `torch.autograd.gradcheck`，它同样要求 float64。
+float64 用来压低相减时的舍入误差；中心差分的截断误差是 $O(\epsilon^2)$，比单侧差分的 $O(\epsilon)$ 小一个量级；eps 取 $10^{-5}$ 到 $10^{-6}$，太小会让舍入误差被 eps 除之后放大（实测 float32 下 eps 取 $10^{-6}$ 误差达 1.19，float64 下同样步长是 1e-9 量级）。也可以直接用 `torch.autograd.gradcheck`，它同样要求 float64。
