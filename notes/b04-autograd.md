@@ -10,6 +10,10 @@
 
 手工求导在两层模型上还能做，到了几十层不现实，写错一个符号程序照样跑，只是不收敛。框架把链式法则机械化：前向计算时记下每一步运算构成计算图，反向时从标量损失出发逐步回代，这套机制叫自动微分。本单元练两种能力，一种看懂公式，知道 $\nabla_{\mathbf{x}}\mathbf{x}^\top\mathbf{x}=2\mathbf{x}$ 这类结果怎么来的；一种会用工具，知道 `.grad` 什么时候是 `None`、为什么反传前要清零。
 
+v1 附录《数学基础》的微分部分还有"泰勒展开"与"海森矩阵"两节，d2l 主线用不到：
+前者是优化算法收敛性分析的背景，后者是二阶方法的基础，而这本书里的优化器全是一阶的
+（B25 讲的动量、Adam 都只在一阶梯度的基础上做文章）。这里记一笔，需要时回去翻附录。
+
 ## 1 导数、偏导数、梯度、链式法则
 
 ### 1.1 导数
@@ -303,7 +307,7 @@ $$f'(x)\approx\frac{f(x+h)-f(x-h)}{2h},\qquad \text{截断误差 } O(h^2),$$
 
 记录训练损失时常写成 `total_loss += loss`。`loss` 是张量，累加结果仍连着图，整条链路无法释放。实测按张量累加 1、5、20 次后，变量可达的计算图节点数为 5、21、81，随迭代次数线性增长；换成 `total_loss += loss.item()` 后只剩当前这一步的图。取标量用 `loss.item()`，返回 Python 浮点数，不连图。`float(loss)` 也能用，但会触发警告 `Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior`，它等价于隐式 detach。对多元素张量调用 `item()` 报 `RuntimeError: a Tensor with 4 elements cannot be converted to Scalar`。
 
-### 5.6 in-place 操作与版本计数
+### 5.8 in-place 操作与版本计数
 
 带 `requires_grad` 的张量上做 in-place，会出现三类结果：
 
@@ -335,6 +339,39 @@ x.grad               # tensor([3.7183, 8.3891])，正确结果是 tensor([2.7183
 每个分量正好差 1.0，也就是被加进去的那部分。梯度算错却没有任何提示。
 
 参数是叶子，更新要写在 `torch.no_grad()` 里：`with torch.no_grad(): p -= 0.1 * p.grad`。`backward()` 累加梯度，不清零会叠加：实测连续两次 `(x * x).sum().backward()` 得到 `tensor([4., 8.])`。参数更新要写在 `no_grad()` 里，见 5.5 节。
+
+### 5.9 Python 控制流不影响求导
+
+动态图的含义是：计算图在**前向执行时**按实际走过的路径搭出来。所以 `if`、`while`、
+函数调用这些 Python 控制流都不妨碍求导，只要走过的那些操作可微。
+
+```python
+def f(a):
+    b = a * 2
+    while b.norm() < 1000:
+        b = b * 2
+    if b.sum() > 0:
+        c = b
+    else:
+        c = 100 * b
+    return c
+
+a = torch.randn(size=(), requires_grad=True)
+d = f(a)
+d.backward()
+```
+
+循环多少次、走哪个分支都取决于 `a` 的值，反传照样工作。这个函数的结果一定是 `k * a`
+的形式（`k` 是循环里累乘出来的 2 的幂，再乘 100 或不乘），所以 `a.grad` 应当等于 `d / a`：
+
+```python
+a.grad == d / a          # tensor(True)
+```
+
+对照早期静态图框架（如 TensorFlow 1.x）：图要先定义好再运行，`if` 和 `while` 必须用框架
+提供的特殊算子来表达，Python 的 `if` 在图里不起作用。torch 不需要，因为图是边跑边建的。
+
+代价是每次前向都要重新搭一次图，没有"图复用"这回事。
 
 ## 6 自测题
 
