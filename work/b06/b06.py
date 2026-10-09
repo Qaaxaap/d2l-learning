@@ -106,9 +106,12 @@ def train_concise(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
     dataset = TensorDataset(X, y)
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
     net = nn.Sequential(nn.Linear(X.numel() / X.size(0), 1))
+    optimizer = torch.optim.SGD(net.parameters(), lr=0.03)
     for epoch in range(num_epochs):
         for Xi, yi in loader:
-            loss = nn.Module.loss(net(Xi), yi)
+            loss = nn.MSELoss(net(Xi), yi)
             optimizer.zero_grad()
             loss.backward()
+            optimizer.step()
+
 
