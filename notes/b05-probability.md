@@ -226,9 +226,23 @@ torch.bincount(rolls, minlength=6)       # tensor([1, 0, 2, 0, 0, 1])
 注意编号从 0 开始，而骰子的面是 1 到 6，换算时要留意。
 
 两个实测的坑。`total_count` 必须是整数，传 `1.0` 会报
-`NotImplementedError: inhomogeneous total_count is not supported`。需要可复现的随机数时用底层的
-`torch.multinomial(probs, num_samples, replacement=True, generator=g)`，其中
-`g = torch.Generator().manual_seed(0)`。
+`NotImplementedError: inhomogeneous total_count is not supported`。
+
+### 9.1 让随机数可复现
+
+默认每次跑出来的随机数都不一样。要复现就固定种子：
+
+```python
+g = torch.Generator().manual_seed(0)
+rolls = torch.multinomial(probs, 100, replacement=True, generator=g)
+```
+
+`torch.Generator()` 造一个随机数发生器，`.manual_seed(0)` 把它的种子固定为 0。
+之后凡是传了 `generator=g` 的采样，都按这个种子产生序列，同样的代码每次都得到同样的结果。
+
+换个数字就是另一组随机数，同样可复现。调试时固定种子能让你把"结果变了"和"随机波动"分开。
+
+**注意**：不传 `generator` 的调用走的是全局随机状态，不受这里的 `g` 影响。
 
 （v2 的 MXNet tab 用 `np.random.multinomial`，返回次数向量，与 torch 的分布对象写法不同。）
 
