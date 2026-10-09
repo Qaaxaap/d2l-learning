@@ -132,13 +132,16 @@ def main() -> int:
         assert torch.allclose(p, want), (
             f"梯度是 [2,4]，除以批量 2 再乘 lr 0.1，p 应变成 {want.tolist()}，得到 {p.tolist()}"
         )
-        assert p.grad is not None and torch.allclose(p.grad, torch.zeros(2)), (
-            f"更新后梯度应当清零，得到 {p.grad}"
-        )
-        before = p.detach().clone()
-        mod.sgd([p], 0.1, 2)
-        assert torch.allclose(p.detach(), before), (
-            "梯度已清零，再调一次 sgd 不应当改变参数"
+        # 清零的两种写法都收：zero_() 填 0，或者置成 None（torch 2.x 的默认做法）
+        cleared = p.grad is None or torch.allclose(p.grad, torch.zeros(2))
+        assert cleared, f"更新后梯度应当清零或置空，得到 {p.grad}"
+        # 清零要真的生效：再反传一次，梯度不该带着上一次的
+        (p * p).sum().backward()
+        want_grad = 2 * p.detach()
+        assert torch.allclose(p.grad, want_grad), (
+            f"再反传一次后梯度应为 2p = {[round(v, 3) for v in want_grad.tolist()]}，"
+            f"得到 {[round(v, 3) for v in p.grad.tolist()]}。"
+            "数值是两倍说明上一次的梯度没清干净"
         )
 
     @case("T5 从零实现训练")
