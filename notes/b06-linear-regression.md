@@ -328,7 +328,57 @@ from torch.utils.data import DataLoader, TensorDataset
 注意它把输出维度放在前面，与你手写时 `(2, 1)` 的约定相反。这是 `nn.Linear` 的约定，
 不是错误。
 
-### 5.1.1 除以批量大小这件事，两边位置不同
+### 5.1.1 怎么用 `nn` 声明一个模型
+
+`nn.Linear(2, 1)` 是一个**层**（把 2 维输入映射到 1 维输出），不是完整模型。
+把它变成能调用的模型有两种写法。
+
+**写法一：`nn.Sequential`。** 按顺序把层串起来，调用时依次穿过：
+
+```python
+net = nn.Sequential(nn.Linear(2, 1))
+```
+
+层多的时候：
+
+```python
+net = nn.Sequential(nn.Linear(2, 8), nn.ReLU(), nn.Linear(8, 1))
+```
+
+规则是前一层的输出形状必须与后一层的输入形状对得上。`Sequential` 只负责按顺序调用。
+
+**怎么写 `net(X)`**：`nn.Module` 定义了 `__call__`，它转去调 `forward`。
+所以 `net(X)` 与 `net.forward(X)` 结果相同，但**要写 `net(X)`**——
+`__call__` 里还挂着 hook 等机制，直接调 `forward` 会绕过去。
+
+**写法二：继承 `nn.Module`。** 层的顺序拼接用 `Sequential` 就够；
+需要写控制流（分支、循环）或让同一层被多次调用时，才自己定义。结构是这样：
+
+```python
+class 你的模型名(nn.Module):
+    def __init__(self, 超参数):
+        super().__init__()          # 必须第一句
+        self.某个参数 = nn.Parameter(...)
+
+    def forward(self, X):
+        ...                          # 返回预测值
+```
+
+三个要点：
+
+1. **`super().__init__()` 必须第一句调用。** `nn.Module` 的初始化里建立了参数登记机制，
+   不调它，后面给 `self` 挂参数会报错。
+2. **`forward` 定义前向怎么算**，输入输出都是张量。
+3. **要训练的量必须包成 `nn.Parameter`。** 写成 `self.w = torch.zeros(2, 1)` 也能跑，
+   但它不会出现在 `net.parameters()` 里，优化器看不到它，训练时它永远不动。
+
+**参数在哪**：`net.parameters()` 是生成器，遍历模型里全部 `nn.Parameter`。
+`torch.optim.SGD(net.parameters(), lr=...)` 就是靠它拿到要更新的量。
+`nn.Linear(in_features, out_features)` 内部有两个参数：`weight` 形状
+`(out_features, in_features)`、`bias` 形状 `(out_features,)`——
+注意它把输出维放在前面，与你手写 `(d, 1)` 的约定相反。
+
+### 5.1.2 除以批量大小这件事，两边位置不同
 
 这是书上没点明的一处差异，值得单独记。
 
