@@ -170,6 +170,8 @@ torch.mm(A, C)         # 同上，只接受两个二维张量
 
 ## 4. 降维求和与 keepdim
 
+![降维求和的示意：沿 dim=0 时每一列压成一个数，结果形状 (4,)；沿 dim=1 时每一行压成一个数，结果形状 (3,)。两个结果都是一维，被求和的那一维消失](figs/b03-reduction.png)
+
 ```python
 A = torch.arange(20, dtype=torch.float32).reshape(5, 4)
 A.sum()                  # 0 维张量
