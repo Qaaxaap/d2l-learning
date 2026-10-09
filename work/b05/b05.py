@@ -40,9 +40,9 @@ def mean_var(values: torch.Tensor, probs: torch.Tensor) -> tuple:
     返回两个 0 维张量。
     """
     x = values * probs
-    v = torch.tensor(x.sum())
-    e = torch.tensor((values ** 2 * probs).sum() - v.item() ** 2)
-    return (v, e)
+    e = x.sum()
+    v = (values ** 2 * probs).sum() - e.item() ** 2
+    return (e, v)
 
 def posterior(p_d_given_h1: float, p_d_given_h0: float, p_h1: float) -> float:
     """给定 P(D=1|H=1)、P(D=1|H=0)、P(H=1)，返回 P(H=1|D=1)。
