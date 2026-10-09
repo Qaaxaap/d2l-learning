@@ -151,6 +151,12 @@ $$P(\mathbf{Y}\mid\mathbf{X})=\prod_{i=1}^n P(\mathbf{y}^{(i)}\mid\mathbf{x}^{(i
 
 ## 6 大数定律
 
+![大数定律的实测：左图是六个面各自的累积频率，随投掷次数增加收敛到 1/6；右图是对 1/6 的最大偏差，取对数坐标后沿 1/sqrt(n) 的斜率下降](figs/b05-convergence.png)
+
+这张图是真掷了 2000 次骰子跑出来的（`tools/figs/b05_convergence.py`，固定随机种子）。
+左边是定律本身要说的收敛，右边的斜率是它的速度：偏差按 $1/\sqrt{n}$ 缩小，
+这正是下一节中心极限定理给出的量级。
+
 设 $X_1,\dots,X_n$ 独立同分布，$E[X_i]=\mu$、$\mathrm{Var}[X_i]=\sigma^2<\infty$。对任意 $\epsilon>0$，
 
 $$P\left(|\bar X-\mu|\geq\epsilon\right)\leq\frac{\mathrm{Var}[\bar X]}{\epsilon^2}=\frac{\sigma^2}{n\epsilon^2}\xrightarrow[n\to\infty]{}0 .$$
