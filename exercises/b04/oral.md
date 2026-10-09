@@ -5,6 +5,9 @@
 **答题要求**：用中文和代码描述即可。**公式不必写 LaTeX**——"A 加 A 的转置再乘 x"这种说法
 完全可以，没必要打成 `$(A+A^\top)x$`。这门的重点是把想法讲清楚，不是排版。
 
+原稿里两道微积分常识题（导数和微分的关系、偏导数与梯度）在第 2026-10-10 那次口试后被删掉了，
+学习者判断那是常识、不值得占题目位置。现在共七题。
+
 题目分两档：
 
 - **必会**：后面写代码直接要用，答不出来要补课
@@ -12,35 +15,7 @@
 
 ## 第一层：是什么
 
-【了解】 **Q1** 导数和微分是什么关系？用微分近似函数值时，误差为什么是二阶的？
-
-<details><summary>参考答点</summary>
-
-导数是函数在某一点的瞬时变化率，是一个数：$f'(x)=\lim_{h\to 0}\frac{f(x+h)-f(x)}{h}$。
-
-微分是用导数构造的**线性近似**：$f(x+\Delta x)\approx f(x)+f'(x)\Delta x$。
-把右边那部分写成 $\mathrm{d}f=f'(x)\Delta x$，它就是 $\Delta f$ 的主部。
-
-误差是二阶的，因为泰勒展开的下一项是 $\frac{1}{2}f''(x)\Delta x^2$，
-所以在 $\Delta x\to 0$ 时误差按 $\Delta x^2$ 缩小。也正因为是线性近似，
-梯度下降才能用"沿负梯度方向走一小步"来近似地降低函数值。
-
-</details>
-
-【了解】 **Q2** 偏导数和梯度是什么关系？梯度指向哪个方向？
-
-<details><summary>参考答点</summary>
-
-偏导数是多元函数对某一个变量求导，其余变量当常数。
-
-梯度把所有偏导数打包成一个向量：$\nabla_{\mathbf{x}}f=\left[\frac{\partial f}{\partial x_1},\dots,\frac{\partial f}{\partial x_n}\right]^\top$。
-
-梯度指向函数值**上升最快**的方向，它的反方向下降最快。所以梯度下降沿 $-\nabla f$ 走。
-梯度的每个分量是"那个变量单独动一点，函数变化多少"。
-
-</details>
-
-【必会】 **Q3** `requires_grad=True` 做了什么？`backward()` 做了什么？
+【必会】 **Q1** `requires_grad=True` 做了什么？`backward()` 做了什么？
 
 <details><summary>参考答点</summary>
 
@@ -56,7 +31,7 @@
 
 ## 第二层：为什么
 
-【了解】 **Q4** $y=\mathbf{x}^\top\mathbf{A}\mathbf{x}$ 的梯度为什么是 $(\mathbf{A}+\mathbf{A}^\top)\mathbf{x}$？$\mathbf{A}$ 对称时为什么变成 $2\mathbf{A}\mathbf{x}$？
+【了解】 **Q2** $y=\mathbf{x}^\top\mathbf{A}\mathbf{x}$ 的梯度为什么是 $(\mathbf{A}+\mathbf{A}^\top)\mathbf{x}$？$\mathbf{A}$ 对称时为什么变成 $2\mathbf{A}\mathbf{x}$？
 
 <details><summary>参考答点</summary>
 
@@ -74,7 +49,7 @@ $\mathbf{A}$ 对称时 $\mathbf{A}^\top=\mathbf{A}$，两项相同，合成 $2\m
 
 </details>
 
-【必会】 **Q5** `x.grad` 是 `None` 有哪几种原因？分别怎么排查？
+【必会】 **Q3** `x.grad` 是 `None` 有哪几种原因？分别怎么排查？
 
 <details><summary>参考答点</summary>
 
@@ -92,7 +67,7 @@ $\mathbf{A}$ 对称时 $\mathbf{A}^\top=\mathbf{A}$，两项相同，合成 $2\m
 
 </details>
 
-【必会】 **Q6** 训练循环里为什么每轮都要清零梯度？忘了写会怎样？
+【必会】 **Q4** 训练循环里为什么每轮都要清零梯度？忘了写会怎样？
 
 <details><summary>参考答点</summary>
 
@@ -111,7 +86,7 @@ PyTorch 的写法是 `optimizer.zero_grad()`（或手工 `p.grad = None`）。
 
 ## 第三层：应用与陷阱
 
-【了解】 **Q7** `retain_graph=True` 解决什么问题？什么时候必须用？代价是什么？
+【了解】 **Q5** `retain_graph=True` 解决什么问题？什么时候必须用？代价是什么？
 
 <details><summary>参考答点</summary>
 
@@ -126,7 +101,7 @@ PyTorch 的写法是 `optimizer.zero_grad()`（或手工 `p.grad = None`）。
 
 </details>
 
-【必会】 **Q8** `with torch.no_grad():` 与 `.detach()` 分别适合什么场合？
+【必会】 **Q6** `with torch.no_grad():` 与 `.detach()` 分别适合什么场合？
 
 <details><summary>参考答点</summary>
 
@@ -146,7 +121,7 @@ with torch.no_grad():
 
 </details>
 
-【了解】 **Q9** 梯度检验为什么要用 `float64` 和中心差分？步长取多大合适？
+【了解】 **Q7** 梯度检验为什么要用 `float64` 和中心差分？步长取多大合适？
 
 <details><summary>参考答点</summary>
 
@@ -165,7 +140,7 @@ torch 自带 `torch.autograd.gradcheck`，它同样要求输入是 float64。
 
 ## 评分
 
-- **必会**四题（Q3、Q5、Q6、Q8）全对才算通过
-- **了解**五题答不上来不扣分，我讲一遍即可；答对其中两题以上算超额
+- **必会**四题（Q1、Q3、Q4、Q6）全对才算通过
+- **了解**三题（Q2、Q5、Q7）答不上来不扣分，我讲一遍即可
 - 必会题答错 → 回去看对应小节，隔天补考那一题
-- 了解题里的 Q4 与 Q7 只在真用得上时才回看（写自定义层、算高阶导时）
+- 了解题里的 Q2 与 Q5 只在真用得上时才回看（写自定义层、算高阶导时）
