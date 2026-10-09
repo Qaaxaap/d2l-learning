@@ -137,6 +137,7 @@ def train_concise(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
     - 数据用 TensorDataset 包起来，交给 DataLoader 分批
     - 损失用 nn.MSELoss()
     - 优化器用 torch.optim.SGD
+    - losses 与 T5 一样，是每个 epoch 结束时的损失，Python 浮点数组成的列表
     """
 ```
 

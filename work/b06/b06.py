@@ -1,8 +1,23 @@
-from pyexpat import features
+"""
+import torch
+import torch.nn as nn
+
+w = torch.randn(2, 1, requires_grad=True)
+b = torch.zeros(1, requires_grad=True)
+lr, batch_size = 0.5, 10
+net = lambda X: X @ w + b
+loss_fn = lambda y_hat, y: (y_hat - y) ** 2
+
+for epoch in range(3):
+    for X, y in batches:
+        l = loss_fn(net(X), y) 没有清空上次的梯度，会叠加
+        l.backward() 这里l是张量，.sum()再反向传播
+        w = w - lr * w.grad / batch_size 被计入了计算图，应当 no_grad 包裹
+        b = b - lr * b.grad / batch_size
+"""
 
 import torch
 import torch.nn as nn
-from torch.nn.modules import loss
 from torch.utils.data import DataLoader, TensorDataset
 
 def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
@@ -105,13 +120,17 @@ def train_concise(X: torch.Tensor, y: torch.Tensor, lr: float = 0.03,
     torch.manual_seed(seed)
     dataset = TensorDataset(X, y)
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
-    net = nn.Sequential(nn.Linear(X.numel() / X.size(0), 1))
+    net = nn.Sequential(nn.Linear(X.numel() // X.size(0), 1))
     optimizer = torch.optim.SGD(net.parameters(), lr=0.03)
+    loss = nn.MSELoss()
+    losses = []
     for epoch in range(num_epochs):
         for Xi, yi in loader:
-            loss = nn.MSELoss(net(Xi), yi)
+            l = loss(net(Xi), yi)
             optimizer.zero_grad()
-            loss.backward()
+            l.backward()
             optimizer.step()
+        losses.append(loss(net(X), y))
+    return net, losses
 
 
