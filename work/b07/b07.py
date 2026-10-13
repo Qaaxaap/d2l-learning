@@ -154,7 +154,7 @@ def train_concise(train_iter, test_iter, num_epochs: int = 5,
             l = loss_fn(net(X), y)
             l.backward()
             optimizer.step()
-            total_loss += l
+            total_loss += l.item()
             total_size += X.size(0)
         d["train_loss"].append(float(total_loss / total_size))
         d["train_acc"].append(evaluate_accuracy(net, train_iter)) 
