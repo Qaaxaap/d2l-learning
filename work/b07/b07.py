@@ -1,3 +1,20 @@
+"""
+import torch
+import torch.nn as nn
+
+net = nn.Sequential(nn.Linear(784, 10))
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
+
+for epoch in range(5):
+    for X, y in train_iter: 梯度未清零 会累加
+        X = X.reshape(X.shape[0], -1)
+        out = torch.softmax(net(X), dim=1)
+        l = loss_fn(out, y) 交叉熵内部含有softmax,不需要再做一次，直接用net(X), y跑loss_fn
+        optimizer.step()
+        l.backward() 求梯度过晚，无法正确更新参数，应互换更新和求梯度两行
+"""
+
 from numpy import argmax
 import torch
 import torch.nn as nn
@@ -59,7 +76,20 @@ def make_net(num_inputs: int = 784, num_outputs: int = 10, seed: int = 0):
     W, b = torch.normal(size=(num_inputs, num_outputs), mean=0, std=0.01, requires_grad=True), torch.zeros((num_outputs,), requires_grad=True)
     return (W, b)
 
-def sgd(params: list, lr: float, batch_size: int) -> None:
+def sgd(params: list, lr: float, batch_simport torch
+import torch.nn as nn
+
+net = nn.Sequential(nn.Linear(784, 10))
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
+
+for epoch in range(5):
+    for X, y in train_iter:
+        X = X.reshape(X.shape[0], -1)
+        out = torch.softmax(net(X), dim=1)
+        l = loss_fn(out, y)
+        optimizer.step()
+        l.backward()ize: int) -> None:
     """小批量随机梯度下降，与 B06 的 T4 相同，这一章自己重写一遍。
 
     对 params 里的每个参数做 p ← p - lr * p.grad / batch_size。
@@ -113,7 +143,33 @@ def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
     ret = torch.zeros(size=(q, q), dtype=torch.int64)
     for X, y in loader:
         ya = net(X.reshape(X.size(0), -1)).argmax(dim=-1)
-        ret[y, ya] += 1
+        for t, p in zip(y, ya):
+            ret[t, p] += 1
     return ret
 
+def train_concise(train_iter, test_iter, num_epochs: int = 5,
+                  lr: float = 0.1, seed: int = 0) -> dict:
+    """用 nn.Linear、nn.CrossEntropyLoss、torch.optim.SGD 重写一遍。
 
+    返回的字典键与 T4 相同。
+    """
+    torch.manual_seed(seed)
+    net = nn.Sequential(nn.Linear(784, 10))
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    d = {}
+    d["train_loss"], d["train_acc"], d["test_acc"] = [], [], [] 
+    for _ in range(num_epochs):
+        total_loss, total_size = 0, 0
+        for X, y in train_iter:
+            optimizer.zero_grad()
+            X = X.reshape(X.size(0), -1)
+            l = loss_fn(net(X), y)
+            l.backward()
+            optimizer.step()
+            total_loss += l
+            total_size += X.size(0)
+        d["train_loss"].append(float(total_loss / total_size))
+        d["train_acc"].append(evaluate_accuracy(net, train_iter)) 
+        d["test_acc"].append(evaluate_accuracy(net, test_iter))
+    return d
