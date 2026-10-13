@@ -76,20 +76,7 @@ def make_net(num_inputs: int = 784, num_outputs: int = 10, seed: int = 0):
     W, b = torch.normal(size=(num_inputs, num_outputs), mean=0, std=0.01, requires_grad=True), torch.zeros((num_outputs,), requires_grad=True)
     return (W, b)
 
-def sgd(params: list, lr: float, batch_simport torch
-import torch.nn as nn
-
-net = nn.Sequential(nn.Linear(784, 10))
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
-
-for epoch in range(5):
-    for X, y in train_iter:
-        X = X.reshape(X.shape[0], -1)
-        out = torch.softmax(net(X), dim=1)
-        l = loss_fn(out, y)
-        optimizer.step()
-        l.backward()ize: int) -> None:
+def sgd(params: list, lr: float, batch_size: int) -> None:
     """小批量随机梯度下降，与 B06 的 T4 相同，这一章自己重写一遍。
 
     对 params 里的每个参数做 p ← p - lr * p.grad / batch_size。
