@@ -279,7 +279,39 @@ $$\hat y_j = \frac{\exp(o_j - m)}{\sum_k \exp(o_k - m)} .$$
 **`dim` 为什么是 1**：`dim=0` 是批量那一维，`dim=1` 才是类别那一维。
 写错成 `dim=0` 不报错，只是每一列单独归一化，结果全错。这是这一章最容易犯的错。
 
-### 5.2.1 用 `clamp` 绕过下溢是错的
+### 5.2.1 不经过 softmax 直接算 log 概率
+
+上面说"`log_softmax` 比先 softmax 再取 log 精度好"。它内部靠的是一个恒等式：
+
+$$\log \hat y_j = \log \frac{\exp(o_j)}{\sum_k \exp(o_k)} = o_j - \log \sum_k \exp(o_k) .$$
+
+右边那一项叫 **log-sum-exp**，记作 $\operatorname{logsumexp}(\mathbf{o})$。
+这个变形的好处是**不必先算出概率**：
+
+- 左式要先得到 $\hat y_j$（可能下溢成 0），再取 log（变成 $-\infty$）
+- 右式只做减法，$o_j$ 与 $\log\sum_k\exp(o_k)$ 都是有限值
+
+**logsumexp 自己也要稳定地算**，手法与 softmax 一样是平移：
+
+$$\operatorname{logsumexp}(\mathbf{o}) = m + \log \sum_k \exp(o_k - m),\qquad m = \max_k o_k .$$
+
+减掉 $m$ 之后，指数里的数最大是 0，不会上溢；求和的结果至少为 1
+（因为总有一项 $o_k - m = 0$），取 log 也不会掉到 $-\infty$。
+
+**串起来，自己实现交叉熵是三步**：
+
+1. 按类别维取最大值 $m$
+2. 算 $\operatorname{logsumexp} = m + \log\sum_k\exp(o_k - m)$
+3. 用 $o_j - \operatorname{logsumexp}$ 得到每个类别的 log 概率，挑出正确类别那一项，取负
+
+第 3 步之后要不要取平均，取决于约定：本课程的约定是返回**和**，除法留给 `sgd`
+（见 6.1 节的说明）。
+
+对照一下这两个封装各做了哪几步：`torch.log_softmax(x, dim)` 做的就是上面第 1 到 3 步的
+前半段；`nn.CrossEntropyLoss` 在此之上再挑正确类别、取负、按 `reduction` 合并。
+题目禁止调用它们，是因为这三步就是这一章要练的东西。
+
+### 5.2.2 用 `clamp` 绕过下溢是错的
 
 一个自然的想法是：既然 `log(0)` 会变 `-inf`，那就给概率设个下限，
 写成 `torch.log(p.clamp_min(1e-12))`。**不要这么做**，它会引入偏差。
