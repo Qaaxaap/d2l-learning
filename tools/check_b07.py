@@ -119,7 +119,10 @@ def main() -> int:
     @case("T3 随机模型的准确率")
     def _t3():
         _, test_iter = get_iters()
-        W, b = mod.make_net()
+        # 断言自己造一个随机线性模型，不依赖 T4 的 make_net（那是后面才写的）
+        g = torch.Generator().manual_seed(0)
+        W = torch.randn(784, 10, generator=g) * 0.01
+        b = torch.zeros(10)
         acc = mod.evaluate_accuracy(lambda X: X @ W + b, test_iter)
         assert acc < 0.3, (
             f"未训练的模型应当接近随机水平，得到 {acc:.4f}。"
@@ -145,7 +148,9 @@ def main() -> int:
     @case("T5 混淆矩阵")
     def _t5():
         _, test_iter = get_iters()
-        W, b = mod.make_net()
+        g = torch.Generator().manual_seed(0)
+        W = torch.randn(784, 10, generator=g) * 0.01
+        b = torch.zeros(10)
         net = lambda X: X @ W + b  # noqa: E731
         cm = mod.confusion_matrix(net, test_iter)
         assert tuple(cm.shape) == (10, 10), f"形状应为 (10, 10)，得到 {tuple(cm.shape)}"

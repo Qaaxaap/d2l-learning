@@ -38,11 +38,18 @@ def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
     """
     return float((logits.argmax(dim=1) == y).sum() / logits.size(0))
 
-def evaluate_accuracy(net, data_iter) -> float:
+def evaluate_accuracy(net, loader) -> float:
     """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
 
-    在整个 data_iter 上算准确率，返回 Python 浮点数。
+    在整个 loader 上算准确率，返回 Python 浮点数。
     评估过程不应建立计算图。
     """
-    
+    t, sum = 0, 0
+    with torch.no_grad():
+        for X, y in loader:
+           ya = net(X) 
+           t += int((ya.argmax(dim=1) == y).sum())
+           sum += ya.size(0)
+    return t / sum
+           
 
