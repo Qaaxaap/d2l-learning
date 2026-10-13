@@ -112,7 +112,18 @@ def evaluate_accuracy(net, loader) -> float:
 
 ## T4 从零实现：训练
 
+这一题要三个零件：T1 的 `cross_entropy`、下面这个 `sgd`、以及参数初始化。
+
 ```python
+def sgd(params: list, lr: float, batch_size: int) -> None:
+    """小批量随机梯度下降，与 B06 的 T4 相同，这一章自己重写一遍。
+
+    对 params 里的每个参数做 p ← p - lr * p.grad / batch_size。
+    要求：就地更新、更新后就地清零该参数的梯度、过程中不建计算图。
+    注意这里的除法不能省：T1 的 cross_entropy 返回的是和，不是平均。
+    """
+
+
 def make_net(num_inputs: int = 784, num_outputs: int = 10, seed: int = 0):
     """返回 (W, b) 两个叶子张量：W 形状 (784, 10) 用均值 0、标准差 0.01 的正态随机数，
     b 形状 (10,) 用全零。都用 seed 保证可复现，都开 requires_grad。"""

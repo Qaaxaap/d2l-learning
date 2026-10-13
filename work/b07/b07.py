@@ -74,7 +74,7 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
     """
     W, b = make_net(seed=seed)
     d = {}
-    d["train_loss"], d["train_acc"], d["test_acc"] = []
+    d["train_loss"], d["train_acc"], d["test_acc"] = [], [], []
     for _ in range(num_epochs):
         loss, sum = 0, 0
         for X, y in train_iter:
