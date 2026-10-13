@@ -4,10 +4,11 @@ version = "0.0.0"
 description = "动手学深度学习（torch 版）练习仓库"
 requires-python = ">=3.14"
 
-# 解释器和科学计算包用系统那份（Arch 的 python-pytorch-cuda 等），
-# 所以这里默认不声明任何依赖，跑脚本直接 python3 即可。
-# 需要系统没有的包时用 `uv add <包名>`，它会装进项目内的 .venv，
-# 和系统包共存（.venv 创建时带 --system-site-packages，见 Makefile）。
+# 解释器和科学计算包用 nix profile 那份（~/nix 的 modules/packages.nix：
+# torch、numpy、pandas、matplotlib、d2l 等），所以这里默认不声明任何依赖，
+# 跑脚本直接 python3 即可。
+# 需要 profile 里没有的包时用 `uv add <包名>`，它会装进项目内的 .venv，
+# 和 profile 包共存（.venv 创建时带 --system-site-packages，见 justfile）。
 dependencies = []
 
 [tool.uv]

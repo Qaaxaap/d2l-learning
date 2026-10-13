@@ -16,11 +16,11 @@ run f:
 check u:
     python3 tools/check_{{u}}.py
 
-# 需要额外包时用：建带系统包可见性的 .venv 并同步依赖
+# 需要额外包时用：建带 profile 包可见性的 .venv 并同步依赖
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    [ -d .venv ] || uv venv --system-site-packages --python /usr/bin/python3
+    [ -d .venv ] || uv venv --system-site-packages --python "$(command -v python3)"
     uv sync
 
 # 删掉 .venv 与 __pycache__
