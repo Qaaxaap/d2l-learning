@@ -1,3 +1,4 @@
+from numpy import argmax
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -22,8 +23,26 @@ def cross_entropy(logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
     不许调用 nn.CrossEntropyLoss、torch.log_softmax 或 torch.logsumexp。
     """
-    p = softmax(logits)
+    mx = logits.max(dim = -1, keepdim=True).values
+    lse = mx + torch.log(torch.exp(logits - mx).sum(dim=1, keepdim=True))
     n = logits.size(0)
     idx = torch.arange(n)
-    return -torch.log(p[idx, y].clamp_min(1e-5)).sum()
+    lt = logits - lse
+    return -(lt[idx, y]).sum()
+
+def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
+    """返回命中率，Python 浮点数。
+
+    logits 形状 (n, q)，y 形状 (n,) 是整数标签。
+    不需要先算 softmax（想想为什么）。
+    """
+    return float((logits.argmax(dim=1) == y).sum() / logits.size(0))
+
+def evaluate_accuracy(net, data_iter) -> float:
+    """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
+
+    在整个 data_iter 上算准确率，返回 Python 浮点数。
+    评估过程不应建立计算图。
+    """
+    
 

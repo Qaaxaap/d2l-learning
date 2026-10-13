@@ -47,11 +47,11 @@ def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
     return (pred == y).float().mean().item()
 
 
-def evaluate_accuracy(net, data_iter) -> float:
+def evaluate_accuracy(net, loader) -> float:
     """整个数据集上的准确率，不建图。"""
     correct, total = 0, 0
     with torch.no_grad():
-        for X, y in data_iter:
+        for X, y in loader:
             X = X.reshape(X.shape[0], -1)
             pred = net(X).argmax(dim=1)
             correct += (pred == y).sum().item()
@@ -96,10 +96,10 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
     return {"train_loss": train_loss, "train_acc": train_acc, "test_acc": test_acc}
 
 
-def confusion_matrix(net, data_iter, q: int = 10) -> torch.Tensor:
+def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
     cm = torch.zeros(q, q, dtype=torch.long)
     with torch.no_grad():
-        for X, y in data_iter:
+        for X, y in loader:
             X = X.reshape(X.shape[0], -1)
             pred = net(X).argmax(dim=1)
             for t, p in zip(y.tolist(), pred.tolist()):

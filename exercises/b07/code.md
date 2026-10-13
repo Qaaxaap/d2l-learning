@@ -24,6 +24,25 @@ softmax 与交叉熵都要自己算，数值稳定的平移也要自己写（T6 
 
 ---
 
+## 先看一段：关于迭代器
+
+下面几道题里的 `loader`、`train_iter`、`test_iter` 都是**参数**，由验收脚本传进来
+（类型是 `torch.utils.data.DataLoader`）。你不用实现它们，但要知道它们产出什么：
+
+- 每次迭代给一个 `(X, y)`
+- `X` 形状 `(batch, 1, 28, 28)`，像素值已经缩到 0 到 1
+- `y` 形状 `(batch,)`，元素是 0 到 9 的整数
+- 最后一个批量的样本数可能小于 `batch_size`
+
+**图像要不要拉平、在哪一步拉平由你决定**，但同一个脚本里要统一。模型是
+`nn.Linear(784, 10)`，它只接受 `(n, 784)`。在取数据时拉平、或者在送进模型前拉平，
+两种做法都对。
+
+别与 B06 的 `data_iter` 混：那是你自己写的生成器，签名是
+`data_iter(batch_size, features, labels, seed)`；这里的 `loader` 是外部传进来的 `DataLoader`。
+
+---
+
 ## T1 softmax 与交叉熵
 
 ```python
@@ -78,10 +97,10 @@ def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
 ## T3 在数据集上评估
 
 ```python
-def evaluate_accuracy(net, data_iter) -> float:
+def evaluate_accuracy(net, loader) -> float:
     """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
 
-    在整个 data_iter 上算准确率，返回 Python 浮点数。
+    在整个 loader 上算准确率，返回 Python 浮点数。
     评估过程不应建立计算图。
     """
 ```
@@ -123,7 +142,7 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
 ## T5 混淆矩阵
 
 ```python
-def confusion_matrix(net, data_iter, q: int = 10) -> torch.Tensor:
+def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
     """返回 (q, q) 的整数张量。
 
     第 i 行第 j 列 = 真实类别是 i 而被预测成 j 的样本数。
@@ -134,7 +153,7 @@ def confusion_matrix(net, data_iter, q: int = 10) -> torch.Tensor:
 | 检查 | 期望 |
 |---|---|
 | 矩阵形状 | `(10, 10)` |
-| 所有元素之和 | 等于 `data_iter` 里的样本总数 |
+| 所有元素之和 | 等于 `loader` 里的样本总数 |
 | 对角线之和 / 总数 | 与 `evaluate_accuracy` 返回的准确率一致（误差 1e-6 内） |
 
 ## T6 简洁实现
