@@ -59,6 +59,17 @@ def make_net(num_inputs: int = 784, num_outputs: int = 10, seed: int = 0):
     W, b = torch.normal(size=(num_inputs, num_outputs), mean=0, std=0.01, requires_grad=True), torch.zeros((num_outputs,), requires_grad=True)
     return (W, b)
 
+def sgd(params: list, lr: float, batch_size: int) -> None:
+    """小批量随机梯度下降，与 B06 的 T4 相同，这一章自己重写一遍。
+
+    对 params 里的每个参数做 p ← p - lr * p.grad / batch_size。
+    要求：就地更新、更新后就地清零该参数的梯度、过程中不建计算图。
+    注意这里的除法不能省：T1 的 cross_entropy 返回的是和，不是平均。
+    """
+    with torch.no_grad():
+        for p in params:
+            p -= lr * p.grad / batch_size
+            p.grad = None
 
 def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
                        lr: float = 0.1, batch_size: int = 256,
@@ -79,18 +90,30 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
         loss, sum = 0, 0
         for X, y in train_iter:
             X = X.reshape(X.size(0), -1)
-            W.grad = b.grad = None
             ya = X @ W + b
             #l = accuracy(ya, y)
             l = cross_entropy(ya, y)
             l.backward()
+            sgd([W, b], lr, ya.size(0))
             with torch.no_grad():
                 loss += l
                 sum += X.size(0)
+        net = lambda X: X @ W + b
         d["train_loss"].append(float(loss / sum))
+        d["train_acc"].append(evaluate_accuracy(net, train_iter))
+        d["test_acc"].append(evaluate_accuracy(net, test_iter))
     return d
 
+def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
+    """返回 (q, q) 的整数张量。
 
-
+    第 i 行第 j 列 = 真实类别是 i 而被预测成 j 的样本数。
+    对角线上是预测正确的数量，整张表所有元素之和等于样本总数。
+    """
+    ret = torch.zeros(size=(q, q), dtype=torch.int64)
+    for X, y in loader:
+        ya = net(X.reshape(X.size(0), -1)).argmax(dim=-1)
+        ret[y, ya] += 1
+    return ret
 
 

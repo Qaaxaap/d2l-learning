@@ -167,6 +167,8 @@ def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
 | 所有元素之和 | 等于 `loader` 里的样本总数 |
 | 对角线之和 / 总数 | 与 `evaluate_accuracy` 返回的准确率一致（误差 1e-6 内） |
 
+累加时留意一件事：**用张量做下标是取位置，不是逐个位置加一**。`ret[y, ya] += 1` 这种写法不报错但会漏掉重复组合，细节见讲义 7.2 节。
+
 ## T6 简洁实现
 
 ```python
