@@ -73,7 +73,7 @@ def cross_entropy(logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     lt = logits - lse
     return -(lt[idx, y]).sum()
 
-def evaluate_accuracy(net, loader) -> float:
+def evaluate_accuracy(net, loader, device:torch.device=torch.device('cpu')) -> float:
     """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
 
     在整个 loader 上算准确率，返回 Python 浮点数。
@@ -82,9 +82,10 @@ def evaluate_accuracy(net, loader) -> float:
     t, s = 0, 0
     with torch.no_grad():
         for X, y in loader:
-           ya = net(X.reshape(X.size(0), -1)) 
-           t += int((ya.argmax(dim=1) == y).sum())
-           s += ya.size(0)
+            X, y = X.to(device), y.to(device)
+            ya = net(X.reshape(X.size(0), -1)) 
+            t += int((ya.argmax(dim=1) == y).sum())
+            s += ya.size(0)
     return t / s
 
 def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
@@ -107,7 +108,7 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
     if device.type == 'cuda':
         torch.cuda.manual_seed_all(seed)
     W1, b1, W2, b2 = init_params(seed=seed) 
-    W1, b1, W2, b2 = W1.to(device).requires_grad_(), b1.to(device).requires_grad_(), W2.to(device).requires_grad_(), b2.to(device).requires_grad_()
+    W1, b1, W2, b2 = nn.Parameter(W1.to(device)), nn.Parameter(b1.to(device)), nn.Parameter(W2.to(device)), nn.Parameter(b2.to(device))
     for _ in range(num_epochs):
         total_loss, total_size = 0, 0
         for X, y in train_iter:
@@ -121,7 +122,44 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
             total_size += W1.size(0)
         net = lambda X: relu(X @ W1 + b1) @ W2 + b2
         d["train_loss"].append(total_loss / total_size)
-        d["train_acc"].append(evaluate_accuracy(net, train_iter))
-        d["test_acc"].append(evaluate_accuracy(net, test_iter))
+        d["train_acc"].append(evaluate_accuracy(net, train_iter, device=device))
+        d["test_acc"].append(evaluate_accuracy(net, test_iter, device=device))
     return d
         
+def train_concise(train_iter, test_iter, num_epochs: int = 10,
+                  lr: float = 0.1, seed: int = 0) -> dict:
+    """用框架的封装重写一遍。
+
+    模型用 nn.Sequential(nn.Flatten(), nn.Linear(784, 256), nn.ReLU(), nn.Linear(256, 10))，
+    损失用 nn.CrossEntropyLoss，优化器用 torch.optim.SGD。
+    返回的字典键与 T4 相同，三个键是三个独立的列表。
+    """
+    d = {}
+    d["train_loss"], d["train_acc"], d["test_acc"] = [], [], []
+    torch.manual_seed(seed)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if device.type == 'cuda':
+        torch.cuda.manual_seed_all(seed)
+    net = nn.Sequential(
+        nn.Flatten(), 
+        nn.Linear(784, 256), 
+        nn.ReLU(), 
+        nn.Linear(256, 10)
+    )
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss()
+    for _ in range(num_epochs):
+        total_loss, total_size = 0, 0
+        for X, y in train_iter:
+            optimizer.zero_grad()
+            X, y = X.to(device), y.to(device)
+            l = loss_fn(y, net(X))
+            l.backward()
+            optimizer.step()
+            total_loss += l.item()
+            total_size += X.size(0)
+        d["train_loss"].append(total_loss/ total_size)
+        d["train_acc"].append(evaluate_accuracy(net, train_iter, device))
+        d["test_acc"].append(evaluate_accuracy(net, test_iter, device))
+    return d
+    

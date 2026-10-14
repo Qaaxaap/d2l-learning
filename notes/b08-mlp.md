@@ -301,6 +301,38 @@ net = nn.Sequential(
 
 其余部分（损失、优化器、训练循环）与 B07 的简洁实现逐字相同。
 
+### 5.1 搬到 GPU
+
+简洁实现搬设备只要一行：`net = net.to(device)`。
+
+`nn.Module.to(device)` 与 `Tensor.to(device)` 的语义不同，这一点容易混：
+
+| | `Tensor.to(device)` | `nn.Module.to(device)` |
+|---|---|---|
+| 做什么 | 返回一个新张量 | 遍历模块里全部参数与 buffer，就地替换成目标设备上的版本 |
+| 返回值 | 新张量，要接住 | `self`，接不接都行 |
+| 参数还是叶子吗 | 不是（带 `grad_fn`）| 是（换的是 `param.data`）|
+
+**为什么 `nn.Module` 那边不会出问题**：它内部改的是 `param.data`，不经过带梯度的运算，
+也就不产生 `grad_fn`。从零实现里参数是裸张量，直接 `.to("cuda")` 会得到非叶子张量，
+`.grad` 永远是 `None`（B06 讲义 5.1.1.2 节）。
+
+**顺序**：
+
+```python
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+net = nn.Sequential(...)
+net = net.to(device)
+optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+```
+
+- 优化器在 `to()` 之前或之后建都行，因为参数对象本身没换。习惯上先 `to`
+- 数据也要搬：每个批次前 `X, y = X.to(device), y.to(device)`。参数在 GPU 而数据在 CPU
+  会报 device 不匹配
+- `loss_fn` 不用搬，`nn.CrossEntropyLoss` 没有参数
+- 只有一块 GPU 时 `device` 可以简写成字符串 `"cuda"`；写 `torch.device(...)` 是为了
+  在没有 GPU 的机器上自动回退到 `"cpu"`
+
 ## 6 实现会踩的坑
 
 | 坑 | 症状 | 原因 |
