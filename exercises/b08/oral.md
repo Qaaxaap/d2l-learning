@@ -96,17 +96,17 @@ tanh 与 sigmoid 形状相同，但 tanh 关于原点对称（零中心），这
 
 </details>
 
-**Q7** 纸质书与电子版在写法上有哪三处差别？
+**Q7** 照着纸质书的简洁实现写 torch 代码，有一处必须补、否则形状报错。是哪一处？为什么纸质书不需要它？
 
 <details><summary>参考答点</summary>
 
-| | 纸质书（Gluon）| 电子版（PyTorch）|
-|---|---|---|
-| 激活函数 | 写在层的参数里 `nn.Dense(256, activation='relu')` | 独立子层 `nn.ReLU()` |
-| 输入维 | 靠延后初始化推断 | `nn.Linear(784, 256)` 要写出 784 |
-| 拉平 | 不需要，`nn.Dense` 自动处理 | 需要 `nn.Flatten()` |
+**`nn.Flatten()`。**
 
-第三处最容易漏：数据是 $(256,1,28,28)$，`nn.Linear` 只把最后一维当特征维。
+数据形状是 $(256,1,28,28)$，`nn.Linear` 只把最后一维当特征维，
+所以要先拉平成 $(256,784)$ 才能接线性层。
+
+纸质书用的是 Gluon 的 `nn.Dense`，它会自己在最后一维做仿射，不需要显式拉平。
+这一处照着抄必然报 `shapes cannot be multiplied`。
 
 </details>
 
