@@ -11,7 +11,7 @@ net = nn.Sequential(
 )
 for name, p in net.named_parameters():
     with torch.no_grad():
-        p.zero_() 没教，不知道是啥，讲义写的不行。
+        p.zero_() 所有单元全0导致退化。不需要手动初始化
 
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
