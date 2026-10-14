@@ -39,5 +39,40 @@ def mlp_forward(X: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
     X1 = relu(X @ W1 + b1)
     return X1 @ W2 + b2
 
-def count_params(net) -> int:
+def count_params(net: nn.Sequential) -> int:
     """返回 net 里所有可训练参数的个数之和，Python 整数。"""
+    sum = 0
+    for i in net.parameters():
+        sum += i.numel()
+    return sum
+
+def sgd(params: list, lr: float, batch_size: int) -> None:
+    """与 B07 的 T4 相同，这一章自己再写一遍。
+
+    对每个参数做 p ← p - lr * p.grad / batch_size，更新后就地清零它的梯度。
+    就地更新，过程中不建计算图。
+    """
+    for p in params:
+        with torch.no_grad():
+            p -= lr * p.grad
+            p.grad = None
+
+
+def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
+                       lr: float = 0.1, batch_size: int = 256,
+                       seed: int = 0) -> dict:
+    """用手写的 relu、mlp_forward、cross_entropy 与 sgd 训练。
+
+    交叉熵与准确率用 B07 里自己写的那两份（`cross_entropy` 与 `evaluate_accuracy`，
+    抄进本章或重新实现一遍都行）。
+    返回一个字典，键固定为：
+        train_loss -> 每个 epoch 的平均训练损失，浮点列表
+        train_acc  -> 每个 epoch 结束时的训练集准确率，浮点列表
+        test_acc   -> 每个 epoch 结束时的测试集准确率，浮点列表
+    三个列表长度都是 num_epochs，**且必须是三个独立的列表**。
+    """
+    d = {}
+    d["train_loss"], d["train_acc"], d["test_acc"] = [], [], []
+    torch.manual_seed(seed)
+    for _ in num_epochs:
+        
