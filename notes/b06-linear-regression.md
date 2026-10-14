@@ -399,6 +399,36 @@ class 你的模型名(nn.Module):
 **一处容易混**：`net.w` 是张量，可以直接参与运算；要当纯数据用（打印、转 numpy、画图）
 先 `.detach()`，否则它带着计算图（B04 的 5.5 节）。
 
+#### 5.1.1.2 `.to(device)` 会把叶子张量变成非叶子
+
+这是把模型搬到 GPU 时最常踩的坑，2026-10-15 在 B08 上遇到过一次。
+
+`.to(device)` 在目标设备**与当前不同**时会复制张量，而这个复制**带 `grad_fn`**
+（`ToCopyBackward0`），结果**不是叶子张量**。PyTorch 只给叶子张量填 `.grad`，
+非叶子的 `.grad` 恒为 `None`，于是 `lr * p.grad` 会报
+`TypeError: unsupported operand type(s) for *: 'float' and 'NoneType'`。
+
+实测：
+
+| 写法 | `is_leaf` | `grad_fn` |
+|---|---|---|
+| `torch.randn(3, 4, requires_grad=True)` | `True` | `None` |
+| 上一行 `.to("cuda")` | `False` | `ToCopyBackward0` |
+| 再 `.requires_grad_()` | `False` | 同上（这个方法不改 `is_leaf`）|
+
+**为什么在 CPU 上不报错**：目标设备与当前相同时 `.to()` 是恒等操作，直接返回 `self`，
+不产生副本。所以 `.to("cpu")` 对已在 CPU 的张量是安全的，`.to("cuda")` 不是。
+这解释了"同一份代码在 CPU 上跑得通，在 GPU 上报 TypeError"。
+
+**三种避开方式**：
+
+1. **建的时候就在目标设备上**：`torch.normal(..., device=device)`。没有搬运这一步，
+   最干净
+2. **用 `nn.Parameter` 包一层**：`nn.Parameter(w.to(device))`。`nn.Parameter` 建出来就是叶子
+3. `w.data.to(device).requires_grad_()`：`.data` 脱离计算图，不产生 `grad_fn`
+
+排查方法：打印 `p.is_leaf`。`False` 就说明它被某个带梯度的操作加工过。
+
 `nn.Linear` 里的参数就是用它建的：`weight` 与 `bias` 都是 `nn.Parameter`。
 所以 `net[0].weight` 拿到的也是 `nn.Parameter`，访问方式与上面一样。
 

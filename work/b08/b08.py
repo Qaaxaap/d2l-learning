@@ -54,9 +54,38 @@ def sgd(params: list, lr: float, batch_size: int) -> None:
     """
     for p in params:
         with torch.no_grad():
-            p -= lr * p.grad
+            p -= lr * p.grad / batch_size
             p.grad = None
+            
+def cross_entropy(logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    """交叉熵损失。
 
+    - logits 形状 (n, q)，是未经 softmax 的分数
+    - y 形状 (n,)，元素是 0 到 q-1 的整数标签（不是独热）
+    - 返回标量：这一批样本的交叉熵**之和**（不取平均）
+
+    不许调用 nn.CrossEntropyLoss、torch.log_softmax 或 torch.logsumexp。
+    """
+    mx = logits.max(dim = -1, keepdim=True).values
+    lse = mx + torch.log(torch.exp(logits - mx).sum(dim=1, keepdim=True))
+    n = logits.size(0)
+    idx = torch.arange(n, device=logits.device)
+    lt = logits - lse
+    return -(lt[idx, y]).sum()
+
+def evaluate_accuracy(net, loader) -> float:
+    """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
+
+    在整个 loader 上算准确率，返回 Python 浮点数。
+    评估过程不应建立计算图。
+    """
+    t, s = 0, 0
+    with torch.no_grad():
+        for X, y in loader:
+           ya = net(X.reshape(X.size(0), -1)) 
+           t += int((ya.argmax(dim=1) == y).sum())
+           s += ya.size(0)
+    return t / s
 
 def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
                        lr: float = 0.1, batch_size: int = 256,
@@ -74,5 +103,25 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
     d = {}
     d["train_loss"], d["train_acc"], d["test_acc"] = [], [], []
     torch.manual_seed(seed)
-    for _ in num_epochs:
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if device.type == 'cuda':
+        torch.cuda.manual_seed_all(seed)
+    W1, b1, W2, b2 = init_params(seed=seed) 
+    W1, b1, W2, b2 = W1.to(device).requires_grad_(), b1.to(device).requires_grad_(), W2.to(device).requires_grad_(), b2.to(device).requires_grad_()
+    for _ in range(num_epochs):
+        total_loss, total_size = 0, 0
+        for X, y in train_iter:
+            X, y = X.to(device), y.to(device)
+            X = X.reshape(X.size(0), -1)
+            y1 = mlp_forward(X, W1, b1, W2, b2)
+            l = cross_entropy(y1, y)
+            l.backward()
+            sgd([W1, W2, b1, b2], lr, X.size(0))
+            total_loss += l.item()
+            total_size += W1.size(0)
+        net = lambda X: relu(X @ W1 + b1) @ W2 + b2
+        d["train_loss"].append(total_loss / total_size)
+        d["train_acc"].append(evaluate_accuracy(net, train_iter))
+        d["test_acc"].append(evaluate_accuracy(net, test_iter))
+    return d
         
