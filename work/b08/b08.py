@@ -1,3 +1,28 @@
+"""
+import torch
+import torch.nn as nn
+
+torch.manual_seed(0)
+net = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(784, 256), 隐藏层需要激活函数，否则退化
+    nn.Linear(256, 10),
+    nn.ReLU(), 输出层不需要激活函数
+)
+for name, p in net.named_parameters():
+    with torch.no_grad():
+        p.zero_() 没教，不知道是啥，讲义写的不行。
+
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
+
+for epoch in range(10):
+    for X, y in train_iter:
+        optimizer.zero_grad()
+        l = loss_fn(net(X), y)
+        l.backward()
+        optimizer.step()
+"""
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -145,7 +170,7 @@ def train_concise(train_iter, test_iter, num_epochs: int = 10,
         nn.Linear(784, 256), 
         nn.ReLU(), 
         nn.Linear(256, 10)
-    )
+    ).to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
     loss_fn = nn.CrossEntropyLoss()
     for _ in range(num_epochs):
@@ -153,12 +178,12 @@ def train_concise(train_iter, test_iter, num_epochs: int = 10,
         for X, y in train_iter:
             optimizer.zero_grad()
             X, y = X.to(device), y.to(device)
-            l = loss_fn(y, net(X))
+            l = loss_fn(net(X), y)
             l.backward()
             optimizer.step()
             total_loss += l.item()
-            total_size += X.size(0)
-        d["train_loss"].append(total_loss/ total_size)
+            total_size += 1
+        d["train_loss"].append(total_loss / total_size)
         d["train_acc"].append(evaluate_accuracy(net, train_iter, device))
         d["test_acc"].append(evaluate_accuracy(net, test_iter, device))
     return d
