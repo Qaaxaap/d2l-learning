@@ -76,13 +76,25 @@ def mlp_forward(X: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
 
 ```python
 def count_params(net) -> int:
-    """返回 net 里所有可训练参数的个数之和，Python 整数。"""
+    """返回 net 里所有可训练参数的个数之和，Python 整数。
+
+    net 是 nn.Module（例如 nn.Sequential 或 nn.Linear）。
+    断言里会传三种：下面那个 MLP、nn.Linear(784, 10)、以及空的 nn.Sequential()。
+    """
 ```
 
 | 调用 | 期望 |
 |---|---|
-| 上面那个 MLP（`nn.Sequential(nn.Flatten(), nn.Linear(784,256), nn.ReLU(), nn.Linear(256,10))`） | `203530` |
-| B07 的单层模型（`nn.Linear(784, 10)`） | `7850` |
+| `nn.Sequential(nn.Flatten(), nn.Linear(784,256), nn.ReLU(), nn.Linear(256,10))` | `203530` |
+| `nn.Linear(784, 10)` | `7850` |
+| `nn.Sequential()`（空模型） | `0` |
+
+**可用的两个接口**（都在前面讲过，这一题要把它们合起来）：
+
+- `net.parameters()`：遍历模型里全部参数，B06 讲义 5.1.1 节
+- `p.numel()`：一个张量的元素个数，例如 $(784,256)$ 得 200704，B02 讲过
+
+注意 `parameters()` 只给 `nn.Parameter`。如果模型里用普通张量存了某个量，它不会被遍历到。
 
 ## T4 从零实现：训练
 

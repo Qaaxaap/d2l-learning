@@ -143,6 +143,8 @@ def main() -> int:
         assert got == PARAMS_FULL, f"MLP 的参数个数应为 {PARAMS_FULL}，得到 {got}"
         got2 = mod.count_params(nn.Linear(784, 10))
         assert got2 == PARAMS_LINEAR, f"单层模型的参数个数应为 {PARAMS_LINEAR}，得到 {got2}"
+        got3 = mod.count_params(nn.Sequential())
+        assert got3 == 0, f"空模型应当返回 0，得到 {got3}"
 
     @case("T4 从零实现训练")
     def _t4():
