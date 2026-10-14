@@ -295,6 +295,11 @@ B06 的 5.1.1 节讲了 `nn.Parameter` "不包起来优化器就看不到"，但
 给链接前仍然要读过那一页，标明看哪一节、其余部分为什么现在不用看，
 以及那一页和本机环境的出入（例如 PyTorch 教程里的 `torch.accelerator` 与本机 `torch.cuda`）。
 
+**链接写完要验证能打开。** 章节号对得上不代表网址对：v2 的 4.4 源文件叫
+`underfit-overfit.md`，而 `generalization.html` 会 301。写完用
+`curl -s -o /dev/null -w '%{http_code}' <url>` 逐个查，非 200 就换。
+2026-10-15 全库扫了一遍 17 条链接，发现这一条。
+
 ### 讲义讲知识，不教翻译
 
 纸质书是 MXNet、学习者写 torch，但**学习对象是知识，不是"把书上的代码翻成 torch"**。
