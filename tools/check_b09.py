@@ -5,9 +5,7 @@ T7 是纸面题，这里只提醒人工检查。
 """
 
 import importlib.util
-import os
 import sys
-import tempfile
 from pathlib import Path
 
 import matplotlib
@@ -116,19 +114,23 @@ def main() -> int:
         x_tr, y_tr, x_te, y_te = mod.make_data()
         res = mod.train_poly(x_tr, y_tr, x_te, y_te, 3, num_epochs=20)
         plt.close("all")
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "curve.png")
-            mod.plot_errors(res["train_loss"], res["test_loss"], path)
-            assert os.path.exists(path), f"应当把图存到 {path}，文件不存在"
-            assert os.path.getsize(path) > 1000, "存出来的文件太小，可能是空图"
-            fig = plt.gcf()
-            axes = fig.get_axes()
-            if axes:
-                assert axes[0].get_yscale() == "log", (
-                    "纵轴应当是对数刻度。两条误差常差一两个数量级，"
-                    "线性刻度下小的那条会贴在轴上"
-                )
+        # 图写到学习者的目录而不是临时目录：这张图是 T4 的产物，
+        # 断言只能查"文件存在、纵轴是对数"，画得对不对要靠他自己打开看。
+        out_dir = REPO / "work" / "b09"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path = out_dir / "curve.png"
+        mod.plot_errors(res["train_loss"], res["test_loss"], str(path))
+        assert path.exists(), f"应当把图存到 {path}，文件不存在"
+        assert path.stat().st_size > 1000, "存出来的文件太小，可能是空图"
+        fig = plt.gcf()
+        axes = fig.get_axes()
+        if axes:
+            assert axes[0].get_yscale() == "log", (
+                "纵轴应当是对数刻度。两条误差常差一两个数量级，"
+                "线性刻度下小的那条会贴在轴上"
+            )
         plt.close("all")
+        print(f"      （T4 的图写在 {path.relative_to(REPO)}，自己打开看看两条曲线）")
 
     @case("T5 k 折切分")
     def _t5():

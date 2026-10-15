@@ -75,9 +75,11 @@ def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
     要求：横轴是轮数，纵轴用**对数刻度**，两条曲线要有图例区分，
     另存为文件（不要 plt.show()）。
     """
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(7, 4))
     x = range(1, len(train_loss) + 1)
-    plt.semilogy(x, train_loss)
-    plt.semilogy(x, test_loss)
+    plt.semilogy(x, train_loss, label="train loss")
+    plt.semilogy(x, test_loss, label="test loss")
+    plt.xlabel("epoch")
+    plt.ylabel("mean loss(log scale)")
     plt.legend()
     plt.savefig(fname=path, dpi=200)

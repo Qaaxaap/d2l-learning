@@ -94,8 +94,8 @@ def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
     要求：横轴是轮数，纵轴用**对数刻度**，两条曲线要有图例区分，
     另存为文件（不要 plt.show()）。
 
-    path 由调用方给。验收脚本传的是它自己的临时目录，跑完就删；
-    你自己想看图的时候传 "work/b09/curve.png" 这类路径。别把文件名写死。
+    path 由调用方给，别把文件名写死。验收脚本传的是 "work/b09/curve.png"，
+    跑完 just check b09 之后那张图就在那里，自己打开看。
     """
 ```
 
@@ -106,6 +106,7 @@ def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
 | 调用后 | `path` 指向的文件存在且非空 |
 | 纵轴 | 对数刻度 |
 | 两条曲线 | 都有图例 |
+| 图存到哪 | `work/b09/curve.png`，跑完自己打开看 |
 
 ## T5 k 折切分
 
