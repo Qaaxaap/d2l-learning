@@ -225,6 +225,9 @@ plt.plot(x, y)                # 画折线，两个参数是横坐标和纵坐标
 plt.xlabel("x")               # 横轴标签
 plt.ylabel("sin(x)")          # 纵轴标签
 plt.savefig("out.png", dpi=120)   # 存成 PNG，dpi 是每英寸像素数
+
+# 这里画的是单条折线。画多条（每条加 label=，最后调 plt.legend()）
+# 见 B09 讲义 4.3 节。
 ```
 
 **matplotlib 只认 numpy 数组，不认 torch 张量。** 传进去之前要转换：

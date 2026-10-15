@@ -163,7 +163,33 @@ $$y = 1.2x - 3.4x^2 + 5.6x^3 + 5 + \epsilon,\qquad \epsilon \sim \mathcal{N}(0, 
 书上画的图纵轴用**对数刻度**，函数名就叫 `semilogy`。原因是两个误差常常相差一两个数量级，
 线性刻度下小的那条贴在轴上看不出来。
 
-两条曲线加一条水平线（真实值或基准）是看误差的标准画法。
+**两条曲线画在一张图上**要多两个东西：每条的标签与图例。A0 的 4.7 节只讲了单条折线，
+这里是第一次画多条：
+
+```python
+plt.figure(figsize=(7, 4))
+plt.semilogy(epochs, train_loss, label="training error")
+plt.semilogy(epochs, test_loss, label="generalization error")
+plt.xlabel("epoch")
+plt.ylabel("mean squared error (log scale)")
+plt.legend()                      # 把上面 label= 的文字画成图例
+plt.savefig("curve.png", dpi=120)
+```
+
+四个要点：
+
+- **横轴要显式给。** `plot(x, y)` 的两个参数分别是横坐标与纵坐标。只传一个参数时横轴取
+  0, 1, 2, …，在这里恰好等于轮数减一，容易和"轮数从 1 开始"混淆
+- **`label=` 是给图例用的文字**，写在每次 `plot` 调用里
+- **`plt.legend()` 负责把那些文字画出来。** 不调它，`label=` 写了也不显示
+- **`plt.semilogy` 与 `plt.plot` 用法相同**，区别只在纵轴取对数
+
+**保存与显示的区别**：`plt.savefig(path)` 把当前画布写到文件；`plt.show()` 只在有图形界面时
+弹窗，脚本跑完什么也不留下。脚本里用 `savefig`，并且要在 `show` 之前调用，
+否则某些后端会存出一张空白图。
+
+**图存到哪由调用方决定。** 写函数时把路径当参数收，不要在函数里写死文件名——
+这样同一份代码既能被验收脚本用（它传自己的临时目录），也能被你手动调用存到 `work/` 下慢慢看。
 
 ## 5 动手
 
