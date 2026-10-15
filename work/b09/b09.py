@@ -1,3 +1,25 @@
+"""
+import matplotlib.pyplot as plt
+import torch
+
+w = torch.zeros(3, 1, requires_grad=True)
+b = torch.zeros(1, requires_grad=True)
+train_curve, test_curve = [], []
+
+for epoch in range(100):
+    for X, y in train_iter:
+        pred = X @ w + b 梯度没有清零产生了累加
+        loss = ((pred - y) ** 2).sum()
+        loss.backward()
+        with torch.no_grad():
+            w -= lr * w.grad
+            b -= lr * b.grad
+    train_curve.append(loss.item()) 要记录平均，但这里记录的是和
+    test_curve.append(((X_test @ w + b - y_test) ** 2).sum())
+
+plt.plot(train_curve, test_curve)没有使用对数y坐标
+plt.show()没有保存
+"""
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -83,3 +105,37 @@ def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
     plt.ylabel("mean loss(log scale)")
     plt.legend()
     plt.savefig(fname=path, dpi=200)
+
+def k_fold_indices(n: int, k: int, seed: int = 0) -> list:
+    """把 0 到 n-1 这 n 个下标切成 k 份。返回一个长度 k 的列表，
+    每一项是一个 Python 整数列表。
+
+    要求：k 份合起来正好是 0 到 n-1 各一次，不重不漏；各份大小相差不超过 1。
+    """
+    l = []
+    last = 0
+    batch_size = n // k
+    big_batch = n - batch_size * k
+    small_batch = k - big_batch
+    for _ in range(small_batch):
+        l.append(list(range(last, last + batch_size)))
+        last += batch_size
+    for _ in range(big_batch):
+        l.append(list(range(last, last + batch_size + 1)))
+        last += batch_size + 1
+    return l
+
+def diagnose(train_loss: list, test_loss: list) -> str:
+    """给定两条曲线，返回 "underfitting"、"overfitting" 或 "good"。
+
+    判据按顺序：
+      1. 最后一轮训练损失 > 0.5           -> "underfitting"
+      2. 最后一轮测试损失 > 训练损失 * 10  -> "overfitting"
+      3. 其余                              -> "good"
+    """
+    if (train_loss[-1] > 0.5):
+        return "underfitting"
+    elif (test_loss[-1] > train_loss[-1] * 10):
+        return "overfitting"
+    else:
+        return "good"
