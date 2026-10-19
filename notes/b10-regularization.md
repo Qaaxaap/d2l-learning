@@ -149,6 +149,33 @@ $$\mathbb{E}[h_i'] = \frac{\mathbb{E}[\xi_i]}{1-p} h_i = h_i .$$
 `nn.Module` 创建时默认是**训练模式**。所以评估之前要 `net.eval()`，
 评估完要切回 `net.train()`。忘了切回，下一轮训练就不丢弃了，而这件事**不报错**。
 
+**怎么知道当前是哪种模式**：`nn.Module` 有个 `training` 属性，布尔值。
+`True` 表示训练模式，`False` 表示推理模式。
+
+**怎么安全地临时切换**：先记下来，用完恢复。
+
+```python
+was_training = net.training    # 记下当前状态
+net.eval()                     # 切到推理模式
+# ... 做评估 ...
+if was_training:               # 按原来的状态恢复
+    net.train()
+```
+
+**为什么要记而不是无条件 `net.train()`**：如果这个函数可能被调用在推理模式下，
+无条件切回训练模式会破坏调用者的状态。先记再恢复，函数就没有副作用。
+
+**不要直接给 `training` 赋值。** `net.training = False` 不报错，
+但它只改顶层那个对象自己的标记，**不会递归到子模块**——`nn.Dropout` 子层仍然是训练模式，
+行为与 `net.eval()` 完全不同。实测：
+
+| 写法 | 顶层 `training` | 子层 `training` |
+|---|---|---|
+| `net.training = False` | `False` | `True`（没变）|
+| `net.eval()` | `False` | `False`（跟着变）|
+
+`eval()` 与 `train()` 会递归处理全部子模块，直接赋值不会。所以只用这两个方法。
+
 **换模式只影响这类"训练与推理行为不同"的层**（dropout、BatchNorm），
 对 `nn.Linear`、`nn.ReLU` 没有影响。
 
@@ -214,6 +241,7 @@ net = nn.Sequential(
 | `nn.Dropout(p)` | 丢弃层，`p` 是丢弃概率 | 2.5 |
 | `net.train()` | 切到训练模式，dropout 生效 | 2.3 |
 | `net.eval()` | 切到推理模式，dropout 跳过 | 2.3 |
+| `net.training` | 属性，读当前是不是训练模式 | 2.3 |
 | `torch.rand(shape)` | 生成 $[0,1)$ 的均匀随机数，用来造掩码 | 2.5 |
 | `tensor.float()` | 把 bool 张量转成浮点，用于掩码相乘 | 2.5 |
 | `torch.norm(w)` | 求范数，用来算惩罚项 | 1.4 |
