@@ -109,7 +109,15 @@ def evaluate(net:nn.Sequential, loader:DataLoader) -> float:
     在整个 loader 上算准确率，返回 Python 浮点数。
     **评估时丢弃层不应生效**，而且评估前后要正确恢复模型原来的模式。
     """
-    is_training = net.tr
+    is_training = net.training
+    net.eval()
+    total_size, total_loss = 0, 0
+    with torch.no_grad():
+        for X, y in loader:
+            y_hat = net(X)
+            
+    if is_training:
+        net.train()
 
 
 def train_dropout(train_iter, test_iter, use_dropout: bool = True,
