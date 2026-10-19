@@ -115,9 +115,11 @@ def evaluate(net:nn.Sequential, loader:DataLoader) -> float:
     with torch.no_grad():
         for X, y in loader:
             y_hat = net(X)
-            
+            total_size += X.shape(0)
+            total_loss += (y_hat.argmax(dim=1) == y).sum().item()
     if is_training:
         net.train()
+    return total_loss / total_size
 
 
 def train_dropout(train_iter, test_iter, use_dropout: bool = True,

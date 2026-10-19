@@ -172,8 +172,54 @@ def main() -> int:
         assert not torch.allclose(a, b), "两次调用结果应当不同（确实是随机的）"
         assert torch.allclose(x, torch.ones(2000, 5)), "不应修改输入张量本身"
 
-    @case("T5 丢弃法训练")
-    def _t5():
+    @case("T5a make_dropout_net 的结构")
+    def _t5a():
+        net = mod.make_dropout_net()
+        kinds = [type(m).__name__ for m in net]
+        want = ["Flatten", "Linear", "ReLU", "Dropout", "Linear", "ReLU", "Dropout", "Linear"]
+        assert kinds == want, f"层的顺序应为 {want}，得到 {kinds}"
+        p1, p2 = net[3].p, net[6].p
+        assert abs(p1 - 0.2) < 1e-9, f"第一个丢弃层的丢弃概率应为 0.2，得到 {p1}"
+        assert abs(p2 - 0.5) < 1e-9, f"第二个丢弃层的丢弃概率应为 0.5，得到 {p2}"
+        out = net(torch.randn(2, 1, 28, 28))
+        assert tuple(out.shape) == (2, 10), f"输出形状应为 (2, 10)，得到 {tuple(out.shape)}"
+
+    @case("T5b evaluate 不建图且两次结果相同")
+    def _t5b():
+        # 断言自己造模型，不依赖 make_dropout_net
+        torch.manual_seed(0)
+        net = nn.Sequential(nn.Flatten(), nn.Linear(784, 10), nn.Dropout(0.5))
+        _, test_iter = get_fashion_iters()
+        a = mod.evaluate(net, test_iter)
+        b = mod.evaluate(net, test_iter)
+        assert a == b, (
+            f"同一个模型两次评估结果应完全相同，得到 {a:.6f} 与 {b:.6f}。"
+            "两次不同说明评估时丢弃层还在随机丢弃——评估前要切到推理模式"
+        )
+        assert 0.0 <= a <= 1.0, f"评估结果应是 0 到 1 的比例，得到 {a}"
+
+    @case("T5c evaluate 用完恢复原来的模式")
+    def _t5c():
+        torch.manual_seed(0)
+        net = nn.Sequential(nn.Flatten(), nn.Linear(784, 10), nn.Dropout(0.5))
+        _, test_iter = get_fashion_iters()
+        # 从训练模式开始，评估完应当回到训练模式
+        net.train()
+        mod.evaluate(net, test_iter)
+        assert net.training is True, (
+            "模型原本处于训练模式，评估之后应当恢复成训练模式，"
+            "否则下一轮训练不会丢弃"
+        )
+        # 从推理模式开始，评估完应当仍是推理模式
+        net.eval()
+        mod.evaluate(net, test_iter)
+        assert net.training is False, (
+            "模型原本处于推理模式，评估之后被切成了训练模式——"
+            "应当先记下原状态，用完按原状态恢复"
+        )
+
+    @case("T5d train_dropout 的完整流程")
+    def _t5d():
         train_iter, test_iter = get_fashion_iters()
         res = mod.train_dropout(train_iter, test_iter, use_dropout=True, num_epochs=5)
         keys = ("train_loss", "train_acc", "test_acc")
@@ -188,17 +234,6 @@ def main() -> int:
             f"5 轮后测试精度应超过 0.75，得到 {res['test_acc'][-1]:.4f}。"
             "偏低时按顺序查：丢弃层的顺序对不对、评估时有没有切 eval、"
             "损失是不是被 weight_decay 影响了"
-        )
-
-    @case("T5 评估时丢弃层不生效")
-    def _t5b():
-        train_iter, test_iter = get_fashion_iters()
-        net = mod.make_dropout_net()
-        a = mod.evaluate(net, test_iter)
-        b = mod.evaluate(net, test_iter)
-        assert a == b, (
-            f"同一个模型两次评估结果应完全相同，得到 {a:.6f} 与 {b:.6f}。"
-            "两次不同说明评估时丢弃层还在随机丢弃——评估前要切到推理模式"
         )
 
     print(f"通过 {len(_passed)} 项")
