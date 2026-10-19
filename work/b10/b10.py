@@ -4,7 +4,7 @@ import torch.nn as nn
 
 def test_acc(net, loader):
     correct, total = 0, 0
-    with torch.no_grad():
+    with torch.no_grad(): 没有关丢弃，测试的时候还在丢弃
         for X, y in loader:
             correct += (net(X).argmax(dim=1) == y).sum().item()
             total += y.numel()
@@ -18,7 +18,7 @@ net = nn.Sequential(
     nn.Linear(256, 10),
 )
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=0.5, weight_decay=0.01)
+optimizer = torch.optim.SGD(net.parameters(), lr=0.5, weight_decay=0.01) 这个实验要看丢弃法，不需要wd,要控制变量
 
 for epoch in range(5):
     total, n = 0, 0
