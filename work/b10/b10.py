@@ -14,7 +14,7 @@ net = nn.Sequential(
     nn.Flatten(),
     nn.Linear(784, 256),
     nn.Dropout(0.2),
-    nn.ReLU(), 反了，丢弃的是输出，这丢错东西了
+    nn.ReLU(), 反了，丢弃的是输出，这丢错东西了实际丢弃量打折扣
     nn.Linear(256, 10),
 )
 loss_fn = nn.CrossEntropyLoss()
