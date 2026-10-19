@@ -1,6 +1,39 @@
+"""
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+
+def test_acc(net, loader):
+    correct, total = 0, 0
+    with torch.no_grad():
+        for X, y in loader:
+            correct += (net(X).argmax(dim=1) == y).sum().item()
+            total += y.numel()
+    return correct / total
+
+net = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(784, 256),
+    nn.Dropout(0.2),
+    nn.ReLU(), 反了，丢弃的是输出，这丢错东西了
+    nn.Linear(256, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.5, weight_decay=0.01)
+
+for epoch in range(5):
+    total, n = 0, 0
+    for X, y in train_iter:
+        optimizer.zero_grad()
+        loss = loss_fn(net(X), y)
+        loss.backward()
+        optimizer.step()
+        total += loss.item() * y.numel()
+        n += y.numel()
+    print(f"epoch {epoch}: 训练损失 {total / n:.4f}  测试精度 {test_acc(net, test_iter):.4f}")
+"""
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, dataloader
 from torchvision import datasets, transforms
 
 def make_high_dim(n_train: int = 20, n_test: int = 100,
@@ -115,14 +148,14 @@ def evaluate(net:nn.Sequential, loader:DataLoader) -> float:
     with torch.no_grad():
         for X, y in loader:
             y_hat = net(X)
-            total_size += X.shape(0)
+            total_size += X.size(0)
             total_loss += (y_hat.argmax(dim=1) == y).sum().item()
     if is_training:
         net.train()
     return total_loss / total_size
 
 
-def train_dropout(train_iter, test_iter, use_dropout: bool = True,
+def train_dropout(train_iter:DataLoader, test_iter:DataLoader, use_dropout: bool = True,
                   num_epochs: int = 5, lr: float = 0.5,
                   batch_size: int = 256, seed: int = 0) -> dict:
     """训练上面那个 MLP，返回 {"train_loss": [...], "train_acc": [...],
@@ -131,3 +164,32 @@ def train_dropout(train_iter, test_iter, use_dropout: bool = True,
     use_dropout=False 时两个丢弃层的概率都设成 0。
     损失用 nn.CrossEntropyLoss（它返回的是平均损失，记录的也是平均，不必再除）。
     """
+    torch.manual_seed(seed)
+    train_loss, train_acc, test_acc = [], [], []
+    d1, d2 = 0.2, 0.5
+    if use_dropout is False:
+        d1, d2 = 0, 0
+    net = make_dropout_net(dropout1=d1, dropout2=d2)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=0)
+    for _ in range(num_epochs):
+        train_total_size, train_total_loss = 0, 0
+        for X, y in train_iter:
+            optimizer.zero_grad()
+            net.train()
+            y_hat = net(X)
+            loss = loss_fn(y_hat, y)
+            loss.backward()
+            optimizer.step()
+            train_total_loss += loss.item() * X.size(0)
+            train_total_size += X.size(0)
+        train_loss.append(train_total_loss / train_total_size)
+        net.eval()
+        train_acc.append(evaluate(net, train_iter))
+        test_acc.append(evaluate(net, test_iter))
+    return {
+        "train_loss" : train_loss, 
+        "train_acc" : train_acc, 
+        "test_acc" : test_acc
+    }
+
