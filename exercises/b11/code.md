@@ -49,8 +49,16 @@ def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
                       lam: float = 0.0) -> dict:
     """对四个参数求梯度，返回 {"W1": ..., "b1": ..., "W2": ..., "b2": ...}。
 
-    返回的梯度要**脱离计算图**（调用方会拿它们做数值比较），形状与参数相同。
-    不要修改传进来的参数。
+    **调用方传进来的四个参数是普通张量，`requires_grad` 为 `False`。**
+    要让梯度能算到它们身上，你得自己把它们接进计算图。一个办法是先复制一份再开梯度，
+    这样原对象不受影响。
+
+    **不要修改传进来的任何对象**（包括不要改它们的 `requires_grad`），
+    调用方之后还要用它们做别的比较。
+
+    返回的梯度要脱离计算图（调用方会拿它们做数值比较），形状与参数相同。
+
+    可以复用上面 `build_model` 的前向。
     """
 ```
 
@@ -58,6 +66,7 @@ def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
 |---|---|
 | `build_model` 返回的是标量张量 | 是的 |
 | `grads_by_autograd` 返回四个键 | 形状与参数一致，`requires_grad` 为 `False` |
+| 传进去的四个参数 | `requires_grad` 仍是 `False`，数值没变（没被函数改动）|
 | 四个梯度的数值 | 与数值梯度吻合（相对误差 1e-4 以内）|
 | `lam>0` 时 | `W1`、`W2` 的梯度比 `lam=0` 时多 `lam * W` |
 | 传入的参数 | 没被修改 |

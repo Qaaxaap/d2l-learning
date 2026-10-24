@@ -122,6 +122,9 @@ def main() -> int:
                 f"  参考: {ref[key].flatten()[:4].tolist()}"
             )
         for key, val in before.items():
+            assert not params[key].requires_grad, (
+                f"传进来的 {key} 原来没有 requires_grad，函数不该改动它"
+            )
             assert torch.allclose(params[key], val), f"不应该修改传进来的 {key}"
 
     @case("T1 正则项只进权重")
