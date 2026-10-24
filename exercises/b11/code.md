@@ -112,11 +112,21 @@ def numeric_grad(f, x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
 ```python
 def grad_check(analytic: torch.Tensor, numeric: torch.Tensor,
                tol: float = 1e-4) -> bool:
-    """比较两组梯度是否吻合。
+    """比较两组梯度是否吻合，返回 bool。
 
-    相对误差定义为：
-        ||analytic - numeric|| / max(||analytic|| + ||numeric||, 1e-8)
-    小于 tol 返回 True，否则 False。
+    相对误差 = diff / scale，其中
+
+        diff  = 两组之差的 L2 范数
+              = (analytic - numeric).norm()
+
+        scale = 两组各自的 L2 范数之和
+              = analytic.norm() + numeric.norm()
+              再与 1e-8 取较大者（避免分母为 0 或过小把比值放大）
+
+    相对误差小于 tol 返回 True，否则 False。
+
+    这里的 L2 范数指**把所有元素平方求和再开方**。对矩阵来说这就是 Frobenius 范数，
+    torch 里统一用 `.norm()`（默认就是 L2）。它返回一个零维张量，与标量比较时要 `.item()`。
     """
 ```
 
