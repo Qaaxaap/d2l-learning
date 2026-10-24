@@ -54,10 +54,42 @@ def numeric_grad(f, x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
 
     f 接受一个张量返回一个标量张量。不会修改传入的 x。
     """
+    x = x.to(torch.float64)
     grad = []
     for i, xi in enumerate(x.flatten()):
-        epi = torch.zeros_like(x).flatten()
+        epi = torch.zeros_like(x, dtype=torch.float64).flatten()
         epi[i] += eps
         epi = epi.reshape(x.shape)
         grad.append((f(x + epi) - f(x - epi)) / (2 * eps))
-    return torch.tensor(grad).reshape(x.shape)
+    return torch.tensor(grad).reshape(x.shape).to(torch.float32)
+
+def grad_check(analytic: torch.Tensor, numeric: torch.Tensor,
+               tol: float = 1e-4) -> bool:
+    """比较两组梯度是否吻合。
+
+    相对误差定义为：
+        ||analytic - numeric|| / max(||analytic|| + ||numeric||, 1e-8)
+    小于 tol 返回 True，否则 False。
+    """
+    if (analytic - numeric).sum() / max(analytic.sum() + numeric.sum(), 1e-8) < tol:
+        return True
+    return False
+
+def xavier_uniform(a: int, b: int, seed: int = 0) -> torch.Tensor:
+    """返回形状 (a, b) 的 Xavier 均匀初始化权重。
+
+    每个元素从 U(-r, r) 采样，r = sqrt(6 / (a + b))，a 是输入个数、b 是输出个数。
+    同一个 seed 给出相同结果。
+    """
+    r = (6 / (a + b)) ** 0.5
+    torch.manual_seed(seed)
+    return torch.rand(size=(a, b), dtype=torch.float32) * r
+
+def he_uniform(a: int, b: int, seed: int = 0) -> torch.Tensor:
+    """返回形状 (a, b) 的 He 均匀初始化权重。
+
+    每个元素从 U(-r, r) 采样，r = sqrt(6 / a)。
+    """
+    r = (6 / a) ** 0.5
+    torch.manual_seed(seed)
+    return torch.rand(size=(a, b), dtype=torch.float32) * r

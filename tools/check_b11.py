@@ -165,6 +165,18 @@ def main() -> int:
         assert mod.grad_check(a, a * 1.01) is False, "相差 1% 应返回 False"
         z = torch.zeros(3)
         assert mod.grad_check(z, z.clone()) is True, "两组全零应返回 True"
+        # 正负抵消：两组的和都是 0，用 .sum() 当范数会把分母压到 1e-8
+        # 而这两组实际差得很远（欧氏距离 2.83），必须返回 False
+        a = torch.tensor([1.0, -1.0])
+        b = torch.tensor([-1.0, 1.0])
+        assert mod.grad_check(a, b) is False, (
+            "这两组相差 (2, -2)，欧氏距离 2.83，必须返回 False。"
+            "如果返回 True，检查是不是用 .sum() 代替了欧氏范数——"
+            "两组的和都是 0，用 .sum() 会让分子分母都变成 0"
+        )
+        # 大尺度、正负混合：范数与 sum 也要对
+        big = torch.tensor([100.0, -100.0])
+        assert mod.grad_check(big, big * 1.01) is False, "相差 1% 应返回 False"
 
     @case("T4 Xavier 与 He 初始化")
     def _t4():
