@@ -1,3 +1,4 @@
+from numpy import zeros_like
 import torch
 import torch.nn as nn
 
@@ -53,4 +54,10 @@ def numeric_grad(f, x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
 
     f 接受一个张量返回一个标量张量。不会修改传入的 x。
     """
-    return (f(x + eps) - f(x - eps)) / (2 * eps)
+    grad = []
+    for i, xi in enumerate(x.flatten()):
+        epi = torch.zeros_like(x).flatten()
+        epi[i] += eps
+        epi = epi.reshape(x.shape)
+        grad.append((f(x + epi) - f(x - epi)) / (2 * eps))
+    return torch.tensor(grad).reshape(x.shape)
