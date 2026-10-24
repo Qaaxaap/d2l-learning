@@ -1,4 +1,26 @@
-from numpy import zeros_like
+"""
+import torch
+
+def relu(t):
+    return torch.maximum(t, torch.zeros_like(t))
+
+def backward(x, W1, b1, W2, b2, y, lam=0.0):
+    z = W1 @ x + b1
+    h = relu(z)
+    o = W2 @ h + b2
+    L = 0.5 * ((o - y) ** 2).sum()
+    s = lam / 2 * ((W1 ** 2).sum() + (W2 ** 2).sum())
+    J = L + s
+
+    d_o = o - y                          # 对 o 的梯度
+    d_W2 = d_o @ h.t() + lam * W2        # 对 W2 的梯度
+    d_b2 = d_o.sum()   梯度不应该求和                  # 对 b2 的梯度
+    d_h = W2 @ d_o     没有转置W2                  # 对 h 的梯度
+    d_z = d_h * (z >= 0).float()         # 对 z 的梯度 零点导数通常认为是0（这题无意义吧）
+    d_W1 = d_z @ x.t() + lam * W1        # 对 W1 的梯度
+    d_b1 = d_z.sum()   梯度不应该求和                  # 对 b1 的梯度
+    return J, {"W1": d_W1, "b1": d_b1, "W2": d_W2, "b2": d_b2}
+"""
 import torch
 import torch.nn as nn
 
@@ -71,7 +93,7 @@ def grad_check(analytic: torch.Tensor, numeric: torch.Tensor,
         ||analytic - numeric|| / max(||analytic|| + ||numeric||, 1e-8)
     小于 tol 返回 True，否则 False。
     """
-    if (analytic - numeric).sum() / max(analytic.sum() + numeric.sum(), 1e-8) < tol:
+    if (analytic - numeric).norm() / max(analytic.norm() + numeric.norm(), 1e-8) < tol:
         return True
     return False
 
