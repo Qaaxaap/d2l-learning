@@ -20,42 +20,51 @@ B04 里用 `backward()` 一行拿到梯度。这一章先**手写**一遍这个�
 
 ---
 
-## T1 手写反向传播
+## T1 用 autograd 取梯度，再用数值梯度验证
+
+这一题不手写反向传播——框架里有 `backward()`，实际工作里也用不到手写。
+要练的是两件更实用的事：**会用 `backward()` 取到梯度**，以及**知道梯度到底是什么**（数值偏导），
+所以能自己验证它。
 
 ```python
-def forward_backward(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
-                     W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
-                     lam: float = 0.0) -> tuple:
-    """一个单隐藏层的 MLP，手写正向与反向。
+def build_model(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
+                W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
+                lam: float = 0.0):
+    """按下面的前向算出目标函数 J，返回一个标量张量。
 
-    前向：
         z = W1 @ x + b1
-        h = relu(z)                # relu 自己写，不许用 torch.relu
+        h = relu(z)
         o = W2 @ h + b2
         L = 0.5 * sum((o - y) ** 2)
         s = lam / 2 * (||W1||_F^2 + ||W2||_F^2)
         J = L + s
 
     形状：x (d, 1)、y (q, 1)、W1 (h, d)、b1 (h, 1)、W2 (q, h)、b2 (q, 1)。
+    四个参数由调用方传进来，**函数里不要重新初始化它们**。
+    """
 
-    返回 (J, grads)，J 是标量张量，grads 是字典，键为 "W1"、"b1"、"W2"、"b2"，
-    值是各个梯度，形状与对应参数相同。
 
-    **不许调用 backward()、不许用任何 autograd 相关的东西**（包括 torch.autograd、
-    requires_grad）。全部梯度用链式法则手推。
+def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
+                      W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
+                      lam: float = 0.0) -> dict:
+    """对四个参数求梯度，返回 {"W1": ..., "b1": ..., "W2": ..., "b2": ...}。
+
+    返回的梯度要**脱离计算图**（调用方会拿它们做数值比较），形状与参数相同。
+    不要修改传进来的参数。
     """
 ```
 
 | 检查 | 期望 |
 |---|---|
-| 返回值 | `(J, grads)`，`grads` 有四个键，形状与参数一致 |
-| `lam=0` 时的 `J` | 等于 `0.5 * sum((o - y) ** 2)` |
-| 四个梯度的**数值** | 与数值梯度吻合（相对误差 1e-4 以内）|
+| `build_model` 返回的是标量张量 | 是的 |
+| `grads_by_autograd` 返回四个键 | 形状与参数一致，`requires_grad` 为 `False` |
+| 四个梯度的数值 | 与数值梯度吻合（相对误差 1e-4 以内）|
 | `lam>0` 时 | `W1`、`W2` 的梯度比 `lam=0` 时多 `lam * W` |
-| 代码里 | 没有 `backward`、没有 `requires_grad` |
+| 传入的参数 | 没被修改 |
 
-**提示**：写完后用 T2 与 T3 两个工具自查。手推容易在转置上出错，
-而形状对不上时数值梯度会直接告诉你第几个元素错了。
+**提示**：这一题的关键是搞清"梯度是什么"。`backward()` 算出来的 `.grad` 就是目标函数对参数的
+**偏导**，所以把某个参数加一个很小的量、看目标函数变化多少，
+得到的就是那个偏导的近似值——这就是 T2 要写的数值梯度。两者应该吻合。
 
 ## T2 数值梯度
 
@@ -150,6 +159,8 @@ def backward(x, W1, b1, W2, b2, y, lam=0.0):
     d_b1 = d_z.sum()                     # 对 b1 的梯度
     return J, {"W1": d_W1, "b1": d_b1, "W2": d_W2, "b2": d_b2}
 ```
+
+这一题**不要求你写反向传播**，只要求<b>读</b>。这段代码是别人写的，你指出问题即可。
 
 三处分别指三个位置：**对 `h` 求导的转置**、**偏置梯度的形状**、
 **relu 在 0 处的导数**。

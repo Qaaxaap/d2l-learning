@@ -13,28 +13,33 @@ def relu(t: torch.Tensor) -> torch.Tensor:
     return torch.maximum(t, torch.zeros_like(t))
 
 
-# ---------- T1 手写反向传播 ----------
+# ---------- T1 用 autograd 取梯度 ----------
 
-def forward_backward(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
-                     W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
-                     lam: float = 0.0) -> tuple:
-    # 前向
+def build_model(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
+                W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
+                lam: float = 0.0):
     z = W1 @ x + b1
     h = relu(z)
     o = W2 @ h + b2
     loss = 0.5 * ((o - y) ** 2).sum()
     reg = lam / 2 * ((W1**2).sum() + (W2**2).sum())
-    J = loss + reg
+    return loss + reg
 
-    # 反向，按讲义 2.2 节的顺序倒着来
-    d_o = o - y                          # dL/do，平方损失对 o 求导
-    d_W2 = d_o @ h.t() + lam * W2        # dJ/dW2 = d_o h^T + lam*W2
-    d_b2 = d_o.sum(dim=1, keepdim=True)  # dJ/db2 = sum(d_o)，按列求和
-    d_h = W2.t() @ d_o                   # dJ/dh = W2^T d_o，注意转置
-    d_z = d_h * (z > 0).float()          # 过 relu：逐元素乘，导数是 0/1（0 处取 0）
-    d_W1 = d_z @ x.t() + lam * W1        # dJ/dW1 = d_z x^T + lam*W1
-    d_b1 = d_z.sum(dim=1, keepdim=True)  # dJ/db1 = sum(d_z)
-    return J, {"W1": d_W1, "b1": d_b1, "W2": d_W2, "b2": d_b2}
+
+def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
+                      W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
+                      lam: float = 0.0) -> dict:
+    # 拷一份再开梯度：直接对传进来的张量开 requires_grad 会改到调用方的对象
+    params = {
+        "W1": W1.clone().requires_grad_(True),
+        "b1": b1.clone().requires_grad_(True),
+        "W2": W2.clone().requires_grad_(True),
+        "b2": b2.clone().requires_grad_(True),
+    }
+    J = build_model(x, params["W1"], params["b1"], params["W2"], params["b2"], y, lam)
+    J.backward()
+    # detach：调用方要拿这些梯度做数值比较，带计算图没意义
+    return {k: v.grad.detach().clone() for k, v in params.items()}
 
 
 # ---------- T2 数值梯度 ----------

@@ -60,7 +60,7 @@ def make_case(seed: int = 0):
     }
 
 
-def reference(name: str, params: dict, lam: float):
+def reference(params: dict, lam: float):
     """用 autograd 算一份参考值，仅供断言对照。
 
     只对四个参数求梯度——x 与 y 是数据，不参与求导。
@@ -80,43 +80,49 @@ def reference(name: str, params: dict, lam: float):
 def main() -> int:
     mod = load_user_module()
 
-    @case("T1 手写反向传播：目标函数与四个梯度")
+    @case("T1 build_model 的目标函数")
     def _t1a():
         params = make_case()
-        J_ref, grads_ref = reference("t1", params, lam=0.1)
-        J, grads = mod.forward_backward(
-            params["x"], params["W1"], params["b1"], params["W2"], params["b2"],
-            params["y"], lam=0.1,
+        x, W1, b1, W2, b2, y = (
+            params["x"], params["W1"], params["b1"], params["W2"], params["b2"], params["y"],
         )
-        assert isinstance(grads, dict), f"第二个返回值应是字典，得到 {type(grads).__name__}"
+        J = mod.build_model(x, W1, b1, W2, b2, y, lam=0.1)
+        assert J.dim() == 0, f"应返回标量张量，得到形状 {tuple(J.shape)}"
+        J_ref, _ = reference(params, lam=0.1)
         assert torch.allclose(J, J_ref), f"目标函数应为 {J_ref.item():.6f}，得到 {J.item():.6f}"
+        # lam=0 时 J 应当就是平方损失
+        L = 0.5 * ((W2 @ torch.relu(W1 @ x + b1) + b2 - y) ** 2).sum()
+        assert torch.allclose(mod.build_model(x, W1, b1, W2, b2, y, lam=0.0), L), (
+            "lam=0 时目标函数应等于 0.5*sum((o-y)^2)"
+        )
+
+    @case("T1 grads_by_autograd 的四个梯度")
+    def _t1b():
+        params = make_case()
+        x, W1, b1, W2, b2, y = (
+            params["x"], params["W1"], params["b1"], params["W2"], params["b2"], params["y"],
+        )
+        before = {k: v.clone() for k, v in params.items()}
+        grads = mod.grads_by_autograd(x, W1, b1, W2, b2, y, lam=0.1)
+        assert isinstance(grads, dict), f"应返回字典，得到 {type(grads).__name__}"
+        _, ref = reference(params, lam=0.1)
         for key in ("W1", "b1", "W2", "b2"):
             assert key in grads, f"字典缺 {key} 键"
             got = grads[key]
-            want = grads_ref[key]
-            assert tuple(got.shape) == tuple(want.shape), (
-                f"{key} 的梯度形状应为 {tuple(want.shape)}，得到 {tuple(got.shape)}。"
-                "形状不对通常是转置或 keepdim 的问题"
+            assert tuple(got.shape) == tuple(ref[key].shape), (
+                f"{key} 的梯度形状应为 {tuple(ref[key].shape)}，得到 {tuple(got.shape)}"
             )
-            assert torch.allclose(got, want, atol=1e-6), (
+            assert not got.requires_grad, (
+                f"{key} 的梯度应当是 detach 过的（调用方要拿它做数值比较），"
+                "检查有没有 .detach() 或 .clone().detach()"
+            )
+            assert torch.allclose(got, ref[key], atol=1e-6), (
                 f"{key} 的梯度与参考值不符。\n"
                 f"  你的: {got.flatten()[:4].tolist()}\n"
-                f"  参考: {want.flatten()[:4].tolist()}"
+                f"  参考: {ref[key].flatten()[:4].tolist()}"
             )
-
-    @case("T1 用了 autograd 吗")
-    def _t1b():
-        src = USER_FILE.read_text(encoding="utf-8")
-        # 只检查 forward_backward 这一个函数体，别处可以有 autograd
-        start = src.find("def forward_backward")
-        assert start != -1, "找不到 forward_backward 的定义"
-        end = src.find("\ndef ", start + 1)
-        body = src[start:end if end != -1 else len(src)]
-        for bad in (".backward(", "requires_grad", "torch.autograd"):
-            assert bad not in body, (
-                f"forward_backward 里出现了 {bad!r}。这一题要手推链式法则，"
-                "不能用 autograd"
-            )
+        for key, val in before.items():
+            assert torch.allclose(params[key], val), f"不应该修改传进来的 {key}"
 
     @case("T1 正则项只进权重")
     def _t1c():
@@ -124,13 +130,13 @@ def main() -> int:
         x, W1, b1, W2, b2, y = (
             params["x"], params["W1"], params["b1"], params["W2"], params["b2"], params["y"],
         )
-        _, g_no = mod.forward_backward(x, W1, b1, W2, b2, y, lam=0.0)
-        _, g_reg = mod.forward_backward(x, W1, b1, W2, b2, y, lam=0.5)
+        g_no = mod.grads_by_autograd(x, W1, b1, W2, b2, y, lam=0.0)
+        g_reg = mod.grads_by_autograd(x, W1, b1, W2, b2, y, lam=0.5)
         for key in ("W1", "W2"):
             diff = g_reg[key] - g_no[key]
             want = 0.5 * params[key]
             assert torch.allclose(diff, want, atol=1e-6), (
-                f"lam 从 0 变到 0.5 时，{key} 的梯度应多出 0.5*{key}，实际不符"
+                f"lam 从 0 变到 0.5 时，{key} 的梯度应多出 0.5*{key}"
             )
         for key in ("b1", "b2"):
             assert torch.allclose(g_reg[key], g_no[key], atol=1e-6), (
