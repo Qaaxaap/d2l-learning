@@ -34,7 +34,9 @@ def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
     返回的梯度要**脱离计算图**（调用方会拿它们做数值比较），形状与参数相同。
     不要修改传进来的参数。
     """
-    l = build_model(x.requires_grad(), W1, b1, W2, b2, y, lam)
+    rg = lambda x : x.clone().requires_grad_()
+    W1, b1, W2, b2 = rg(W1), rg(b1), rg(W2), rg(b2)
+    l = build_model(x, W1, b1, W2, b2, y, lam)
     l.backward()
     return {
         "W1": W1.grad.detach(),
@@ -42,3 +44,13 @@ def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
         "W2": W2.grad.detach(),
         "b2": b2.grad.detach(),
     }
+
+def numeric_grad(f, x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """中心差分数值梯度。
+
+    对 x 的每个元素，把它加上 eps 与减去 eps 各算一次 f，差商 (f(+) - f(-)) / (2*eps)
+    就是该元素上的近似偏导。返回与 x 同形状的张量。
+
+    f 接受一个张量返回一个标量张量。不会修改传入的 x。
+    """
+    return (f(x + eps) - f(x - eps)) / (2 * eps)
