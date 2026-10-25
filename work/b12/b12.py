@@ -1,3 +1,36 @@
+"""
+import pandas as pd
+import torch
+
+def preprocess(train_data, test_data):
+    n_train = train_data.shape[0]
+
+    # 各自处理，不合并
+    train_features = train_data.iloc[:, 1:-1].copy()
+    test_features = test_data.iloc[:, 1:].copy() 不能各自处理，否则one-hot、标准化出问题。
+
+    # 分别标准化
+    for col in train_features.columns:
+        if train_features[col].dtype != "object":
+            train_features[col] = (train_features[col] - train_features[col].mean()) / train_features[col].std()
+    for col in test_features.columns:
+        if test_features[col].dtype != "object": 应当一起标准化
+            test_features[col] = (test_features[col] - test_features[col].mean()) / test_features[col].std()
+
+    # 先填缺失，再 one-hot
+    train_features = train_features.fillna(0)
+    test_features = test_features.fillna(0) 先one-hot,否则0也会被one-hot拆开。
+
+    # 分别 one-hot
+    train_features = pd.get_dummies(train_features) 应该一起one-hot
+    test_features = pd.get_dummies(test_features)
+
+    return (
+        torch.tensor(train_features.values, dtype=torch.float32),
+        torch.tensor(test_features.values, dtype=torch.float32),
+        torch.tensor(train_data["SalePrice"].values.reshape(-1, 1), dtype=torch.float32),
+    )
+"""
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -102,3 +135,21 @@ def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
         total_train_loss += train_ls[-1]
         total_test_loss += test_ls[-1]
     return total_train_loss / k, total_test_loss / k
+
+def train_and_pred(train_features: torch.Tensor,
+                   test_features: torch.Tensor,
+                   train_labels: torch.Tensor,
+                   test_data: pd.DataFrame,
+                   num_epochs: int, lr: float, weight_decay: float,
+                   batch_size: int) -> pd.DataFrame:
+    """用全部训练数据重训一个模型，对测试集预测，返回提交用的 DataFrame。
+
+    返回的 DataFrame 有两列：Id 与 SalePrice，行数与测试集相同（1459）。
+    同时把它存到 work/b12/submission.csv（不带行号）。
+    """
+    net = nn.Sequential(nn.Linear(train_features.shape[1], train_labels.shape[1]))
+    train(net, train_features, train_labels, None, None, num_epochs, lr, weight_decay, batch_size)
+    test_data["SalePrice"] = pd.Series(net(test_features).detach().numpy().reshape(-1))
+    submission = pd.concat([test_data["Id"], test_data["SalePrice"]], axis=1)
+    submission.to_csv("submission.csv", index=False)
+    return submission
