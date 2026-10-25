@@ -87,15 +87,18 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
     """
     sp = lambda x : list(torch.tensor_split(x, k))[i]
     spn = lambda x: torch.cat(torch.tensor_split(x, k)[0:i] + torch.tensor_split(x, k)[i+1:])
-    return (sp(X), sp(y), spn(X), spn(y))
+    return (spn(X), spn(y), sp(X), sp(y))
 
 
 def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
            lr: float, weight_decay: float, batch_size: int
            ) -> tuple[float, float]:
     """跑 k 折，返回 (avg_train_rmse, avg_valid_rmse) 两个浮点数。"""
-    net = nn.Sequential(nn.Flatten(), nn.Linear())
+    total_train_loss, total_test_loss = 0, 0
     for i in range(k):
-        x_train, x_test, y_train, y_test = get_k_fold_data(k, i, X, y)
-        train(net, x_train, y_train, x_test, y_test, num_epochs, lr, weight_decay, batch_size)
-        
+        net = nn.Sequential(nn.Flatten(), nn.Linear(X.numel() // X.size(0), y.numel() // y.size(0)))
+        x_train, y_train, x_test, y_test = get_k_fold_data(k, i, X, y)
+        train_ls, test_ls = train(net, x_train, y_train, x_test, y_test, num_epochs, lr, weight_decay, batch_size)
+        total_train_loss += train_ls[-1]
+        total_test_loss += test_ls[-1]
+    return total_train_loss / k, total_test_loss / k

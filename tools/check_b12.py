@@ -172,6 +172,11 @@ def main() -> int:
             assert tx.shape[0] + vx.shape[0] == 1460, (
                 f"第 {i} 折的训练与验证样本数之和应为 1460，得到 {tx.shape[0]} + {vx.shape[0]}"
             )
+            assert tx.shape[0] > vx.shape[0], (
+                f"第 {i} 折的训练集应比验证集大：k=5 时训练 4 份（1168）、验证 1 份（292），"
+                f"得到训练 {tx.shape[0]}、验证 {vx.shape[0]}。"
+                "如果反了，检查 get_k_fold_data 里第 i 份是拼进了训练集还是拿来当验证集"
+            )
             assert tuple(tx.shape[1:]) == (1,), "特征的列数应保持为 1"
             sizes.append(vx.shape[0])
             seen_valid.extend(vx.flatten().tolist())
@@ -192,7 +197,8 @@ def main() -> int:
         )
         assert 0.18 < avg_valid < 0.35, (
             f"5 折平均验证误差应在 0.18 到 0.35 之间（50 轮实测约 0.27），得到 {avg_valid:.4f}。"
-            "偏高检查：预处理有没有问题、学习率是不是太小、轮数是不是太少"
+            "学习率与轮数是断言传进去的，不用怀疑超参数。查：训练集与验证集有没有反、"
+            "train 有没有用上 lr、get_k_fold_data 每折是否返回 1168 个训练样本"
         )
         assert avg_valid > avg_train * 0.5, (
             f"验证误差 {avg_valid:.4f} 比训练误差 {avg_train:.4f} 小太多，"
