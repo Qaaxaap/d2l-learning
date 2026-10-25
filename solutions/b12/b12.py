@@ -18,7 +18,7 @@ REPO = Path.cwd()   # 需要在仓库根目录运行；从 __file__ 推在拷到
 
 # ---------- T1 读数据 ----------
 
-def load_houses(csv_dir: str = "data") -> tuple:
+def load_houses(csv_dir: str = "data") -> tuple[pd.DataFrame, pd.DataFrame]:
     train = pd.read_csv(f"{csv_dir}/kaggle_house_pred_train.csv")
     test = pd.read_csv(f"{csv_dir}/kaggle_house_pred_test.csv")
     return train, test
@@ -26,7 +26,8 @@ def load_houses(csv_dir: str = "data") -> tuple:
 
 # ---------- T2 预处理 ----------
 
-def preprocess(train_data, test_data) -> tuple:
+def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
+               ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     n_train = train_data.shape[0]
 
     # 去掉 Id（第 0 列）与标签（最后一列）；测试集没有标签，所以到末尾
@@ -70,9 +71,11 @@ def get_net(num_features: int = 331):
     return nn.Sequential(nn.Linear(num_features, 1))
 
 
-def train(net, train_features, train_labels, test_features, test_labels,
+def train(net: nn.Module,
+          train_features: torch.Tensor, train_labels: torch.Tensor,
+          test_features: torch.Tensor | None, test_labels: torch.Tensor | None,
           num_epochs: int, lr: float, weight_decay: float,
-          batch_size: int) -> tuple:
+          batch_size: int) -> tuple[list[float], list[float]]:
     g = torch.Generator().manual_seed(0)
     train_iter = DataLoader(
         TensorDataset(train_features, train_labels),
@@ -98,7 +101,8 @@ def train(net, train_features, train_labels, test_features, test_labels,
 
 # ---------- T5 k 折 ----------
 
-def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor) -> tuple:
+def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
+                    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     assert k > 1, "k 至少是 2"
     n = X.shape[0]
     base, extra = divmod(n, k)
@@ -119,7 +123,8 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor) -> tuple:
 
 
 def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
-           lr: float, weight_decay: float, batch_size: int) -> tuple:
+           lr: float, weight_decay: float, batch_size: int
+           ) -> tuple[float, float]:
     train_sum, valid_sum = 0.0, 0.0
     for i in range(k):
         tx, ty, vx, vy = get_k_fold_data(k, i, X, y)
@@ -134,9 +139,12 @@ def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
 
 # ---------- T6 预测与提交 ----------
 
-def train_and_pred(train_features, test_features, train_labels, test_data,
+def train_and_pred(train_features: torch.Tensor,
+                   test_features: torch.Tensor,
+                   train_labels: torch.Tensor,
+                   test_data: pd.DataFrame,
                    num_epochs: int, lr: float, weight_decay: float,
-                   batch_size: int):
+                   batch_size: int) -> pd.DataFrame:
     net = get_net(train_features.shape[1])
     train_ls, _ = train(
         net, train_features, train_labels, None, None,

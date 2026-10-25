@@ -20,6 +20,10 @@
 **数据已经放在仓库的 `data/` 目录下**：`kaggle_house_pred_train.csv` 与
 `kaggle_house_pred_test.csv`。不用自己下载。
 
+**类型注解**：`pd.DataFrame` 是 pandas 的二维表，`torch.Tensor` 是张量，
+`torch.nn.Module` 是模型的基类（B06 讲过），`tuple[X, Y]` 表示"返回两个值，分别是 X 和 Y"。
+`X | None` 表示"可以是 X，也可以是 None"。
+
 **这一章需要 pandas**。讲义 1.1 与 2 节里用到的每个 API 都讲过
 （`read_csv`、`shape`、`dtypes`、`iloc`、`concat`、`apply`、`fillna`、`get_dummies`、
 `values`、`to_csv`），不必查文档。
@@ -51,7 +55,8 @@ def load_houses(csv_dir: str = "data") -> tuple:
 ## T2 预处理
 
 ```python
-def preprocess(train_data, test_data) -> tuple:
+def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
+               ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """把两张表变成三个张量，返回 (train_features, test_features, train_labels)。
 
     步骤（讲义 2 节）：
@@ -95,9 +100,11 @@ def log_rmse(preds: torch.Tensor, labels: torch.Tensor) -> float:
 ## T4 训练
 
 ```python
-def train(net, train_features, train_labels, test_features, test_labels,
+def train(net: torch.nn.Module,
+          train_features: torch.Tensor, train_labels: torch.Tensor,
+          test_features: torch.Tensor | None, test_labels: torch.Tensor | None,
           num_epochs: int, lr: float, weight_decay: float,
-          batch_size: int) -> tuple:
+          batch_size: int) -> tuple[list[float], list[float]]:
     """训练 net，返回 (train_ls, test_ls)。
 
     两个列表长度都是 num_epochs，元素是那一轮结束后的 log_rmse（Python 浮点数）。
@@ -118,7 +125,8 @@ def train(net, train_features, train_labels, test_features, test_labels,
 ## T5 k 折
 
 ```python
-def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor) -> tuple:
+def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
+                    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """返回第 i 折的 (X_train, y_train, X_valid, y_valid)。
 
     k 份的大小相差不超过 1（用 divmod 分配余数，B09 的 T5 做过类似的事）。
@@ -127,7 +135,8 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor) -> tuple:
 
 
 def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
-           lr: float, weight_decay: float, batch_size: int) -> tuple:
+           lr: float, weight_decay: float, batch_size: int
+           ) -> tuple[float, float]:
     """跑 k 折，返回 (avg_train_rmse, avg_valid_rmse) 两个浮点数。"""
 ```
 
@@ -141,9 +150,12 @@ def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
 ## T6 预测与提交
 
 ```python
-def train_and_pred(train_features, test_features, train_labels, test_data,
+def train_and_pred(train_features: torch.Tensor,
+                   test_features: torch.Tensor,
+                   train_labels: torch.Tensor,
+                   test_data: pd.DataFrame,
                    num_epochs: int, lr: float, weight_decay: float,
-                   batch_size: int):
+                   batch_size: int) -> pd.DataFrame:
     """用全部训练数据重训一个模型，对测试集预测，返回提交用的 DataFrame。
 
     返回的 DataFrame 有两列：Id 与 SalePrice，行数与测试集相同（1459）。
