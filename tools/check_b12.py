@@ -210,6 +210,11 @@ def main() -> int:
         tr, te = get_data()
         features, test_features, labels = mod.preprocess(tr, te)
         torch.manual_seed(0)
+        # 先删掉旧文件：否则"文件存在"这一条会被上一次留下的文件蒙过去，
+        # 学习者的实现存到别处也能通过
+        out = REPO / "work" / "b12" / "submission.csv"
+        if out.exists():
+            out.unlink()
         sub = mod.train_and_pred(
             features, test_features, labels, te,
             num_epochs=20, lr=5, weight_decay=0, batch_size=64,
@@ -225,8 +230,10 @@ def main() -> int:
         assert 50_000 < prices.mean() < 1_000_000, (
             f"预测价格均值应在 5 万到 100 万之间，得到 {prices.mean():.0f}"
         )
-        out = REPO / "work" / "b12" / "submission.csv"
-        assert out.exists(), f"应当存到 {out}"
+        assert out.exists(), (
+            f"应当把文件存到 {out}（相对仓库根是 work/b12/submission.csv）。"
+            "如果存到了仓库根目录，检查 train_and_pred 里拼路径的那一行"
+        )
         saved = pd.read_csv(out)
         assert list(saved.columns) == ["Id", "SalePrice"], (
             f"存下来的 CSV 列名应为 ['Id', 'SalePrice']，得到 {list(saved.columns)}。"
