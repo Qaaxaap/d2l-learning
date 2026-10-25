@@ -137,7 +137,11 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
                     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """返回第 i 折的 (X_train, y_train, X_valid, y_valid)。
 
-    k 份的大小相差不超过 1（用 divmod 分配余数，B09 的 T5 做过类似的事）。
+    k 份的大小相差不超过 1。**用 Python 算切分索引是正常的**——没有"纯 Python"
+    与"张量版"的对立；切完之后拼接才用张量操作（`torch.cat`）。
+    余数怎么分配：`base, extra = divmod(n, k)`，前 extra 份各 base+1 个、其余各 base 个。
+    也可以直接 `torch.tensor_split(X, k)`，两种都收。
+
     第 i 份做验证，其余拼接做训练。所有样本都必须被用到且只用一次。
     """
 

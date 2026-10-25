@@ -41,6 +41,10 @@ def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
     test = torch.tensor(data.iloc[train_data.shape[0]:,:].values, dtype=torch.float32)
     return (train, test, label)
     
+def log_rmse(preds: torch.Tensor, labels: torch.Tensor) -> float:
+    clipped = torch.clamp(preds, min=1.0)
+    return torch.sqrt(((clipped.log() - labels.log()) ** 2).mean()).item()
+
 def train(net: torch.nn.Module,
           train_features: torch.Tensor, train_labels: torch.Tensor,
           test_features: torch.Tensor | None, test_labels: torch.Tensor | None,
@@ -54,5 +58,45 @@ def train(net: torch.nn.Module,
 
     优化器用 torch.optim.Adam，损失用 log_rmse（不是 MSE）。
     """
-    optimizer = torch.optim.Adam()
-    loss_fn = 
+    optimizer = torch.optim.Adam(params=net.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
+    train_ls, test_ls = [], []
+    for _ in range(num_epochs):
+        n = train_features.shape[0]
+        for i in range(0, n, batch_size):
+            optimizer.zero_grad()
+            X, y = train_features[i:min(n,i+batch_size)], train_labels[i:min(n,i+batch_size)]
+            l = loss_fn(net(X), y)
+            l.backward()
+            optimizer.step()
+        if test_features is not None:
+            test_ls.append(log_rmse(net(test_features), test_labels))
+        train_ls.append(log_rmse(net(train_features), train_labels))
+    return (train_ls, test_ls)
+
+def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
+                    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """返回第 i 折的 (X_train, y_train, X_valid, y_valid)。
+
+    k 份的大小相差不超过 1（用 divmod 分配余数，B09 的 T5 做过类似的事）。
+    第 i 份做验证，其余拼接做训练。所有样本都必须被用到且只用一次。
+    """
+    
+
+def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
+           lr: float, weight_decay: float, batch_size: int
+           ) -> tuple[float, float]:
+    """跑 k 折，返回 (avg_train_rmse, avg_valid_rmse) 两个浮点数。"""
+
+
+def train_and_pred(train_features: torch.Tensor,
+                   test_features: torch.Tensor,
+                   train_labels: torch.Tensor,
+                   test_data: pd.DataFrame,
+                   num_epochs: int, lr: float, weight_decay: float,
+                   batch_size: int) -> pd.DataFrame:
+    """用全部训练数据重训一个模型，对测试集预测，返回提交用的 DataFrame。
+
+    返回的 DataFrame 有两列：Id 与 SalePrice，行数与测试集相同（1459）。
+    同时把它存到 work/b12/submission.csv（不带行号）。
+    """
