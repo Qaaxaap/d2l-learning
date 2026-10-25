@@ -116,7 +116,10 @@ def train(net: torch.nn.Module,
     test_features 与 test_labels 可以是 None——那时只返回训练曲线，
     第二个列表给空列表。
 
-    优化器用 torch.optim.Adam，损失用 log_rmse（不是 MSE）。
+    **反向传播用的损失是平方损失（nn.MSELoss）；记录进列表的指标是 log_rmse。**
+    两者不同：平方损失用来更新参数，log_rmse 用来报告（与比赛指标一致）。
+    log_rmse 不是 torch.nn 里的东西，就是 T3 那道题要你写的。
+    优化器用 torch.optim.Adam。
     """
 ```
 
