@@ -149,7 +149,25 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
 def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
            lr: float, weight_decay: float, batch_size: int
            ) -> tuple[float, float]:
-    """跑 k 折，返回 (avg_train_rmse, avg_valid_rmse) 两个浮点数。"""
+    """跑 k 折交叉验证，返回两个浮点数：(平均训练误差, 平均验证误差)。
+
+    流程：
+      1. 准备两个累加器，都从 0 开始
+      2. 对 i = 0, 1, ..., k-1 重复下面几步：
+         a. 用 get_k_fold_data(k, i, X, y) 取出这一折的 (训练特征, 训练标签,
+            验证特征, 验证标签)
+         b. **造一个全新的模型**（输入维度 = X.shape[1]）
+         c. 用 train(...) 训练它 num_epochs 轮
+         d. train 返回的两个列表各取**最后一个元素**，分别加到两个累加器上
+      3. 两个累加器各除以 k，返回
+
+    **每一折都要重新造模型**：复用上一折的模型等于在"已经被训练过的参数"上接着训，
+    第二折的结果就不是"用训练集训练、在验证集上评估"了，交叉验证的意义没了。
+
+    两个误差的含义：训练误差是该折在自己的训练集上的最后一轮 log_rmse；
+    验证误差是该折在验证集上的最后一轮 log_rmse。平均之后分别叫
+    avg_train_rmse 与 avg_valid_rmse。
+    """
 ```
 
 | 检查 | 期望 |

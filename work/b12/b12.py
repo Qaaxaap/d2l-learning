@@ -58,7 +58,7 @@ def train(net: torch.nn.Module,
 
     优化器用 torch.optim.Adam，损失用 log_rmse（不是 MSE）。
     """
-    optimizer = torch.optim.Adam(params=net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(params=net.parameters(), lr=lr, weight_decay=weight_decay)
     loss_fn = nn.MSELoss()
     train_ls, test_ls = [], []
     for _ in range(num_epochs):
@@ -78,25 +78,24 @@ def get_k_fold_data(k: int, i: int, X: torch.Tensor, y: torch.Tensor
                     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """返回第 i 折的 (X_train, y_train, X_valid, y_valid)。
 
-    k 份的大小相差不超过 1（用 divmod 分配余数，B09 的 T5 做过类似的事）。
+    k 份的大小相差不超过 1。**用 Python 算切分索引是正常的**——没有"纯 Python"
+    与"张量版"的对立；切完之后拼接才用张量操作（`torch.cat`）。
+    余数怎么分配：`base, extra = divmod(n, k)`，前 extra 份各 base+1 个、其余各 base 个。
+    也可以直接 `torch.tensor_split(X, k)`，两种都收。
+
     第 i 份做验证，其余拼接做训练。所有样本都必须被用到且只用一次。
     """
-    
+    sp = lambda x : list(torch.tensor_split(x, k))[i]
+    spn = lambda x: torch.cat(torch.tensor_split(x, k)[0:i] + torch.tensor_split(x, k)[i+1:])
+    return (sp(X), sp(y), spn(X), spn(y))
+
 
 def k_fold(k: int, X: torch.Tensor, y: torch.Tensor, num_epochs: int,
            lr: float, weight_decay: float, batch_size: int
            ) -> tuple[float, float]:
     """跑 k 折，返回 (avg_train_rmse, avg_valid_rmse) 两个浮点数。"""
-
-
-def train_and_pred(train_features: torch.Tensor,
-                   test_features: torch.Tensor,
-                   train_labels: torch.Tensor,
-                   test_data: pd.DataFrame,
-                   num_epochs: int, lr: float, weight_decay: float,
-                   batch_size: int) -> pd.DataFrame:
-    """用全部训练数据重训一个模型，对测试集预测，返回提交用的 DataFrame。
-
-    返回的 DataFrame 有两列：Id 与 SalePrice，行数与测试集相同（1459）。
-    同时把它存到 work/b12/submission.csv（不带行号）。
-    """
+    net = nn.Sequential(nn.Flatten(), nn.Linear())
+    for i in range(k):
+        x_train, x_test, y_train, y_test = get_k_fold_data(k, i, X, y)
+        train(net, x_train, y_train, x_test, y_test, num_epochs, lr, weight_decay, batch_size)
+        
