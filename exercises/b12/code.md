@@ -20,6 +20,10 @@
 **数据已经放在仓库的 `data/` 目录下**：`kaggle_house_pred_train.csv` 与
 `kaggle_house_pred_test.csv`。不用自己下载。
 
+**标签的位置**：训练集的最后一列是 `SalePrice`，测试集没有这一列。
+所以训练集的特征是 `iloc[:, 1:-1]`、测试集是 `iloc[:, 1:]`。这个 `-1` 只因这份数据
+把标签放在最后一列，换一份数据先看标签在哪。
+
 **类型注解**：`pd.DataFrame` 是 pandas 的二维表，`torch.Tensor` 是张量，
 `torch.nn.Module` 是模型的基类（B06 讲过），`tuple[X, Y]` 表示"返回两个值，分别是 X 和 Y"。
 `X | None` 表示"可以是 X，也可以是 None"。
@@ -60,7 +64,8 @@ def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
     """把两张表变成三个张量，返回 (train_features, test_features, train_labels)。
 
     步骤（讲义 2 节）：
-      1. 去掉 Id 列
+      1. 去掉不该进特征的列。训练集要去掉 Id（第 0 列）**与标签 SalePrice（最后一列）**；
+         测试集只去 Id（它本来就没有 SalePrice）。标签留在特征里等于把答案告诉模型
       2. 训练集与测试集的特征按行合并
       3. 数值特征标准化（减均值除标准差），然后把缺失值填 0
       4. 类别特征转 one-hot，缺失也当成一个类别

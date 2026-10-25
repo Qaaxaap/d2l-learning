@@ -1,5 +1,6 @@
 import pandas as pd
-
+import torch
+import torch.nn as nn
 
 def load_houses(csv_dir: str = "data") -> tuple:
     """读两个 CSV，返回 (train_data, test_data) 两个 DataFrame。
@@ -12,7 +13,8 @@ def load_houses(csv_dir: str = "data") -> tuple:
     test_data = pd.read_csv(csvd + "_test.csv")
     return (train_data, test_data)
 
-def preprocess(train_data, test_data) -> tuple:
+def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
+               ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """把两张表变成三个张量，返回 (train_features, test_features, train_labels)。
 
     步骤（讲义 2 节）：
@@ -25,4 +27,6 @@ def preprocess(train_data, test_data) -> tuple:
     形状要求：train_features (1460, 330)、test_features (1459, 330)、
     train_labels (1460, 1)。
     """
-    
+    train_data = train_data.iloc[:,1:]
+    test_data = test_data.iloc[:,1:]
+    data = pd.concat(train_data, test_data)
