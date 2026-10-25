@@ -27,6 +27,7 @@ def preprocess(train_data: pd.DataFrame, test_data: pd.DataFrame
     形状要求：train_features (1460, 330)、test_features (1459, 330)、
     train_labels (1460, 1)。
     """
-    train_data = train_data.iloc[:,1:]
+    train_data = train_data.iloc[:,1:-1]
     test_data = test_data.iloc[:,1:]
-    data = pd.concat(train_data, test_data)
+    data = pd.concat((train_data, test_data))
+    
