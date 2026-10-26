@@ -1,6 +1,6 @@
 ---
 name: d2l-study-reminder
-description: 给 d2l 学习会话做节奏控制和防溜号。学习者开始时给他一个时间预算并起后台心跳 job，到点问进度，五分钟没回话就用扬声器加中文语音叫他。含 tools/remind.sh 的用法与各任务的时间预算。
+description: 给 d2l 学习会话做节奏控制和防溜号。学习者开始时给他一个时间预算并起后台心跳 job，到点用手机通知问进度，五分钟没回话就升级到振动或立即响铃（手机为主、扬声器兜底）。含 phone-control 接口的用法、各档提醒强度与各任务的时间预算。
 whenToUse: 学习者说"我开始了/开始做某个单元"，或者需要在一段时长之后回来检查他的进度时。
 ---
 
@@ -57,9 +57,44 @@ sleep 1800; echo "心跳：该问 <单元> <任务> 的进度了"
 sleep 300; echo "心跳：五分钟没回话，该响铃了"
 ```
 
-### 3. 没回话就响铃
+### 3. 没回话：手机提醒，扬声器兜底
 
-五分钟的 job 到点时他还没回话，用扬声器叫他：
+五分钟的 job 到点时他还没回话，按强度从弱到强升级。**手机是主力**——
+他人在外面、或者屏幕被别的窗口挡住时，电脑上的提醒看不到，手机一定看得到。
+接口与各档的用法见 `phone-control` skill。
+
+| 强度 | 调用 | 什么时候用 |
+|---|---|---|
+| 静默 | `notify {"silent": true}` | 只是记录"到点了"，不打断 |
+| 横幅+振动 | `notify {"headsUp": true, "vibrate": true, "sound": false}` | **默认用这档**：问进度、提醒看一眼 |
+| 纯振动 | `vibrate {"ms": 400}` 或 `{"pattern": [0,150,120,150]}` | 只戳一下，不动界面 |
+| 立即打断 | `POST /api/ring` | 确认在走神、需要马上停 |
+| 全屏拦截 | `POST /api/message` | 要盖住锁屏、当面拦（例如"你刷了 20 分钟手机"）|
+
+**"到点问进度"用横幅+振动就够，不要用全屏。** 全屏会点亮屏幕、盖在最上层，
+适合"必须立刻处理"的场合；日常问进度用它太重。
+
+**三条 MIUI 特有的坑（2026-10-27 实测）**：
+
+1. **横幅必须显式传 `headsUp: true`。** MIUI 不按 AOSP 的 importance 规则弹横幅，
+   `importance=4` 也不弹。不传 `headsUp` 就只有通知栏。
+2. **应用在前台时自己发的通知不会弹横幅**（Android 标准行为）。
+   测横幅要先把 PREFLIGHT 切到后台。
+3. **振动要显式标 `usage=ALARM`**，否则会被系统整个丢弃
+   （dumpsys 里是 `ignored_for_settings | usage: UNKNOWN`）。
+   短脉冲（200ms 以下）在手里几乎感觉不到，要更明显用
+   `{"pattern": [0,500,200,500,200,500]}`。
+
+**让通知自己消失**：`notify` 带 `seconds`，例如 `{"silent": true, "seconds": 5}`。
+返回里的 `auto_dismiss_seconds` 确认了这一点；不传就是 0（一直留着）。
+
+```bash
+PHONE=$(grep D2L_PHONE ~/Projects/d2l-tutor/LOCAL.env | cut -d= -f2 | tr -d '"')
+curl -s -m 3 -X POST $PHONE/api/ring -H 'Content-Type: application/json' \
+  -d '{"title":"回来学习","body":"五分钟没回话，回来看题。","strength":"strong"}'
+```
+
+**扬声器只在手机不可用时用**（`Connection refused`、请求超时、或者他明确说不方便看手机）：
 
 ```bash
 bash tools/remind.sh 3 "回来学习"
@@ -67,10 +102,38 @@ bash tools/remind.sh 3 "回来学习"
 
 - 第一个参数是响几声，溜号时用 3
 - 第二个参数是语音内容，走 piper 合成中文
-- 音量默认提示音 69%、语音 92%（可用 `D2L_VOL_SOUND` / `D2L_VOL_VOICE` 覆盖）。
-  学习者的系统音量常驻 50%，给低了压不过别的声音
+- 音量默认提示音 69%、语音 92%（可用 `D2L_VOL_SOUND` / `D2L_VOL_VOICE` 覆盖）
+- **不要在凌晨或他睡觉时响铃**，改用手机的静默通知
 
-他回话之后，如果任务还没结束，从第 1 步重新起心跳。
+他回话之后，如果任务还没结束，从第 1 步重新起心跳。**他可能从手机上回**，
+这时看 `GET /api/replies?since=<上次时间>`，不要只看聊天窗口。
+
+- **测完之后清掉事件**：`POST /api/events/clear`，免得测试留下的 `fired` 混进真正的记录。
+
+### 4. 把任务写进他的今日清单
+
+布置任务时可以顺手加一条到手机清单，他完成后能勾掉，AI 也能查到：
+
+```bash
+curl -s -m 3 -X POST $PHONE/api/task -H 'Content-Type: application/json' \
+  -d '{"title":"读完 B15 的 5.1-5.4","minutes":60,"strength":"normal"}'
+```
+
+**用 `minutes` / `seconds`，不要自己算钟点。** `task.time` 是"当天的时刻"，
+凌晨传 `03:45` 会立刻变成逾期；相对时间不会踩这个坑。
+返回里的 `due_in_seconds` 直接就是还有多少秒。
+
+**测完或写错时删掉**：`POST /api/task/delete {"title": "..."}`，或按 `id` 删。
+**不要在日常学习里随意加清单项**——那是他的个人清单，只在确实需要跟踪的任务上加。
+
+### 5. 检测他有没有完成
+
+轮询间隔不要小于 30 秒。
+
+- **只看完成没**：`GET /api/status` 的 `done` 与 `items[].done`
+- **看具体动作**（勾选、稍后、跳过、回了一句）：`GET /api/events?since=<毫秒>`，
+  比 status 精确
+- **看他回了什么话**：`GET /api/replies?since=<毫秒>`，`detail` 就是原文
 
 ## 时间预算
 
@@ -101,4 +164,9 @@ piper 不进 home-manager，因为它默认带训练依赖，近 800 MiB，而�
 - 提醒别太频繁。一个任务一个心跳就够，不要在半小时里问三次。
 - 桌面通知在 AI 的沙盒 bash 里会失败（没有 `DBUS_SESSION_BUS_ADDRESS`），
   需要通知时用 tmux 工具跑。扬声器（paplay）在沙盒里正常。
-- 扬声器是兜底。他人在电脑前时，在对话里喊一声就够，不必响铃。
+- 扬声器是兜底。手机调不通时才用。
+- **不在凌晨或他睡觉时用 `ring` / `remind strength:strong`**。这两个会响铃，
+  关机也拦不住。夜里用静默通知或振动。
+- **手机接口可能被系统回收**：`Connection refused` 或超时就跳过这一次，
+  不要重试到超时，也不要在对话里报错——他不知道怎么修。
+- 手机地址从 `LOCAL.env` 读（`D2L_PHONE`），不要在公开文档里写。

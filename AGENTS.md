@@ -457,6 +457,11 @@ MXNet 的对照只在一种情况下有价值：**同一个概念两边默认行
 - 同时起心跳 job，它的启动时刻就是起点
 - **心跳用 `bash` 后台作业**（`run_in_background: true`），不要用 `zsh`。
   2026-10-24 学习者说 zsh 挂后台可能被拒；那次 zsh 挂上了，但按他的偏好统一用 bash。
+- **到点提醒优先走手机**（`phone-control` skill，地址在 `LOCAL.env` 的 `D2L_PHONE`）。
+  三档强度：静默通知 → 振动 → `POST /api/ring` 立即响铃。**扬声器只在手机调不通时兜底。**
+  手机比扬声器好在三处：他人在外面也看得到、不吵到别人、他可以直接在手机上回话，
+  AI 从 `/api/replies` 读。细则见 `d2l-study-reminder` skill。
+  **凌晨或他睡觉时不要用 `ring` 与 `strength:"strong"`**，改用静默通知或振动。
 - 他报告完成时记下终点，算出实际值与比值
 - 结果写进 `log/` 的"用时对比"节，并累加到 `PROGRESS.md` 的节奏表
 
