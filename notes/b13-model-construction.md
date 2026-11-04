@@ -116,7 +116,7 @@ class MySequential(nn.Module):
 才需要它——`self.layer0 = ...` 这种写死了名字的不用。
 
 **`self.children()`** 返回子模块的迭代器，顺序与添加顺序一致。
-torch 内部记子模块用的是 `OrderedDict`（v1 的书上叫 `_children`），所以顺序可靠。
+torch 内部记子模块用的是 `OrderedDict`，所以顺序可靠。
 
 ## 2 构造复杂模型
 
@@ -377,33 +377,24 @@ print(sum(1 for _ in net.parameters()))                  # 2 + 2 = 4 个张量�
 **反向时的梯度**：两处用到的梯度会累加到同一份 `.grad` 上，这与 B04 讲的
 "梯度是累加的"一致。
 
-## 6 延后初始化
+## 6 延后初始化（书上讲的这个 torch 里没有）
 
-书上 4.3 讲了一件 Gluon 特有的事：创建层时**不指定输入维度**，第一次前向时才推断。
+书上 4.3 讲的是：创建层时不指定输入维度，第一次前向时才推断。**那是框架 `Block` 的设计，
+本课程用的 torch 没有这个行为。**
 
-```python
-# Gluon
-net = nn.Sequential()
-net.add(nn.Dense(256, activation='relu'))   # 只给输出维度
-net.add(nn.Dense(10))
-net.initialize()        # 这时什么都没初始化
-net(X)                  # 第一次前向时才创建参数 (256, 20)
-```
-
-**torch 没有这个行为**。`nn.Linear(20, 256)` 创建时就要求两个维度都给，
-参数立刻存在，可以立刻访问与修改：
+`nn.Linear(20, 256)` 创建时两个维度都要给，参数立刻存在、立刻能取：
 
 ```python
 layer = nn.Linear(20, 256)
 print(layer.weight.shape)     # (256, 20)，马上就能看
 ```
 
-**torch 里唯一类似的东西是 `nn.LazyLinear`**：只给输出维度，第一次前向时推断输入维度。
-它内部的实现机制（`UninitializedParameter`）比书的描述更复杂，这一章不用它。
+**所以读 4.3 时只需要知道一件事**：这一节讲的东西你不用实现，也不用记。
+torch 里没有"参数还没建出来"的状态——你在 B06 就能看出来，`nn.Linear(2, 1)` 的
+`weight` 从来都是直接取得到的。
 
-**所以这一节在 torch 里只有一条要点**：书上的"延后初始化"是 Gluon 的设计，
-torch 里创建层就要给全维度，参数立刻可访问。这一条在 B06 就能看出来——
-`nn.Linear(2, 1)` 的 `weight` 从来都是直接取得到的。
+（torch 里有个 `nn.LazyLinear` 能做到类似的事，实现机制涉及 `UninitializedParameter`，
+本课程不用。）
 
 ## 7 实现会踩的坑
 
