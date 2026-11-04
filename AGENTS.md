@@ -324,6 +324,11 @@ B06 的 5.1.1 节讲了 `nn.Parameter` "不包起来优化器就看不到"，但
 给链接前仍然要读过那一页，标明看哪一节、其余部分为什么现在不用看，
 以及那一页和本机环境的出入（例如 PyTorch 教程里的 `torch.accelerator` 与本机 `torch.cuda`）。
 
+**开发机推 GitHub 不要加代理。** 2026-11-05 实测：开发机直连 GitHub 返回 200，
+而 `https_proxy=http://127.0.0.1:7890` 返回 000。推送被 `TLS connect error: unexpected eof`
+挡住时，先 `unset https_proxy http_proxy all_proxy` 再试。代理只在访问外部资料时需要，
+`git push` 不需要。
+
 **链接写完要验证能打开。** 章节号对得上不代表网址对：v2 的 4.4 源文件叫
 `underfit-overfit.md`，而 `generalization.html` 会 301。写完用
 `curl -s -o /dev/null -w '%{http_code}' <url>` 逐个查，非 200 就换。
