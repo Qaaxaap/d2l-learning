@@ -117,14 +117,19 @@ def main() -> int:
             path.unlink()      # 先清掉旧产物
         out = mod.save_and_load(net, str(path))
         assert isinstance(out, dict), f"应返回字典，得到 {type(out).__name__}"
-        for key in ("saved_keys", "loaded_ok", "max_diff"):
+        for key in ("saved_keys", "max_diff_before", "max_diff_after"):
             assert key in out, f"字典缺 {key} 键"
         assert list(out["saved_keys"]) == list(net.state_dict().keys()), (
             "saved_keys 应与 net.state_dict() 的键一致"
         )
-        assert out["loaded_ok"] is True, "加载应当成功"
-        assert out["max_diff"] < 1e-6, (
-            f"加载后参数与原模型的最大差应接近 0，得到 {out['max_diff']}"
+        # 加载前必须不同，否则测不出加载有没有发生
+        assert out["max_diff_before"] > 1e-3, (
+            f"加载前的差应当明显大于 0（twin 的参数要和原模型不同），得到 "
+            f"{out['max_diff_before']}。检查 make_twin 是不是真的换了参数——"
+            "如果是 deepcopy 复制出来的同参数模型，这个数会是 0"
+        )
+        assert out["max_diff_after"] < 1e-6, (
+            f"加载后参数与原模型的最大差应接近 0，得到 {out['max_diff_after']}"
         )
         assert path.exists(), f"应当把参数存到 {path}（相对仓库根是 work/b14/...）"
 

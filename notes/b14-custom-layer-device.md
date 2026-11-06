@@ -164,6 +164,31 @@ net2.load_state_dict(torch.load("mlp.params"))
 `RuntimeError: Error(s) in loading state_dict for MLP: Missing key(s) in state_dict: ...`；
 形状对不上也会报。这是好事——能立刻发现"模型结构变了但旧参数还在用"。
 
+**`load_state_dict` 返回什么**：一个 `_IncompatibleKeys(missing_keys, unexpected_keys)`
+命名的二元组。键名全对上时两个都是空列表：
+
+```python
+result = net2.load_state_dict(torch.load("mlp.params"))
+print(result)        # _IncompatibleKeys(missing_keys=[], unexpected_keys=[])
+```
+
+**形状对不上会直接报 `RuntimeError`，不会走返回值**——返回值只报告"键缺失/多余"，
+不报告形状问题。
+
+**怎么验证加载真的生效**：比较加载前后的参数。先造一个同结构但参数不同的模型，
+加载之后再看两者的差：
+
+```python
+def max_diff(a, b):
+    return max((p - q).abs().max().item() for p, q in zip(a.parameters(), b.parameters()))
+```
+
+- **加载前**：twin 与 net 的参数不同，`max_diff` 明显大于 0
+- **加载后**：`max_diff` 接近 0（浮点存读的误差量级）
+
+**只查"加载后差很小"不够**：如果 twin 一开始就和 net 一样（比如 deepcopy 出来的），
+加载与不加载都接近 0，测不出加载有没有发生。**两个数字都要看。**
+
 **`save_parameters` / `load_parameters`** 是 v1 书上的 Gluon API，torch 里没有。
 torch 的对应就是上面这两行。
 

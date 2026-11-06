@@ -46,6 +46,13 @@ def make_twin(net: nn.Module) -> nn.Module:
     return twin
 
 
+def _max_diff(a: nn.Module, b: nn.Module) -> float:
+    """两个模型对应参数的最大绝对差。"""
+    return max(
+        (p - q).abs().max().item() for p, q in zip(a.parameters(), b.parameters())
+    )
+
+
 def save_and_load(net: nn.Module, path: str) -> dict:
     path_obj = Path(path)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
@@ -54,13 +61,13 @@ def save_and_load(net: nn.Module, path: str) -> dict:
     torch.save(net.state_dict(), str(path_obj))
 
     twin = make_twin(net)
+    before = _max_diff(net, twin)          # 加载前：应当明显大于 0
+
     twin.load_state_dict(torch.load(str(path_obj)))
     twin.eval()
+    after = _max_diff(net, twin)           # 加载后：应当接近 0
 
-    max_diff = 0.0
-    for a, b in zip(net.parameters(), twin.parameters()):
-        max_diff = max(max_diff, (a - b).abs().max().item())
-    return {"saved_keys": keys, "loaded_ok": True, "max_diff": max_diff}
+    return {"saved_keys": keys, "max_diff_before": before, "max_diff_after": after}
 
 
 # ---------- T4 搬到 GPU ----------
