@@ -67,34 +67,30 @@ class MyDense(nn.Module):
 
 ## T3 保存与加载
 
+只写两个动作：
+
 ```python
-def save_and_load(net: nn.Module, path: str) -> dict:
-    """把 net 的 state_dict 存到 path，再造一个参数不同的同结构模型（用 make_twin），
-    把它加载回来。
-
-    返回：
-    - saved_keys：net.state_dict() 的键名列表（顺序按 state_dict 给的顺序）
-    - max_diff_before：加载前 twin 与 net 参数的最大绝对差（应当明显大于 0）
-    - max_diff_after：加载后两者的最大绝对差（应当接近 0）
-    """
+def save_params(net: nn.Module, path: str) -> list[str]:
+    """把 net 的 state_dict 存到 path，返回键名列表（按 state_dict 给的顺序）。"""
 
 
-def make_twin(net: nn.Module) -> nn.Module:
-    """按 net 的结构造一个**参数不同**的新模型。
-
-    两个数字都要看的原因：如果 twin 与 net 参数相同，加载前后差都接近 0，
-    测不出加载到底有没有发生。
-    """
+def load_params(net: nn.Module, path: str) -> None:
+    """从 path 读参数，装进 net（原地改 net 的参数）。"""
 ```
+
+`path` 是调用方给的字符串，指向 `work/b14/` 下的文件。
 
 | 检查 | 期望 |
 |---|---|
-| `saved_keys` | 与 `net.state_dict().keys()` 一致 |
-| `max_diff_before` | 大于 1e-3（证明 twin 的参数确实不同）|
-| `max_diff_after` | 小于 1e-6（浮点存读的误差）|
-| `path` | 存到 `work/b14/` 下 |
-| `make_twin(net)` 的参数 | 与 `net` 不同（说明加载确实发生了）|
-| 同结构但形状不对时 | 加载报错（断言会另测这一条）|
+| 返回的键名 | 与 `net.state_dict().keys()` 一致 |
+| 存完文件存在 | 是 |
+| 读进一个**参数不同**的同结构模型后 | 该模型参数与原模型一致 |
+| 读进一个**结构不同**的模型 | 抛 `RuntimeError` |
+
+**断言怎么验的**（这部分不用你写）：断言自己 `copy.deepcopy` 造一个同结构模型、
+把参数重随机、记下加载前的差，再调你的 `load_params`，比较加载后的差。
+加载前必须明显不同、加载后必须接近 0，两个数都看——只看后者的话，
+如果那个模型一开始就一样，加载与不加载都是 0，测不出加载有没有发生。
 
 ## T4 搬到 GPU
 

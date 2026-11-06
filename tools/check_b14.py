@@ -7,6 +7,7 @@ T4 需要可用的 CUDA 设备；没有时会跳过那一项并说明。
 整个脚本一两秒跑完（不训练）。
 """
 
+import copy
 import importlib.util
 import sys
 from pathlib import Path
@@ -105,51 +106,55 @@ def main() -> int:
         keys = list(dense.state_dict().keys())
         assert keys == ["weight", "bias"], f"state_dict 键应为 ['weight', 'bias']，得到 {keys}"
 
-    @case("T3 保存与加载")
+    @case("T3 保存参数")
     def _t3a():
         torch.manual_seed(0)
-        net = nn.Sequential(
-            nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2), mod.CenteredLayer()
-        )
+        net = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
         OUT_DIR.mkdir(parents=True, exist_ok=True)
-        path = OUT_DIR / "t3_test.pt"
+        path = OUT_DIR / "t3_save.pt"
         if path.exists():
             path.unlink()      # 先清掉旧产物
-        out = mod.save_and_load(net, str(path))
-        assert isinstance(out, dict), f"应返回字典，得到 {type(out).__name__}"
-        for key in ("saved_keys", "max_diff_before", "max_diff_after"):
-            assert key in out, f"字典缺 {key} 键"
-        assert list(out["saved_keys"]) == list(net.state_dict().keys()), (
-            "saved_keys 应与 net.state_dict() 的键一致"
+        keys = mod.save_params(net, str(path))
+        assert isinstance(keys, list), (
+            f"应当返回键名列表，得到 {type(keys).__name__}"
         )
-        # 加载前必须不同，否则测不出加载有没有发生
-        assert out["max_diff_before"] > 1e-3, (
-            f"加载前的差应当明显大于 0（twin 的参数要和原模型不同），得到 "
-            f"{out['max_diff_before']}。检查 make_twin 是不是真的换了参数——"
-            "如果是 deepcopy 复制出来的同参数模型，这个数会是 0"
-        )
-        assert out["max_diff_after"] < 1e-6, (
-            f"加载后参数与原模型的最大差应接近 0，得到 {out['max_diff_after']}"
+        assert list(keys) == list(net.state_dict().keys()), (
+            f"键名应与 net.state_dict() 一致，得到 {keys}"
         )
         assert path.exists(), f"应当把参数存到 {path}（相对仓库根是 work/b14/...）"
 
-    @case("T3 make_twin 造出的参数确实不同")
+    @case("T3 加载参数")
     def _t3b():
         torch.manual_seed(0)
         net = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
-        twin = mod.make_twin(net)
-        assert list(twin.state_dict().keys()) == list(net.state_dict().keys()), (
-            "make_twin 造出的模型结构应当相同（state_dict 键一致）"
-        )
-        diffs = [
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        path = OUT_DIR / "t3_load.pt"
+        if path.exists():
+            path.unlink()
+        mod.save_params(net, str(path))
+
+        # 断言自己造一个同结构、参数不同的模型（这部分不交给学习者写）
+        twin = copy.deepcopy(net)
+        with torch.no_grad():
+            for p in twin.parameters():
+                p.normal_()
+        before = max(
             (a - b).abs().max().item()
             for a, b in zip(net.parameters(), twin.parameters())
-        ]
-        assert max(diffs) > 1e-3, (
-            "make_twin 的参数应当与原来不同（否则无法验证加载是否发生）"
+        )
+        assert before > 1e-3, "断言自身的 twin 造错了（参数应当与原模型不同）"
+
+        mod.load_params(twin, str(path))
+        after = max(
+            (a - b).abs().max().item()
+            for a, b in zip(net.parameters(), twin.parameters())
+        )
+        assert after < 1e-6, (
+            f"加载后参数应与原模型一致，最大差 {after:.6f}。"
+            "检查是不是没真的调用 load_state_dict，或者读了别的文件"
         )
 
-    @case("T3 形状不匹配时加载应当报错")
+    @case("T3 结构不匹配时加载应当报错")
     def _t3c():
         net_a = nn.Sequential(nn.Linear(4, 8))
         net_b = nn.Sequential(nn.Linear(4, 16))     # 结构不同
@@ -157,9 +162,9 @@ def main() -> int:
         path = OUT_DIR / "t3_mismatch.pt"
         if path.exists():
             path.unlink()
-        torch.save(net_a.state_dict(), str(path))
+        mod.save_params(net_a, str(path))
         try:
-            net_b.load_state_dict(torch.load(str(path)))
+            mod.load_params(net_b, str(path))
         except RuntimeError:
             pass          # 预期报错
         else:

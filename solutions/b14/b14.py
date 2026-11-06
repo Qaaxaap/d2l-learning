@@ -37,37 +37,16 @@ class MyDense(nn.Module):
 
 # ---------- T3 保存与加载 ----------
 
-def make_twin(net: nn.Module) -> nn.Module:
-    """深拷贝出同结构的模型，再把参数重新随机化，保证与原来的不同。"""
-    twin = copy.deepcopy(net)
-    with torch.no_grad():
-        for p in twin.parameters():
-            p.normal_()
-    return twin
-
-
-def _max_diff(a: nn.Module, b: nn.Module) -> float:
-    """两个模型对应参数的最大绝对差。"""
-    return max(
-        (p - q).abs().max().item() for p, q in zip(a.parameters(), b.parameters())
-    )
-
-
-def save_and_load(net: nn.Module, path: str) -> dict:
+def save_params(net: nn.Module, path: str) -> list[str]:
     path_obj = Path(path)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
-
     keys = list(net.state_dict().keys())
     torch.save(net.state_dict(), str(path_obj))
+    return keys
 
-    twin = make_twin(net)
-    before = _max_diff(net, twin)          # 加载前：应当明显大于 0
 
-    twin.load_state_dict(torch.load(str(path_obj)))
-    twin.eval()
-    after = _max_diff(net, twin)           # 加载后：应当接近 0
-
-    return {"saved_keys": keys, "max_diff_before": before, "max_diff_after": after}
+def load_params(net: nn.Module, path: str) -> None:
+    net.load_state_dict(torch.load(str(path)))
 
 
 # ---------- T4 搬到 GPU ----------
@@ -112,9 +91,12 @@ if __name__ == "__main__":
     print("T2 前向:", tuple(dense(torch.randn(2, 5)).shape))
 
     net = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2), CenteredLayer())
-    out = save_and_load(net, str(REPO / "work" / "b14" / "demo.pt"))
-    print("T3 键名:", out["saved_keys"])
-    print("T3 max_diff:", out["max_diff"])
+    keys = save_params(net, str(REPO / "work" / "b14" / "demo.pt"))
+    print("T3 键名:", keys)
+    net2 = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2), CenteredLayer())
+    load_params(net2, str(REPO / "work" / "b14" / "demo.pt"))
+    same = all(torch.equal(a, b) for a, b in zip(net.parameters(), net2.parameters()))
+    print("T3 读回后参数一致:", same)
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("T4 设备:", dev)
