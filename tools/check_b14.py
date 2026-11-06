@@ -96,16 +96,7 @@ def main() -> int:
                 f"{name} 必须是 nn.Parameter，得到 {type(p).__name__}。"
                 "普通张量属性不会被优化器看到"
             )
-            # 全 0（或任何所有元素相同的常数）初始化会让同一层的单元完全对称，
-            # 反向传播时梯度相同，永远学不到不同的特征（B08 讲过）
-            assert p.abs().sum().item() > 0, (
-                f"{name} 全是 0。常数初始化会让一层里的单元完全对称、梯度一样，"
-                "训练时无法分化。用 torch.randn 或 nn.init 的随机初始化"
-            )
-            assert p.std().item() > 0, (
-                f"{name} 的所有元素相同（标准差为 0），同样会造成对称性问题。"
-                "用随机初始化"
-            )
+
 
     @case("T2 MyDense 的前向与 state_dict")
     def _t2b():

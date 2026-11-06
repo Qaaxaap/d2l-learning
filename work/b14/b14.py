@@ -1,3 +1,23 @@
+"""
+import torch
+import torch.nn as nn
+
+class Scale(nn.Module):
+    def __init__(self, n):
+        super().__init__()
+        self.scale = torch.ones(n) 没有Parameters包裹
+
+    def forward(self, x):
+        return x * self.scale
+
+net = nn.Sequential(nn.Linear(4, 4), Scale(4))
+torch.save(net, "model.pt") 保存了全部网络，通常保存state_dict
+
+X = torch.randn(2, 4)
+net2 = nn.Sequential(nn.Linear(4, 4), Scale(4))
+net2.load_state_dict(torch.load("model.pt")) 保存的不是state_dict所以读出来也不是，对不上
+print(net2(X))
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,15 +48,22 @@ class MyDense(nn.Module):
     def forward(self, x):
         return F.relu(x @ self.weight + self.bias)
     
-def save_and_load(net: nn.Module, path: str) -> dict:
-    """把 net 的参数存到 path，再用一个**新建的、结构相同的**模型读回来。
-
-    返回 {"saved_keys": [...], "loaded_ok": bool, "max_diff": float}
-    - saved_keys：state_dict 的键名列表（顺序按 state_dict 给的顺序）
-    - loaded_ok：load_state_dict 是否成功（不抛异常就是 True）
-    - max_diff：新模型参数与旧模型参数的最大绝对差（应该接近 0）
-    """
+def save_params(net: nn.Module, path: str) -> list[str]:
+    """把 net 的 state_dict 存到 path，返回键名列表（按 state_dict 给的顺序）。"""
     torch.save(net.state_dict(), path)
-    net2 = net
-    net2.load_state_dict(torch.load(path))
-    return {torch.load(path), True, }
+    return list(net.state_dict().keys())
+
+def load_params(net: nn.Module, path: str) -> None:
+    """从 path 读参数，装进 net（原地改 net 的参数）。"""
+    net.load_state_dict(torch.load(path))
+
+def to_device(x: torch.Tensor, device) -> torch.Tensor:
+    """把张量搬到 device。设备相同时返回同一个对象（不是副本）。"""
+    return x.to(device)
+
+def move_net(net: nn.Module, device) -> nn.Module:
+    """把模型的所有参数搬到 device，返回搬完之后的模型。
+
+    返回的对象应当**就是传进来的那个模型**（nn.Module.to() 是原地操作）。
+    """
+    return net.to(device)
