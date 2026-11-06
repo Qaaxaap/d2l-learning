@@ -30,15 +30,38 @@ self.weight = nn.Parameter(torch.randn(in_units, units))
 
 </details>
 
-**Q2** 自己写的层算 `x @ W`，而 `nn.Linear` 内部算 `x @ W.T`。
-两者的 `W` 形状分别是多少？
+**Q2** 看这段代码：
+
+```python
+class MyDense(nn.Module):
+    def __init__(self, in_units, units):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(in_units, units))
+        self.bias = nn.Parameter(torch.randn(units))
+
+    def forward(self, x):
+        return x @ self.weight + self.bias
+
+
+lin = nn.Linear(20, 5)
+mine = MyDense(20, 5)
+```
+
+三问：
+
+1. `mine.weight.shape` 是什么？
+2. `lin.weight.shape` 是什么？
+3. 想把 `lin` 学到的权重直接搬进 `mine`，需要做什么形状操作？
 
 <details><summary>参考答点</summary>
 
-- **自己写的**：`W` 形状 `(in_units, units)`，因为算的是 `x @ W`
-- **`nn.Linear(in, out).weight`**：形状 `(out, in)`，因为算的是 `x @ W.T`
+1. `(20, 5)`——`MyDense` 用的是 `x @ W`，`W` 必须是 `(in_units, units)`
+2. `(5, 20)`——`nn.Linear` 内部算 `x @ W.T`，所以 `W` 是 `(out, in)`
+3. **转置**。`lin.weight` 是 `(5,20)`，转置后 `(20,5)` 才能放进 `mine.weight`。
+   原地写要包 `no_grad`，因为 `mine.weight` 是叶子张量。
 
-两者都对，只是约定不同。混用会报形状错。
+**为什么两种约定都行**：`x @ W` 与 `x @ W.T` 只是把形状约定放在定义里还是放在计算里，
+数学上等价。混用会报形状错，读别人的代码时要先看是哪种。
 
 </details>
 
