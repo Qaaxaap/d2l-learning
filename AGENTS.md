@@ -344,6 +344,12 @@ B06 的 5.1.1 节讲了 `nn.Parameter` "不包起来优化器就看不到"，但
 挡住时，先 `unset https_proxy http_proxy all_proxy` 再试。代理只在访问外部资料时需要，
 `git push` 不需要。
 
+**`git push` 连不上 GitHub 时先试 HTTP/1.1。** 2026-11-06 晚上推送报
+`Failed to connect to github.com:443 after 132577 ms`，同时 `curl https://github.com`
+返回 200——说明网络本身通，是 git 的 HTTP/2 连接卡住。
+`git -c http.version=HTTP/1.1 push origin main` 立刻成功。这条与上面那条代理无关：
+先确认 `curl` 通不通，通了就是协议层的问题。
+
 **链接写完要验证能打开。** 章节号对得上不代表网址对：v2 的 4.4 源文件叫
 `underfit-overfit.md`，而 `generalization.html` 会 301。写完用
 `curl -s -o /dev/null -w '%{http_code}' <url>` 逐个查，非 200 就换。
