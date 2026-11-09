@@ -86,7 +86,21 @@ def nin_block(num_channels: int, kernel_size: int, strides: int,
 
 
 def make_nin(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
-    """结构见讲义 3.4 节。最后用 AdaptiveAvgPool2d(1) + Flatten。"""
+    """输入 (N, in_channels, 224, 224)。依次是：
+
+    nin_block(96, 11, 4, 0, in_channels)   224 → 54
+    MaxPool 3×3，步幅 2                     54 → 26
+    nin_block(256, 5, 1, 2)                 26 → 26
+    MaxPool 3×3，步幅 2                     26 → 12
+    nin_block(384, 3, 1, 1)                 12 → 12
+    MaxPool 3×3，步幅 2                     12 → 5
+    Dropout(0.5)
+    nin_block(num_classes, 3, 1, 1)         5 → 5
+    AdaptiveAvgPool2d(1) → Flatten          5 → 1
+    """
+
+
+# 第一个 nin_block 的输入通道不是它自己的输出通道，要显式传 in_channels。
 ```
 
 | 检查 | 期望 |
