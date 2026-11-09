@@ -1,3 +1,35 @@
+"""
+import torch
+from torch import nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+
+net = nn.Sequential(
+    nn.Conv2d(1, 6, 5), nn.ReLU(), nn.MaxPool2d(2, 2),
+    nn.Conv2d(6, 16, 5), nn.ReLU(), nn.MaxPool2d(2, 2),
+    nn.Flatten(),
+    nn.Linear(16 * 4 * 4, 120), nn.ReLU(),
+    nn.Linear(120, 84), nn.ReLU(),
+    nn.Linear(84, 10),
+) net还在cpu上，要to(device)
+
+device = torch.device("cuda")
+transform = transforms.Compose([]) 没有转成张量 需要ToTensor
+train_set = datasets.FashionMNIST("data", True, transform=transform)
+train_iter = DataLoader(train_set, batch_size=256, shuffle=True)
+
+optimizer = torch.optim.SGD(net.parameters(), lr=0.1)
+loss_fn = nn.CrossEntropyLoss()
+
+for epoch in range(5):
+    for X, y in train_iter: 没有清理梯度，要zero_grad
+        X, y = X.to(device), y.to(device)
+        loss = loss_fn(net(X), y)
+        loss.backward()
+        optimizer.step()
+    print(f"epoch {epoch + 1}, loss {loss.item():.4f}")
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
