@@ -87,6 +87,27 @@ def main() -> int:
         assert nn.Sigmoid not in types, (
             "不该用 sigmoid——这一章要求 ReLU。sigmoid 会让梯度消失（讲义 4.5 节）"
         )
+        n_relu = sum(1 for m in net.modules() if isinstance(m, nn.ReLU))
+        assert n_relu == 4, (
+            f"应当有 4 个 nn.ReLU（两个卷积后、两个全连接后），得到 {n_relu} 个"
+        )
+        # 漏了 ReLU 的卷积输出会有负值，池化取最大值会把它带过来
+        pools = [m for m in net.modules() if isinstance(m, nn.MaxPool2d)]
+        assert len(pools) == 2, f"应当有两个最大池化层，得到 {len(pools)} 个"
+        outs = []
+        handles = [m.register_forward_hook(
+            lambda mod_, i, o: outs.append(o.detach())) for m in pools]
+        try:
+            with torch.no_grad():
+                net(torch.randn(2, 1, 28, 28))
+        finally:
+            for h in handles:
+                h.remove()
+        for i, out in enumerate(outs):
+            assert (out >= 0).all(), (
+                f"第 {i + 1} 个池化的输出出现负值（最小 {out.min().item():.4f}）。"
+                "卷积后要接 ReLU，池化取最大值会保留符号"
+            )
         keys = list(net.state_dict().keys())
         # 带参数的层有 5 个：2 个卷积 + 3 个线性，各贡献 weight 与 bias
         assert len(keys) == 10, (

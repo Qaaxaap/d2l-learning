@@ -91,6 +91,7 @@ class Residual(nn.Module):
 | `Residual(3,6,use_1x1conv=True,strides=2)` 对 `(4,3,6,6)` | `(4,6,3,3)` |
 | 不用 1×1 时 | 2 个卷积 + 2 个 BN |
 | 用 1×1 时 | 3 个卷积 |
+| 输出值域 | **全部非负**（末尾过 ReLU）|
 
 ## T4 DenseNet 的两个块
 

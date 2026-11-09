@@ -42,7 +42,7 @@ def make_lenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
 | 前向形状 | `(4, 1, 28, 28)` → `(4, 10)` |
 | 参数量 | `in_channels=1, num_classes=10` 时 **44426** |
 | 展平层的输入维度 | 256 |
-| 激活函数 | 不能含 `nn.Sigmoid` |
+| 激活函数 | 不能含 `nn.Sigmoid`；`nn.ReLU` 恰好 4 个（两个卷积后、两个全连接后）|
 | `state_dict` 里的键数 | 8（4 个卷积/线性层各 2 个）|
 
 **参数量怎么算**（自己核对）：

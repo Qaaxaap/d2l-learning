@@ -178,14 +178,39 @@ def main() -> int:
 
     @case("T3 Residual 的结构")
     def _t3b():
+        # BN 用 nn.BatchNorm2d 或 T2 自己写的都算，别限死实现方式
+        bn_types = (nn.BatchNorm2d,)
+        if hasattr(mod, "BatchNorm"):
+            bn_types = (nn.BatchNorm2d, mod.BatchNorm)
+
         blk = mod.Residual(3, 4)
         convs = [m for m in blk.modules() if isinstance(m, nn.Conv2d)]
         assert len(convs) == 2, f"不用 1×1 时应有 2 个卷积，得到 {len(convs)}"
-        bns = [m for m in blk.modules() if isinstance(m, nn.BatchNorm2d)]
-        assert len(bns) == 2, f"应有 2 个 BN，得到 {len(bns)}"
+        bns = [m for m in blk.modules() if isinstance(m, bn_types)]
+        assert len(bns) == 2, (
+            f"应有 2 个 BN（nn.BatchNorm2d 或自己写的 BatchNorm 都算），"
+            f"得到 {len(bns)}"
+        )
         blk2 = mod.Residual(3, 4, use_1x1conv=True)
         convs2 = [m for m in blk2.modules() if isinstance(m, nn.Conv2d)]
         assert len(convs2) == 3, f"用 1×1 时应有 3 个卷积，得到 {len(convs2)}"
+
+    @case("T3 Residual 末尾的 ReLU")
+    def _t3c():
+        torch.manual_seed(0)
+        # 不用 1×1 时输入输出通道必须相同，否则跳跃连接加不起来
+        for use_1x1, strides, cin, cout in [
+            (False, 1, 3, 3), (True, 2, 3, 6), (False, 1, 5, 5),
+        ]:
+            blk = mod.Residual(cin, cout, use_1x1conv=use_1x1, strides=strides)
+            blk.eval()
+            X = torch.randn(4, cin, 6, 6) * 3
+            Y = blk(X)
+            assert (Y >= 0).all(), (
+                f"Residual({cin},{cout},use_1x1conv={use_1x1},strides={strides}) "
+                f"的输出出现负值（最小 {Y.min().item():.4f}）。"
+                "跳跃连接相加之后要过 ReLU"
+            )
 
     @case("T4 DenseBlock 通道增长")
     def _t4a():

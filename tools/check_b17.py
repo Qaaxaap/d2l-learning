@@ -141,6 +141,77 @@ def main() -> int:
             f"得到 {tuple(out.shape)}。64+128+32+32 = 256"
         )
 
+    @case("T4 Inception 四条线路的 ReLU")
+    def _t4_relu():
+        torch.manual_seed(0)
+        block = mod.Inception(64, (96, 128), (16, 32), 32, 192)
+        # 多造几个输入，避免随机数碰巧全为正
+        for seed in range(3):
+            torch.manual_seed(seed)
+            x = torch.randn(2, 192, 28, 28)
+            out = block(x)
+            assert (out >= 0).all(), (
+                f"第 {seed} 个输入上 Inception 的输出出现负值（最小 "
+                f"{out.min().item():.4f}）。每条线路的卷积后都要接 ReLU，"
+                "拼接前四个结果都应当非负"
+            )
+            # 分段查，报错时能指出是哪条线路漏了
+            segs = [("线路 1", 0, 64), ("线路 2", 64, 192),
+                    ("线路 3", 192, 224), ("线路 4", 224, 256)]
+            for name, lo, hi in segs:
+                seg = out[:, lo:hi]
+                assert (seg >= 0).all(), (
+                    f"{name}（通道 {lo}:{hi}）的输出出现负值（最小 "
+                    f"{seg.min().item():.4f}），这条线路的卷积后漏了 ReLU"
+                )
+
+    @case("T4 GoogLeNet 里每个卷积后的 ReLU")
+    def _t4_relu_net():
+        torch.manual_seed(0)
+        net = mod.make_googlenet()
+        net.eval()
+
+        pools = [m for m in net.modules() if isinstance(m, nn.MaxPool2d)]
+        assert len(pools) >= 5, (
+            f"应当至少有 5 个最大池化层（b1、b2 各一个，b3–b5 各一个），"
+            f"找到 {len(pools)} 个"
+        )
+        pool_outs = []
+        inc_outs = []
+        handles = []
+        for m in pools[:2]:
+            handles.append(m.register_forward_hook(
+                lambda mod_, i, o: pool_outs.append(o.detach())))
+        for m in net.modules():
+            if isinstance(m, mod.Inception):
+                handles.append(m.register_forward_hook(
+                    lambda mod_, i, o: inc_outs.append(o.detach())))
+        try:
+            with torch.no_grad():
+                net(torch.randn(2, 1, 224, 224))
+        finally:
+            for h in handles:
+                h.remove()
+
+        assert len(pool_outs) == 2, (
+            f"应当记录到 b1、b2 两个池化的输出，得到 {len(pool_outs)} 个"
+        )
+        for i, out in enumerate(pool_outs):
+            assert (out >= 0).all(), (
+                f"b{i + 1} 的池化输出出现负值（最小 {out.min().item():.4f}）。"
+                f"b{i + 1} 的每个卷积后都要接 ReLU"
+            )
+        assert inc_outs, "没有找到任何 Inception 模块，检查 make_googlenet 是不是用了它"
+        assert len(inc_outs) == 9, (
+            f"应当有 9 个 Inception（b3 两个、b4 五个、b5 两个），"
+            f"实际前向里出现 {len(inc_outs)} 个"
+        )
+        for i, out in enumerate(inc_outs):
+            assert (out >= 0).all(), (
+                f"第 {i + 1} 个 Inception 的输出出现负值（最小 "
+                f"{out.min().item():.4f}），它内部的卷积后漏了 ReLU"
+            )
+
     @case("T4 GoogLeNet 前向与参数量")
     def _t4b():
         net = mod.make_googlenet()
