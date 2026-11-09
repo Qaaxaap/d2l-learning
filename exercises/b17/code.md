@@ -159,6 +159,10 @@ def make_googlenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
         Inception(384, (192, 384), (48, 128), 128, 832)
         → AdaptiveAvgPool2d(1) → Flatten
 
+    注意 ReLU 的位置：b1、b2 里每个卷积后面各接一个；Inception 内部四条线路的卷积后
+    各接一个（见 Inception 的说明）。模块之间的池化后不接 ReLU，
+    全局平均池化 → Flatten → Linear 之间也没有 ReLU。
+
     最后接 Linear(1024, num_classes)。
     """
 ```
