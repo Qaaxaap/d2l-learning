@@ -68,9 +68,8 @@ Flatten → Dropout(0.5) → Linear(4096) → ReLU
         → Linear(num_classes)
 ```
 
-**注意 Dropout 的位置**：在 `Sequential` 里写的时候，`nn.Linear` 与 `nn.ReLU` 是分开的两层，
-顺序是 `Linear → ReLU → Dropout`。书上 MXNet 的 `Dense(activation='relu')` 把激活折进层里，
-torch 里要显式写 `nn.ReLU()`。
+**torch 的 `nn.Linear` 不含激活**。带激活的全连接层要拆成两层写：`nn.Linear` 与 `nn.ReLU()`。
+所以顺序是 `Linear → ReLU → Dropout`，与上面的结构链一致。
 
 ### 1.3 形状链（输入 1×224×224）
 
@@ -235,8 +234,9 @@ Inception 块在同一层里**并行**跑四种运算，再把结果在通道维
 **线路 4 的池化后面不接 ReLU**：池化是取最大值，本来就保留原值的符号，
 加 ReLU 只会把负数抹成 0，没意义。
 
-**Inception 块的 `forward` 里 ReLU 写在每条线路的最后**，而不是在 `__init__` 的
-`Sequential` 里——因为要拼的是四个已经过激活的结果。
+**拼接发生在四条线路各自过完激活之后**。所以 Inception 块的输出也是非负的。
+
+ReLU 放在 `__init__` 的 `nn.Sequential` 里还是 `forward` 里，两种写法等价，不影响结构。
 
 ### 4.2 拼接用 `torch.cat`
 
