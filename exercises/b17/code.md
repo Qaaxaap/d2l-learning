@@ -23,7 +23,19 @@
 
 ```python
 def make_alexnet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
-    """结构见讲义 1.2 节。输入 (N, in_channels, 224, 224)。"""
+    """输入 (N, in_channels, 224, 224)。
+
+    卷积部分：卷积 11×11 步幅 4（96）→ ReLU → 最大池化 3×3 步幅 2
+              卷积 5×5 填充 2（256）→ ReLU → 最大池化 3×3 步幅 2
+              卷积 3×3 填充 1（384）→ ReLU
+              卷积 3×3 填充 1（384）→ ReLU
+              卷积 3×3 填充 1（256）→ ReLU → 最大池化 3×3 步幅 2
+
+    全连接部分：Flatten（展平后 256×5×5 = 6400）
+                → Linear(6400, 4096) → ReLU → Dropout(0.5)
+                → Linear(4096, 4096) → ReLU → Dropout(0.5)
+                → Linear(4096, num_classes)
+    """
 ```
 
 | 检查 | 期望 |
@@ -50,9 +62,10 @@ def make_vgg(conv_arch, num_classes: int = 10,
              in_channels: int = 1) -> nn.Module:
     """conv_arch 形如 ((1, 64), (1, 128), (2, 256), (2, 512), (2, 512))。
 
-    全连接部分：Flatten → Linear(4096) → ReLU → Dropout(0.5)
-                → Linear(4096) → ReLU → Dropout(0.5)
-                → Linear(num_classes)
+    全连接部分：Flatten（展平后 512×7×7 = 25088）
+                → Linear(25088, 4096) → ReLU → Dropout(0.5)
+                → Linear(4096, 4096) → ReLU → Dropout(0.5)
+                → Linear(4096, num_classes)
     """
 ```
 
