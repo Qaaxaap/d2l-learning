@@ -102,9 +102,14 @@ def make_nin(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
 ```python
 class Inception(nn.Module):
     def __init__(self, c1, c2, c3, c4, in_channels: int):
-        """c1、c4 是整数；c2、c3 是二元组 (降维通道, 输出通道)。
+        """in_channels 是输入通道数，四条并行线路都吃同一个输入：
 
-        四条线路见讲义 4.1 节，最后在通道维拼接。
+        线路 1：1×1 卷积，输出 c1 个通道
+        线路 2：1×1 卷积（输出 c2[0]）→ 3×3 卷积（填充 1，输出 c2[1]）
+        线路 3：1×1 卷积（输出 c3[0]）→ 5×5 卷积（填充 2，输出 c3[1]）
+        线路 4：3×3 最大池化（步幅 1，填充 1）→ 1×1 卷积（输出 c4）
+
+        每个卷积后接 ReLU。
         """
 
     def forward(self, x):
@@ -116,7 +121,32 @@ class Inception(nn.Module):
 
 
 def make_googlenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
-    """五个模块，见讲义 4.3 节。最后接 Linear(1024, num_classes)。"""
+    """输入 (N, in_channels, 224, 224)。五个模块依次是：
+
+    b1：Conv 7×7（64，步幅 2，填充 3）→ ReLU
+        → MaxPool 3×3（步幅 2，填充 1）
+
+    b2：Conv 1×1（64）→ ReLU
+        → Conv 3×3（192，填充 1）→ ReLU
+        → MaxPool 3×3（步幅 2，填充 1）
+
+    b3：Inception(64,  (96, 128),  (16, 32), 32, 192)
+        Inception(128, (128, 192), (32, 96), 64, 256)
+        → MaxPool 3×3（步幅 2，填充 1）
+
+    b4：Inception(192, (96, 208),  (16, 48), 64, 480)
+        Inception(160, (112, 224), (24, 64), 64, 512)
+        Inception(128, (128, 256), (24, 64), 64, 512)
+        Inception(112, (144, 288), (32, 64), 64, 512)
+        Inception(256, (160, 320), (32, 128), 128, 528)
+        → MaxPool 3×3（步幅 2，填充 1）
+
+    b5：Inception(256, (160, 320), (32, 128), 128, 832)
+        Inception(384, (192, 384), (48, 128), 128, 832)
+        → AdaptiveAvgPool2d(1) → Flatten
+
+    最后接 Linear(1024, num_classes)。
+    """
 ```
 
 | 检查 | 期望 |
