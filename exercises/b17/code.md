@@ -107,6 +107,13 @@ class Inception(nn.Module):
         四条线路见讲义 4.1 节，最后在通道维拼接。
         """
 
+    def forward(self, x):
+        """x 形状 (batch, in_channels, H, W)。
+
+        返回四条线路在通道维拼接后的结果，形状
+        (batch, c1 + c2[1] + c3[1] + c4, H, W)。
+        """
+
 
 def make_googlenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
     """五个模块，见讲义 4.3 节。最后接 Linear(1024, num_classes)。"""

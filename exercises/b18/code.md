@@ -49,6 +49,12 @@ class BatchNorm(nn.Module):
                  eps: float = 1e-5, momentum: float = 0.1):
         """num_dims=2 用于全连接（参数形状 (num_features,)），
         num_dims=4 用于卷积（参数形状 (1, num_features, 1, 1)）。"""
+
+    def forward(self, X):
+        """X 形状 (batch, num_features) 或 (batch, num_features, H, W)。
+
+        返回同形状的标准化结果。
+        """
 ```
 
 | 检查 | 期望 |
@@ -71,6 +77,12 @@ class Residual(nn.Module):
         结构见讲义 2.2 节。use_1x1conv 为 True 时，跳跃路径上一个 1×1 卷积
         （步幅与 strides 一致）。
         """
+
+    def forward(self, X):
+        """X 形状 (batch, in_channels, H, W)。
+
+        返回 (batch, num_channels, H // strides, W // strides)。
+        """
 ```
 
 | 检查 | 期望 |
@@ -91,6 +103,12 @@ class DenseBlock(nn.Module):
     def __init__(self, num_convs: int, num_channels: int, in_channels: int):
         """num_convs 个 conv_block，每个的输入是这一路累积的通道数，
         输出后与输入在通道维拼接（见讲义 3.1）。"""
+
+    def forward(self, X):
+        """X 形状 (batch, in_channels, H, W)。
+
+        返回 (batch, in_channels + num_convs * num_channels, H, W)。
+        """
 
 
 def transition_block(num_channels: int, in_channels: int) -> nn.Module:
