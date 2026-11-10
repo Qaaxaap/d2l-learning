@@ -339,16 +339,16 @@ B06 的 5.1.1 节讲了 `nn.Parameter` "不包起来优化器就看不到"，但
 给链接前仍然要读过那一页，标明看哪一节、其余部分为什么现在不用看，
 以及那一页和本机环境的出入（例如 PyTorch 教程里的 `torch.accelerator` 与本机 `torch.cuda`）。
 
-**开发机推 GitHub 不要加代理。** 2026-11-05 实测：开发机直连 GitHub 返回 200，
-而 `https_proxy=http://127.0.0.1:7890` 返回 000。推送被 `TLS connect error: unexpected eof`
-挡住时，先 `unset https_proxy http_proxy all_proxy` 再试。代理只在访问外部资料时需要，
-`git push` 不需要。
+**推送一律用 SSH。** remote 是 `git@github.com:Qaaxaap/d2l-learning.git`。
+2026-11-10 学习者说"用 ssh 啊。从来没允许过你用 http"。此前 remote 配的是 https，
+push 反复失败（`OpenSSL SSL_read: unexpected eof`、超时），我拿代理和 HTTP/1.1 打了两天补丁——
+那些都是在给错误的前提加补丁。改用 SSH 后一次成功。
 
-**`git push` 连不上 GitHub 时先试 HTTP/1.1。** 2026-11-06 晚上推送报
-`Failed to connect to github.com:443 after 132577 ms`，同时 `curl https://github.com`
-返回 200——说明网络本身通，是 git 的 HTTP/2 连接卡住。
-`git -c http.version=HTTP/1.1 push origin main` 立刻成功。这条与上面那条代理无关：
-先确认 `curl` 通不通，通了就是协议层的问题。
+- 不要改回 https
+- **SSH 推送不需要代理**，不需要 `unset` 代理变量，也不需要 `http.version=HTTP/1.1`
+- 推送失败时先看 remote 是不是被改成了 https：`git remote -v`
+- 上面两条（2026-11-05 的"不要加代理"与 2026-11-06 的"HTTP/1.1"）作废，
+  那是 https 时代的经验，现在用不上
 
 **链接写完要验证能打开。** 章节号对得上不代表网址对：v2 的 4.4 源文件叫
 `underfit-overfit.md`，而 `generalization.html` 会 301。写完用
