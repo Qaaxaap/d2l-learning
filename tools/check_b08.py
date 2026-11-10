@@ -1,7 +1,6 @@
 """B08 验收断言。用法: just check b08
 
 读取 work/b08/b08.py 并验证 exercises/b08/code.md 里的 T1-T5。
-T6 是纸面题，这里只提醒人工检查。
 
 这一章用全量数据：MLP 的参数量是 20 万，用 1 万样本训练会不稳定
 （讲义 4.5 节有实测）。两次训练各约 12 秒。
@@ -163,11 +162,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT6 是纸面题，人工检查。")
         return 1
 
     print("T1-T5 全部通过。")
-    print("T6 是纸面题，等我看你标的三处。")
     return 0
 
 

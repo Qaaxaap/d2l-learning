@@ -1,7 +1,6 @@
 """B14 验收断言。用法: just check b14
 
 读取 work/b14/b14.py 并验证 exercises/b14/code.md 里的 T1-T4。
-T5 是纸面题，这里只提醒人工检查。
 
 T4 需要可用的 CUDA 设备；没有时会跳过那一项并说明。
 整个脚本一两秒跑完（不训练）。
@@ -223,11 +222,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT5 是纸面题，人工检查。")
         return 1
 
     print("T1-T4 全部通过。")
-    print("T5 是纸面题，等我看你标的三处。")
     return 0
 
 

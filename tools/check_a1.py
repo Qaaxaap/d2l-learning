@@ -1,7 +1,6 @@
 """A1 验收断言。用法: just check a1
 
 读取 work/a1/a1.py 并验证 exercises/a1/code.md 的 T1-T5。
-T6 是纸面题，这里只提醒人工检查。
 """
 
 import importlib.util
@@ -119,11 +118,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT6 是纸面题，人工检查。")
         return 1
 
     print("T1-T5 全部通过。")
-    print("T6 是纸面题，等我看你标的四处。")
     return 0
 
 

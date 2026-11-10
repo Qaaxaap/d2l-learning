@@ -1,7 +1,6 @@
 """B07 验收断言。用法: just check b07
 
 读取 work/b07/b07.py 并验证 exercises/b07/code.md 里的 T1-T6。
-T7 是纸面题，这里只提醒人工检查。
 
 数据用子集（训练 10000、测试 2000）跑，保证断言几秒内结束；
 精度阈值按这个规模定，全量数据会更高（线性模型约 0.84）。
@@ -209,11 +208,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT7 是纸面题，人工检查。")
         return 1
 
     print("T1-T6 全部通过。")
-    print("T7 是纸面题，等我看你标的三处。")
     return 0
 
 

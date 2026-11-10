@@ -1,7 +1,6 @@
 """B12 验收断言。用法: just check b12
 
 读取 work/b12/b12.py 并验证 exercises/b12/code.md 里的 T1-T6。
-T7 是纸面题，这里只提醒人工检查。
 
 数据在仓库的 data/ 目录下。整个脚本约 20 秒（训练用 20 轮，不是书上的 100 轮）。
 """
@@ -246,11 +245,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT7 是纸面题，人工检查。")
         return 1
 
     print("T1-T6 全部通过。")
-    print("T7 是纸面题，等我看你标的四处。")
     return 0
 
 

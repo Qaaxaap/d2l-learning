@@ -1,7 +1,6 @@
 """B10 验收断言。用法: just check b10
 
 读取 work/b10/b10.py 并验证 exercises/b10/code.md 里的 T1-T5。
-T6 是纸面题，这里只提醒人工检查。
 
 两个实验：高维线性回归（小数据，很快）与 Fashion-MNIST 上的丢弃法（5 轮，约 10 秒）。
 """
@@ -241,11 +240,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT6 是纸面题，人工检查。")
         return 1
 
     print("T1-T5 全部通过。")
-    print("T6 是纸面题，等我看你标的三处。")
     return 0
 
 

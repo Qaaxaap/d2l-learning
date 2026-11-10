@@ -1,7 +1,6 @@
 """B20 验收断言。用法: just check b20
 
 读取 work/b20/b20.py 并验证 exercises/b20/code.md 里的 T1-T4。
-T5 是纸面题，这里只提醒人工检查。
 
 T4 训练一个小语料 10 个 epoch，几秒钟完成。
 """
@@ -193,11 +192,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT5 是纸面题，人工检查。")
         return 1
 
     print("T1-T4 全部通过。")
-    print("T5 是纸面题，等我看你标的三处。")
     return 0
 
 

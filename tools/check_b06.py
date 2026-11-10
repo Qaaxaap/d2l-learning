@@ -1,7 +1,6 @@
 """B06 验收断言。用法: just check b06
 
 读取 work/b06/b06.py 并验证 exercises/b06/code.md 里的 T1-T6。
-T7 是纸面题，这里只提醒人工检查。
 """
 
 import importlib.util
@@ -187,11 +186,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT7 是纸面题，人工检查。")
         return 1
 
     print("T1-T6 全部通过。")
-    print("T7 是纸面题，等我看你标的三处。")
     return 0
 
 

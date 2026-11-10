@@ -1,7 +1,6 @@
 """B15 验收断言。用法: just check b15
 
 读取 work/b15/b15.py 并验证 exercises/b15/code.md 里的 T1-T6。
-T7 是纸面题，这里只提醒人工检查。
 
 整个脚本一两秒跑完（全是小张量上的循环）。
 """
@@ -209,11 +208,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT7 是纸面题，人工检查。")
         return 1
 
     print("T1-T6 全部通过。")
-    print("T7 是纸面题，等我看你标的两处。")
     return 0
 
 

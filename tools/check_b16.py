@@ -1,7 +1,6 @@
 """B16 验收断言。用法: just check b16
 
 读取 work/b16/b16.py 并验证 exercises/b16/code.md 里的 T1-T3。
-T4 是纸面题，这里只提醒人工检查。
 
 T3 用 Fashion-MNIST 的一个小子集训练 2 个 epoch（约 1 秒），
 断言只验趋势与下限，不追求高精度。
@@ -206,11 +205,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT4 是纸面题，人工检查。")
         return 1
 
     print("T1-T3 全部通过。")
-    print("T4 是纸面题，等我看你标的三处。")
     return 0
 
 

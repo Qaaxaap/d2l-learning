@@ -1,7 +1,6 @@
 """B13 验收断言。用法: just check b13
 
 读取 work/b13/b13.py 并验证 exercises/b13/code.md 里的 T1-T5。
-T6 是纸面题，这里只提醒人工检查。
 
 整个脚本几秒钟跑完（不训练）。
 """
@@ -170,11 +169,9 @@ def main() -> int:
         print(f"\n失败 {len(_failures)} 项：")
         for item in _failures:
             print(f"  - {item}")
-        print("\nT6 是纸面题，人工检查。")
         return 1
 
     print("T1-T5 全部通过。")
-    print("T6 是纸面题，等我看你标的三处。")
     return 0
 
 
