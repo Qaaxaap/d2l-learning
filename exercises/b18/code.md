@@ -26,17 +26,18 @@ def batch_norm(X: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
     """手写批量归一化的前向。返回 (Y, moving_mean, moving_var)。
 
     X: 输入张量，形状 (N, features) 或 (N, C, H, W)。
-    gamma: 缩放参数，形状同「要归一的那个维度」，由调用方给定（如全 1）。
-    beta: 平移参数，形状同上，由调用方给定（如全 0）。
-    moving_mean: 移动平均的均值，形状同上。**原地更新**。
-    moving_var: 移动平均的方差，形状同上。**原地更新**。
+    gamma: 缩放参数。二维输入时形状 (features,)，四维输入时 (1, C, 1, 1)。
+          由调用方给定，如全 1。
+    beta: 平移参数，形状同 gamma，如全 0。
+    moving_mean: 移动平均的均值，形状同 gamma。**原地更新**。
+    moving_var: 移动平均的方差，形状同 gamma。**原地更新**。
     eps: 加到方差上的小数，防止除零，如 1e-5。
     momentum: 移动平均的动量，0 到 1 之间，如 0.9。
     training: True 用当前批统计量并更新 moving；
               False 用 moving 统计量、不更新。
 
-    gamma、beta、moving_mean、moving_var 的形状与「要归一的那个维度」一致：
-    二维输入时是 (features,)，四维输入时是 (1, C, 1, 1)。
+    四个张量形状一致才能直接与 X 广播。四维输入时统计量按 N、H、W 求均值后
+    keepdim，得到的形状正是 (1, C, 1, 1)。
     """
 ```
 
@@ -56,8 +57,17 @@ def batch_norm(X: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
 class BatchNorm(nn.Module):
     def __init__(self, num_features: int, num_dims: int = 4,
                  eps: float = 1e-5, momentum: float = 0.1):
-        """num_dims=2 用于全连接（参数形状 (num_features,)），
-        num_dims=4 用于卷积（参数形状 (1, num_features, 1, 1)）。"""
+        """num_dims=2 用于全连接（输入 (N, num_features)），
+        num_dims=4 用于卷积（输入 (N, num_features, H, W)）。
+
+        两对张量的形状都由 num_dims 决定：
+
+        num_dims=2：gamma、beta、moving_mean、moving_var 都是 (num_features,)
+        num_dims=4：四个都是 (1, num_features, 1, 1)
+
+        前两个是可训练参数（nn.Parameter），后两个是 buffer（register_buffer）。
+        卷积时用 (1, C, 1, 1) 而不是 (C,)，是为了与 keepdim 后的统计量直接广播。
+        """
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         """X 形状 (batch, num_features) 或 (batch, num_features, H, W)。
@@ -70,6 +80,7 @@ class BatchNorm(nn.Module):
 |---|---|
 | 可训练参数 | 只有 `gamma`、`beta` 两个，都是 `nn.Parameter` |
 | `state_dict` | 含 `gamma`、`beta`、`moving_mean`、`moving_var` 四个键 |
+| buffer 的形状 | `num_dims=2` 时 `(num_features,)`，`num_dims=4` 时 `(1, num_features, 1, 1)` |
 | 训练模式 | 输出被标准化 |
 | `eval()` 之后 | 输出与训练模式不同；单个样本的输出不依赖同批其他样本 |
 
