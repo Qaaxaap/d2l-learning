@@ -114,6 +114,25 @@ def main() -> int:
             "传入的 moving_var 没有被修改，同样要保持原地更新"
         )
 
+    @case("T1 BN 更新不建计算图")
+    def _t1d_nograd():
+        torch.manual_seed(0)
+        shape = (1, 3, 1, 1)
+        mm = torch.zeros(shape)
+        mv = torch.ones(shape)
+        # 模拟网络中间层：X 带梯度
+        X = torch.randn(4, 3, 6, 6, requires_grad=True)
+        _, r_mm, r_mv = mod.batch_norm(
+            X, torch.ones(shape), torch.zeros(shape), mm, mv, 1e-5, 0.1, True)
+        assert not r_mm.requires_grad, (
+            "更新后的 moving_mean 带上了计算图（requires_grad=True）。"
+            "训练时每个 batch 的计算图都会挂在 buffer 上累积，显存一直涨。"
+            "用 with torch.no_grad(): 包住更新的那两行"
+        )
+        assert not r_mv.requires_grad, (
+            "更新后的 moving_var 同样带上了计算图"
+        )
+
     @case("T1 BN 更新移动平均")
     def _t1d():
         torch.manual_seed(0)

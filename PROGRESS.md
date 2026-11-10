@@ -43,7 +43,7 @@
 | B15 卷积与池化 | 完成 | 高 | 十二项断言全过；T7 两处改错都答到 |
 | B16 LeNet | 完成 | 高 | 七项断言全过；T4 三处改错全对 |
 | B17 AlexNet/VGG/NiN/GoogLeNet | 完成 | 高 | 十项断言全过；T5 三处改错全对 |
-| B18 BN/ResNet/DenseNet | 需返工 | — | 12 项原断言全过；补三条后抓住三处：moving_var 初值 0、transition_block 用 MaxPool、BatchNorm 没原地更新 |
+| B18 BN/ResNet/DenseNet | 需返工 | — | 三轮：12 项全过→补三条抓三处→改对后补 no_grad 检查又抓一处（moving 更新建了计算图）|
 | B19 RNN 与语言模型 | 未开始 | — | |
 | B20 RNN 从零实现与 BPTT | 未开始 | — | |
 | B21 GRU/LSTM/深度双向 RNN | 未开始 | — | |

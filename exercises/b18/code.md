@@ -38,6 +38,11 @@ def batch_norm(X: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
 
     四个张量形状一致才能直接与 X 广播。四维输入时统计量按 N、H、W 求均值后
     keepdim，得到的形状正是 (1, C, 1, 1)。
+
+    更新两个 moving 张量时**不要建计算图**。训练时 X 可能带梯度，mean 与 var
+    也跟着带；如果直接算 `momentum * moving_mean + ...` 再原地加回去，moving 张量
+    会挂上 grad_fn，下一个 batch 继续累积，显存一直涨。
+    用 `with torch.no_grad():` 包住更新的那两行。
     """
 ```
 
@@ -47,6 +52,7 @@ def batch_norm(X: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
 | 训练模式、`gamma=2, beta=3` | 均值 ≈ 3、方差 ≈ 4 |
 | 四维输入 | 每个通道分别归一化 |
 | 训练模式后 | `moving_mean/var` 按 `momentum` 更新 |
+| 更新后 `requires_grad` | **False**（更新不建计算图）|
 | 预测模式 | 用 moving 统计量，且不更新它们 |
 
 **更新公式**：`moving = momentum * moving + (1 - momentum) * 当前批统计量`。
