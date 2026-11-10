@@ -625,7 +625,8 @@ MXNet 的对照只在一种情况下有价值：**同一个概念两边默认行
 2. 更新 `PROGRESS.md`（状态、掌握度、错题本、复习队列、节奏表）
 3. `git add` + `git commit`，提交信息格式 `log(<单元>): <结果> <一句话>`
 4. `git push origin main`。仓库公开在 <https://github.com/Qaaxaap/d2l-learning>。
-   推送要代理，凭据由开发机上 `gh` 的 credential helper 提供，具体命令见 `LOCAL.md`。
+   **用 SSH 推送**（`git@github.com:Qaaxaap/d2l-learning.git`），不走代理，
+   凭据是开发机上的 SSH key。remote 若不是 SSH，先 `git remote set-url` 改回来。
 
 ## 仓库会公开
 
