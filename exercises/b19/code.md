@@ -78,14 +78,16 @@ def data_iter_consecutive(corpus_indices, batch_size: int, num_steps: int):
 ## T4 手写 RNN 前向
 
 ```python
-def rnn_step(X, H, W_xh, W_hh, b_h):
+def rnn_step(X: torch.Tensor, H: torch.Tensor, W_xh: torch.Tensor,
+             W_hh: torch.Tensor, b_h: torch.Tensor) -> torch.Tensor:
     """单步：H_new = tanh(X @ W_xh + H @ W_hh + b_h)。
 
     X: (batch, d)  H: (batch, h)  W_xh: (d, h)  W_hh: (h, h)  b_h: (h,)
     """
 
 
-def rnn_forward(Xs, H0, W_xh, W_hh, b_h):
+def rnn_forward(Xs: torch.Tensor, H0: torch.Tensor, W_xh: torch.Tensor,
+                W_hh: torch.Tensor, b_h: torch.Tensor) -> torch.Tensor:
     """多步：Xs 形状 (seq_len, batch, d)，返回 (seq_len, batch, h)。"""
 ```
 
@@ -105,7 +107,7 @@ def rnn_forward(Xs, H0, W_xh, W_hh, b_h):
 下面这段想实现随机采样。**三处**问题。
 
 ```python
-def data_iter_random(corpus, batch_size, num_steps):
+def data_iter_random(corpus: list[int], batch_size: int, num_steps: int):
     num_examples = len(corpus) // num_steps
     epoch_size = num_examples // batch_size
     starts = list(range(num_examples))

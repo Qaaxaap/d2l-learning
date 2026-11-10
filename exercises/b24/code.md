@@ -45,7 +45,8 @@ class MultiHeadAttention(nn.Module):
                  bias: bool = False):
         """四个无偏置的 nn.Linear：W_q、W_k、W_v、W_o。"""
 
-    def forward(self, queries, keys, values, valid_lens=None):
+    def forward(self, queries: torch.Tensor, keys: torch.Tensor,
+                values: torch.Tensor, valid_lens=None):
         """三个张量形状 (batch, n, d)。返回 (batch, n_q, num_hiddens)。
 
         valid_lens：形状 (batch,) 的整数张量，每个样本的键值有效长度。
@@ -75,7 +76,7 @@ class PositionalEncoding(nn.Module):
                  max_len: int = 1000):
         """P 用公式算出来，注册成 buffer，不训练。"""
 
-    def forward(self, X):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         """X 形状 (batch, n, num_hiddens)。返回同形状。"""
 ```
 
@@ -98,7 +99,7 @@ class AddNorm(nn.Module):
     def __init__(self, normalized_shape: int, dropout: float = 0.0):
         """LayerNorm + Dropout。"""
 
-    def forward(self, X, Y):
+    def forward(self, X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         """返回 LayerNorm(dropout(Y) + X)。"""
 
 
@@ -107,7 +108,7 @@ class PositionWiseFFN(nn.Module):
                  ffn_num_outputs: int):
         """两层全连接，中间 ReLU。"""
 
-    def forward(self, X):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         """X 形状 (batch, n, ffn_num_input)。"""
 
 
@@ -118,7 +119,7 @@ class EncoderBlock(nn.Module):
                  use_bias: bool = False):
         """多头自注意力 → AddNorm → 前馈 → AddNorm。"""
 
-    def forward(self, X, valid_lens=None):
+    def forward(self, X: torch.Tensor, valid_lens=None):
         """X 形状 (batch, n, num_hiddens)。返回同形状。"""
 ```
 
@@ -155,12 +156,12 @@ class PositionalEncoding(nn.Module):
         return self.dropout(X + self.P[:, :X.shape[1], :])
 
 class EncoderBlock(nn.Module):
-    def forward(self, X, valid_lens=None):
+    def forward(self, X: torch.Tensor, valid_lens=None):
         Y = self.addnorm1(X, self.attention(X, X, X, valid_lens))
         return self.addnorm2(Y, self.ffn(Y))
 
 class AddNorm(nn.Module):
-    def forward(self, X, Y):
+    def forward(self, X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         return self.ln(self.dropout(Y + X))
 ```
 

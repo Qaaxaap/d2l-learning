@@ -23,7 +23,7 @@ def sequence_mask(X: torch.Tensor, valid_len: torch.Tensor,
     """把 X 每行第 valid_len[i] 位之后填成 value。X 形状 (n, m)。"""
 
 
-def masked_softmax(X: torch.Tensor, valid_lens):
+def masked_softmax(X: torch.Tensor, valid_lens: torch.Tensor | None):
     """在最后一维做 softmax，按 valid_lens 掩蔽。
 
     X 形状 (batch, n, m)。
@@ -49,7 +49,8 @@ class AdditiveAttention(nn.Module):
     def __init__(self, key_size: int, query_size: int, num_hiddens: int):
         """三个无偏置的 Linear：W_q、W_k、w_v。"""
 
-    def forward(self, queries, keys, values, valid_lens=None):
+    def forward(self, queries: torch.Tensor, keys: torch.Tensor,
+                values: torch.Tensor, valid_lens=None):
         """queries: (batch, n_q, q)  keys: (batch, n_k, k)  values: (batch, n_k, v)
 
         返回 (batch, n_q, v)，并把权重存进 self.attention_weights。
@@ -74,7 +75,8 @@ class AdditiveAttention(nn.Module):
 class DotProductAttention(nn.Module):
     def __init__(self, dropout: float = 0.0): ...
 
-    def forward(self, queries, keys, values, valid_lens=None):
+    def forward(self, queries: torch.Tensor, keys: torch.Tensor,
+                values: torch.Tensor, valid_lens=None):
         """queries: (batch, n_q, d)  keys: (batch, n_k, d)  values: (batch, n_k, v)"""
 ```
 

@@ -43,7 +43,8 @@ def init_rnn_state(batch_size: int, num_hiddens: int, device):
     """返回 (H,)，H 形状 (batch_size, num_hiddens)，全 0。"""
 
 
-def rnn_forward(inputs, state, params):
+def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
+                params: tuple[torch.Tensor, ...]):
     """inputs 是 num_steps 个 (batch, vocab)；
     params 是 (W_xh, W_hh, b_h, W_hq, b_q)；state 是 (H,)。
 
@@ -82,8 +83,9 @@ def grad_clipping(params, theta: float) -> float:
 ## T4 训练
 
 ```python
-def train_rnn(corpus_indices, vocab_size, num_hiddens, num_epochs, lr,
-              batch_size, num_steps, device, use_random=True):
+def train_rnn(corpus_indices: list[int], vocab_size: int, num_hiddens: int,
+              num_epochs: int, lr: float, batch_size: int, num_steps: int,
+              device, use_random: bool = True) -> list[float]:
     """训练字符级 RNN，返回每个 epoch 的平均困惑度列表。
 
     use_random=True 用随机采样（每批重置隐藏状态），
@@ -110,7 +112,7 @@ def train_rnn(corpus_indices, vocab_size, num_hiddens, num_epochs, lr,
 下面这段想训练字符级 RNN。**三处**问题。
 
 ```python
-def to_onehot(X, vocab_size):
+def to_onehot(X: torch.Tensor, vocab_size: int) -> list[torch.Tensor]:
     return [torch.nn.functional.one_hot(x, vocab_size).float() for x in X.T]
 
 def rnn_forward(inputs, state, params):
@@ -122,7 +124,7 @@ def rnn_forward(inputs, state, params):
         outputs.append(torch.softmax(H @ W_hq + b_q, dim=1))
     return outputs, (H,)
 
-def grad_clipping(params, theta):
+def grad_clipping(params: list[torch.Tensor], theta: float) -> float:
     norm = torch.sqrt(sum((p.grad ** 2).sum() for p in params))
     if norm > theta:
         for p in params:

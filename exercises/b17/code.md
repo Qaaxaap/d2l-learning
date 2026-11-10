@@ -129,7 +129,7 @@ class Inception(nn.Module):
         两种写法都收。
         """
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x 形状 (batch, in_channels, H, W)。
 
         返回四条线路在通道维拼接后的结果，形状

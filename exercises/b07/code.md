@@ -97,7 +97,7 @@ def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
 ## T3 在数据集上评估
 
 ```python
-def evaluate_accuracy(net, loader) -> float:
+def evaluate_accuracy(net: nn.Module, loader: DataLoader) -> float:
     """net 是可调用对象，接受 (n, 784) 返回 (n, 10) 的 logits。
 
     在整个 loader 上算准确率，返回 Python 浮点数。

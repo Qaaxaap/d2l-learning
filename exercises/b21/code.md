@@ -17,7 +17,8 @@
 ## T1 按书上的公式实现 GRU
 
 ```python
-def gru_step_book(X, H, params):
+def gru_step_book(X: torch.Tensor, H: torch.Tensor,
+                  params: tuple[torch.Tensor, ...]) -> torch.Tensor:
     """params 依次是 (W_xr, W_hr, b_r, W_xz, W_hz, b_z, W_xh, W_hh, b_h)。
 
     权重形状：W_x* 是 (d, h)，W_h* 是 (h, h)，偏置是 (h,)。
@@ -40,7 +41,8 @@ H = Z * H_prev + (1 - Z) * H_tilde
 ## T2 按 torch 的约定实现 GRU
 
 ```python
-def gru_step_torch(X, H, params):
+def gru_step_torch(X: torch.Tensor, H: torch.Tensor,
+                   params: tuple[torch.Tensor, ...]) -> torch.Tensor:
     """params 依次是 (W_ir, W_hr, b_ir, b_hr, W_iz, W_hz, b_iz, b_hz,
                       W_in, W_hn, b_in, b_hn)。
 
@@ -67,7 +69,8 @@ H_new = (1 - z) * n + z * H_prev
 ## T3 LSTM
 
 ```python
-def lstm_step(X, H, C, params):
+def lstm_step(X: torch.Tensor, H: torch.Tensor, C: torch.Tensor,
+              params: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, torch.Tensor]:
     """params 依次是 (W_xi, W_hi, b_i, W_xf, W_hf, b_f,
                       W_xo, W_ho, b_o, W_xc, W_hc, b_c)。
 
@@ -84,13 +87,13 @@ def lstm_step(X, H, C, params):
 ## T4 深层与双向的形状
 
 ```python
-def hidden_state_shape(num_layers, batch_size, num_hiddens,
-                       bidirectional=False) -> tuple:
-    """返回 nn.RNN/nn.GRU/nn.LSTM 的 h_n 形状。"""
+def hidden_state_shape(num_layers: int, batch_size: int, num_hiddens: int,
+                       bidirectional: bool = False) -> tuple:
+    """返回 nn.RNN/nn.GRU/nn.LSTM 的 h_n 形状，只算不建模型。"""
 
 
-def output_feature_dim(num_hiddens, bidirectional=False) -> int:
-    """返回输出的最后一维。"""
+def output_feature_dim(num_hiddens: int, bidirectional: bool = False) -> int:
+    """返回输出的最后一维。单向是 h，双向是 2h。"""
 ```
 
 | 检查 | 期望 |

@@ -22,7 +22,7 @@ class Encoder(nn.Module):
                  num_layers: int = 1):
         """Embedding + nn.GRU。"""
 
-    def forward(self, X, state=None):
+    def forward(self, X: torch.Tensor, state=None):
         """X 形状 (seq_len, batch)。返回 (outputs, state)。
 
         outputs: (seq_len, batch, num_hiddens)
@@ -46,10 +46,10 @@ class Decoder(nn.Module):
                  num_layers: int = 1):
         """Embedding + nn.GRU + Linear(num_hiddens, vocab_size)。"""
 
-    def init_state(self, enc_state):
+    def init_state(self, enc_state: torch.Tensor) -> torch.Tensor:
         """把编码器的最终状态拿来做解码器的初始状态。"""
 
-    def forward(self, X, state):
+    def forward(self, X: torch.Tensor, state: torch.Tensor):
         """X 形状 (seq_len, batch)。返回 (logits, state)。
 
         logits: (seq_len, batch, vocab_size)
@@ -68,7 +68,8 @@ class Decoder(nn.Module):
 class Seq2Seq(nn.Module):
     def __init__(self, encoder: Encoder, decoder: Decoder): ...
 
-    def forward(self, enc_X, dec_X, enc_state=None):
+    def forward(self, enc_X: torch.Tensor, dec_X: torch.Tensor,
+                enc_state=None):
         """返回 (logits, dec_state)。"""
 ```
 
@@ -80,7 +81,7 @@ class Seq2Seq(nn.Module):
 ## T4 束搜索
 
 ```python
-def beam_search(step_fn, init_state, beam_size: int, max_len: int,
+def beam_search(step_fn: Callable, init_state, beam_size: int, max_len: int,
                 bos_token: int, eos_token: int, alpha: float = 0.75):
     """通用束搜索。
 

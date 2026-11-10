@@ -75,7 +75,7 @@ def mlp_forward(X: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
 ## T3 参数量
 
 ```python
-def count_params(net) -> int:
+def count_params(net: nn.Module) -> int:
     """返回 net 里所有可训练参数的个数之和，Python 整数。
 
     net 是 nn.Module（例如 nn.Sequential 或 nn.Linear）。
