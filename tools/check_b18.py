@@ -96,6 +96,24 @@ def main() -> int:
             assert abs(m) < 1e-5, f"通道 {c} 的均值应接近 0，得到 {m}"
             assert abs(v - 1) < 1e-4, f"通道 {c} 的方差应接近 1，得到 {v}"
 
+    @case("T1 BN 原地更新 moving")
+    def _t1d_inplace():
+        torch.manual_seed(0)
+        X = torch.randn(4, 3, 6, 6) * 5 + 2
+        shape = (1, 3, 1, 1)
+        mm = torch.zeros(shape)
+        mv = torch.ones(shape)
+        mod.batch_norm(X, torch.ones(shape), torch.zeros(shape), mm, mv,
+                       1e-5, 0.1, True)
+        assert mm.abs().sum().item() > 0, (
+            "传入的 moving_mean 没有被修改。题面要求原地更新——"
+            "写成 `moving_mean = momentum * moving_mean + ...` 只是重新绑定了局部名字，"
+            "调用方拿到的张量还是老样子"
+        )
+        assert (mv - 1).abs().sum().item() > 1e-8, (
+            "传入的 moving_var 没有被修改，同样要保持原地更新"
+        )
+
     @case("T1 BN 更新移动平均")
     def _t1d():
         torch.manual_seed(0)
@@ -140,6 +158,27 @@ def main() -> int:
             f"state_dict 应含四个键，得到 {sorted(keys)}。"
             "moving 两个要用 register_buffer，否则不会被保存"
         )
+
+    @case("T2 BatchNorm 的 buffer 初值")
+    def _t2_init():
+        for num_dims, shape in [(2, (4,)), (4, (1, 4, 1, 1))]:
+            bn = mod.BatchNorm(num_features=4, num_dims=num_dims)
+            mm = bn.moving_mean
+            mv = bn.moving_var
+            assert tuple(mm.shape) == shape, (
+                f"num_dims={num_dims} 时 moving_mean 形状应为 {shape}，得到 {tuple(mm.shape)}"
+            )
+            assert tuple(mv.shape) == shape, (
+                f"num_dims={num_dims} 时 moving_var 形状应为 {shape}，得到 {tuple(mv.shape)}"
+            )
+            assert mm.abs().sum().item() == 0, (
+                f"moving_mean 初值应当是全 0，得到 {mm.flatten()[:3].tolist()}"
+            )
+            assert (mv - 1).abs().sum().item() < 1e-6, (
+                f"moving_var 初值应当是全 1（假设初始方差为 1），"
+                f"得到 {mv.flatten()[:3].tolist()}。初始化为 0 会让 eval 模式的输出被 "
+                f"1/sqrt(eps) 放大"
+            )
 
     @case("T2 BatchNorm 层：两种模式")
     def _t2b():
@@ -236,6 +275,13 @@ def main() -> int:
         convs = [m for m in blk.modules() if isinstance(m, nn.Conv2d)]
         assert len(convs) == 1 and convs[0].kernel_size == (1, 1), (
             "过渡层应当用 1×1 卷积改通道数"
+        )
+        pools = [m for m in blk.modules()
+                 if isinstance(m, (nn.AvgPool2d, nn.MaxPool2d))]
+        assert len(pools) == 1, f"过渡层应当有一个池化，得到 {len(pools)} 个"
+        assert isinstance(pools[0], nn.AvgPool2d), (
+            f"过渡层应当用平均池化，得到 {type(pools[0]).__name__}。"
+            "DenseNet 的过渡层用平均池化，不是最大池化"
         )
 
     print(f"通过 {len(_passed)} 项")
