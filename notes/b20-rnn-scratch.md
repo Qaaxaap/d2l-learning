@@ -122,6 +122,10 @@ RNN 前向要五组参数。形状与 B19 的 3.3 节一致。
 
 乘 0.01 让连乘的结果在前若干步内保持数值稳定。
 
+```python
+W_hh = torch.randn(num_hiddens, num_hiddens) * 0.01
+```
+
 偏置不需要缩放。偏置不参与连乘。
 
 ## 3 前向
@@ -152,6 +156,8 @@ LSTM 有 `(H, C)` 两个状态。用元组的形式，换模型时接口不用�
 
 1. 更新隐藏状态：`H = tanh(X @ W_xh + H @ W_hh + b_h)`。
 2. 算输出：`Y_t = H @ W_hq + b_q`。
+
+`H = torch.tanh(X @ W_xh + H @ W_hh + b_h)`。
 
 `H` 在每步之间传递。第 $t$ 步的 `H` 由第 $t-1$ 步的 `H` 与第 $t$ 步的 `X` 共同决定。
 
@@ -195,6 +201,9 @@ LSTM 有 `(H, C)` 两个状态。用元组的形式，换模型时接口不用�
 **要点三：前缀结束后用上一步的预测作为输入。**
 
 每步从 `Y` 里取 `argmax`，把这个索引作为下一步的输入。这叫**自回归**。
+
+取索引写 `torch.argmax(Y, dim=1)`。`Y` 形状 `(1, vocab_size)`，
+沿第 1 维取最大值，得到形状 `(1,)`。
 
 ### 4.3 argmax 的局限
 
@@ -317,6 +326,8 @@ $$\text{perplexity} = \exp(\text{cross-entropy loss})$$
 **为什么用困惑度而不用交叉熵**：困惑度的单位是「等效的候选词个数」。
 困惑度 10 的意思是「模型平均在 10 个候选里犹豫」。这比「损失 2.3」直观。
 
+代码里写 `torch.exp(loss)`，`loss` 是该周期的平均交叉熵。
+
 ## 8 训练循环
 
 ### 8.1 与前面章节的差别
@@ -355,8 +366,10 @@ state = tuple(s.detach() for s in state)
 
 处理步骤：
 
-1. 把 `num_steps` 个输出按第 0 维拼接，得到 `(num_steps * batch, vocab_size)`。
-2. 把 `Y` 转置成 `(num_steps, batch)`，再展平成 `(num_steps * batch,)`。
+1. 把 `num_steps` 个输出按第 0 维拼接，得到 `(num_steps * batch, vocab_size)`：
+   `outs = torch.cat(outputs, dim=0)`。
+2. 把 `Y` 转置成 `(num_steps, batch)`，再展平成 `(num_steps * batch,)`：
+   `targets = Y.T.reshape(-1)`。
 3. 两者一一对应，可以直接算交叉熵。
 
 **顺序不能错**。如果先展平 `Y` 再转置，标签与输出的对应关系就乱了，
@@ -406,7 +419,7 @@ state = tuple(s.detach() for s in state)
 | `s.detach()` | 切断计算图 | 8.2 |
 | `torch.exp(loss)` | 困惑度 | 7 |
 | `torch.cat(outs, dim=0)` | 拼接各步输出 | 8.3 |
-| `y.T.reshape(-1)` | 标签转置展平 | 8.3 |
+| `Y.T.reshape(-1)` | 标签转置展平 | 8.3 |
 
 ## 自测题
 
