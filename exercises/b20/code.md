@@ -88,7 +88,22 @@ def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
 def grad_clipping(params: list[torch.Tensor], theta: float) -> float:
     """把所有参数的梯度当成一个向量，范数超过 theta 时整体按比例缩。
 
-    返回裁剪前的范数。
+    分两步：
+
+    1. 算总范数 norm = sqrt(所有参数的梯度元素的平方和)。
+    2. norm > theta 时，每个梯度乘上 theta / norm；否则不动。
+
+    返回**第 1 步算出的那个 norm**，也就是裁剪之前的值。
+    它不管最后裁没裁都照原样返回。
+
+    举例：梯度是 [3, 4]，总范数 5，theta = 1。
+    裁剪后梯度变成 [0.6, 0.8]，范数为 1。**函数返回 5，不是 1**。
+
+    再举例：梯度是 [0.3, 0.4]，总范数 0.5，theta = 1。
+    没触发裁剪，梯度不变。函数返回 0.5。
+
+    用途是观察训练。频繁超过 theta 说明梯度太大，常见原因是
+    学习率过高、初始化不好或序列太长。
     """
 ```
 

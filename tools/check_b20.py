@@ -121,6 +121,11 @@ def main() -> int:
         p2.grad = torch.tensor([0.0, 0.0])
         theta = 1.0
         before = mod.grad_clipping([p1, p2], theta)
+        # 返回值是裁剪前的范数，不是裁剪后的
+        assert abs(float(before) - 5.0) < 1e-4, (
+            f"应返回裁剪前的范数 5.0，得到 {before}。"
+            "裁剪后范数才是 1.0，返回的是裁剪之前那个数"
+        )
         norm = torch.sqrt((p1.grad ** 2).sum() + (p2.grad ** 2).sum())
         assert abs(norm.item() - theta) < 1e-5, (
             f"裁剪后梯度范数应当等于 {theta}，得到 {norm.item():.6f}"
@@ -144,9 +149,12 @@ def main() -> int:
     def _t3b():
         p = nn.Parameter(torch.zeros(2))
         p.grad = torch.tensor([0.3, 0.4])            # 范数 0.5 < 1.0
-        mod.grad_clipping([p], 1.0)
+        got = mod.grad_clipping([p], 1.0)
         assert torch.allclose(p.grad, torch.tensor([0.3, 0.4])), (
             f"范数未超阈值时梯度不该变，得到 {p.grad.tolist()}"
+        )
+        assert abs(float(got) - 0.5) < 1e-5, (
+            f"没触发裁剪时也该返回算出的范数 0.5，得到 {got}"
         )
 
     @case("T4 训练：困惑度下降")
