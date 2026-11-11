@@ -6,6 +6,15 @@
 
 ---
 
+## 需要的导入
+
+```python
+import torch
+import torch.nn as nn
+```
+
+`params` 是 `tuple[torch.Tensor, ...]`，元组里每个元素是一个权重或偏置。
+
 ## 先看一段：这一章做什么
 
 手写 GRU 与 LSTM 的单步计算，并**用两种 GRU 约定分别与 `nn.GRU` 对比**。

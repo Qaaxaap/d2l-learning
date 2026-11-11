@@ -6,6 +6,15 @@
 
 ---
 
+## 需要的导入
+
+```python
+import torch
+import torch.nn as nn
+```
+
+`valid_lens` 可能为空，签名里写成 `torch.Tensor | None`。
+
 ## 先看一段：这一章做什么
 
 四个零件：掩蔽 softmax、加性注意力、缩放点积注意力、Nadaraya-Watson 核回归。
@@ -23,7 +32,8 @@ def sequence_mask(X: torch.Tensor, valid_len: torch.Tensor,
     """把 X 每行第 valid_len[i] 位之后填成 value。X 形状 (n, m)。"""
 
 
-def masked_softmax(X: torch.Tensor, valid_lens: torch.Tensor | None):
+def masked_softmax(X: torch.Tensor, valid_lens: torch.Tensor | None
+                   ) -> torch.Tensor:
     """在最后一维做 softmax，按 valid_lens 掩蔽。
 
     X 形状 (batch, n, m)。
@@ -46,11 +56,12 @@ def masked_softmax(X: torch.Tensor, valid_lens: torch.Tensor | None):
 
 ```python
 class AdditiveAttention(nn.Module):
-    def __init__(self, key_size: int, query_size: int, num_hiddens: int):
+    def __init__(self, key_size: int, query_size: int, num_hiddens: int) -> None:
         """三个无偏置的 Linear：W_q、W_k、w_v。"""
 
     def forward(self, queries: torch.Tensor, keys: torch.Tensor,
-                values: torch.Tensor, valid_lens=None):
+                values: torch.Tensor, valid_lens: torch.Tensor | None = None
+                ) -> torch.Tensor:
         """queries: (batch, n_q, q)  keys: (batch, n_k, k)  values: (batch, n_k, v)
 
         返回 (batch, n_q, v)，并把权重存进 self.attention_weights。
@@ -73,10 +84,11 @@ class AdditiveAttention(nn.Module):
 
 ```python
 class DotProductAttention(nn.Module):
-    def __init__(self, dropout: float = 0.0): ...
+    def __init__(self, dropout: float = 0.0) -> None: ...
 
     def forward(self, queries: torch.Tensor, keys: torch.Tensor,
-                values: torch.Tensor, valid_lens=None):
+                values: torch.Tensor, valid_lens: torch.Tensor | None = None
+                ) -> torch.Tensor:
         """queries: (batch, n_q, d)  keys: (batch, n_k, d)  values: (batch, n_k, v)"""
 ```
 
@@ -90,7 +102,8 @@ class DotProductAttention(nn.Module):
 
 ```python
 def nadaraya_watson(queries: torch.Tensor, keys: torch.Tensor,
-                    values: torch.Tensor, w: float = 1.0):
+                    values: torch.Tensor, w: float = 1.0
+                    ) -> tuple[torch.Tensor, torch.Tensor]:
     """queries: (batch, n_q)  keys: (batch, n_k)  values: (batch, n_k)
 
     返回 (输出 (batch, n_q), 注意力权重 (batch, n_q, n_k))。

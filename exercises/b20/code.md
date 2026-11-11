@@ -6,6 +6,17 @@
 
 ---
 
+## 需要的导入
+
+题面的签名用到 `torch` 与 `nn`：
+
+```python
+import torch
+import torch.nn as nn
+```
+
+张量一律用 `torch.Tensor`，参数列表用 `list[torch.Tensor]`。
+
 ## 先看一段：这一章做什么
 
 把 B19 的数据管道与 RNN 前向接起来，**训练一个能记住文本模式的字符级语言模型**。
@@ -39,12 +50,14 @@ def to_onehot(X: torch.Tensor, vocab_size: int) -> list[torch.Tensor]:
 ## T2 隐藏状态与前向
 
 ```python
-def init_rnn_state(batch_size: int, num_hiddens: int, device):
+def init_rnn_state(batch_size: int, num_hiddens: int,
+                   device: str) -> tuple[torch.Tensor]:
     """返回 (H,)，H 形状 (batch_size, num_hiddens)，全 0。"""
 
 
 def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
-                params: tuple[torch.Tensor, ...]):
+                params: tuple[torch.Tensor, ...]
+                ) -> tuple[list[torch.Tensor], tuple[torch.Tensor]]:
     """inputs 是 num_steps 个 (batch, vocab)；
     params 是 (W_xh, W_hh, b_h, W_hq, b_q)；state 是 (H,)。
 
@@ -66,7 +79,7 @@ def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
 ## T3 梯度裁剪
 
 ```python
-def grad_clipping(params, theta: float) -> float:
+def grad_clipping(params: list[torch.Tensor], theta: float) -> float:
     """把所有参数的梯度当成一个向量，范数超过 theta 时整体按比例缩。
 
     返回裁剪前的范数。
@@ -85,7 +98,7 @@ def grad_clipping(params, theta: float) -> float:
 ```python
 def train_rnn(corpus_indices: list[int], vocab_size: int, num_hiddens: int,
               num_epochs: int, lr: float, batch_size: int, num_steps: int,
-              device, use_random: bool = True) -> list[float]:
+              device: str, use_random: bool = True) -> list[float]:
     """训练字符级 RNN，返回每个 epoch 的平均困惑度列表。
 
     use_random=True 用随机采样（每批重置隐藏状态），

@@ -6,6 +6,15 @@
 
 ---
 
+## 需要的导入
+
+```python
+import torch
+import torch.nn as nn
+```
+
+`valid_lens` 可能为空，签名里写成 `torch.Tensor | None`。
+
 ## 先看一段：这一章做什么
 
 把 B23 的注意力变成能搭深网络的组件：多头、位置编码、残差加层规范化、编码器块。
@@ -42,11 +51,12 @@ def transpose_output(X: torch.Tensor, num_heads: int) -> torch.Tensor:
 class MultiHeadAttention(nn.Module):
     def __init__(self, key_size: int, query_size: int, value_size: int,
                  num_hiddens: int, num_heads: int, dropout: float = 0.0,
-                 bias: bool = False):
+                 bias: bool = False) -> None:
         """四个无偏置的 nn.Linear：W_q、W_k、W_v、W_o。"""
 
     def forward(self, queries: torch.Tensor, keys: torch.Tensor,
-                values: torch.Tensor, valid_lens=None):
+                values: torch.Tensor, valid_lens: torch.Tensor | None = None
+                ) -> torch.Tensor:
         """三个张量形状 (batch, n, d)。返回 (batch, n_q, num_hiddens)。
 
         valid_lens：形状 (batch,) 的整数张量，每个样本的键值有效长度。
@@ -73,7 +83,7 @@ F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=...)
 ```python
 class PositionalEncoding(nn.Module):
     def __init__(self, num_hiddens: int, dropout: float = 0.0,
-                 max_len: int = 1000):
+                 max_len: int = 1000) -> None:
         """P 用公式算出来，注册成 buffer，不训练。"""
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
@@ -96,7 +106,7 @@ p_{i, 2j+1} = \cos\left(\frac{i}{10000^{2j/d}}\right)$$
 
 ```python
 class AddNorm(nn.Module):
-    def __init__(self, normalized_shape: int, dropout: float = 0.0):
+    def __init__(self, normalized_shape: int, dropout: float = 0.0) -> None:
         """LayerNorm + Dropout。"""
 
     def forward(self, X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
@@ -105,7 +115,7 @@ class AddNorm(nn.Module):
 
 class PositionWiseFFN(nn.Module):
     def __init__(self, ffn_num_input: int, ffn_num_hiddens: int,
-                 ffn_num_outputs: int):
+                 ffn_num_outputs: int) -> None:
         """两层全连接，中间 ReLU。"""
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
@@ -116,10 +126,11 @@ class EncoderBlock(nn.Module):
     def __init__(self, key_size: int, query_size: int, value_size: int,
                  num_hiddens: int, norm_shape: int, ffn_num_input: int,
                  ffn_num_hiddens: int, num_heads: int, dropout: float,
-                 use_bias: bool = False):
+                 use_bias: bool = False) -> None:
         """多头自注意力 → AddNorm → 前馈 → AddNorm。"""
 
-    def forward(self, X: torch.Tensor, valid_lens=None):
+    def forward(self, X: torch.Tensor, valid_lens: torch.Tensor | None = None
+                ) -> torch.Tensor:
         """X 形状 (batch, n, num_hiddens)。返回同形状。"""
 ```
 

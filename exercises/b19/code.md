@@ -6,6 +6,16 @@
 
 ---
 
+## 需要的导入
+
+题面的签名用到 `Iterator`，从 `typing` 导入：
+
+```python
+from typing import Iterator
+```
+
+另外需要 `torch`。向量与索引用 `torch.Tensor`，索引列表用 `list[int]`。
+
 ## 先看一段：这一章做什么
 
 两件事：**把文本变成能训练的批次**（T1–T3）、**手写 RNN 的单步与多步前向**（T4）。
@@ -40,10 +50,11 @@ def to_indices(text: str, char_to_idx: dict) -> list[int]:
 ## T2 随机采样
 
 ```python
-def data_iter_random(corpus_indices, batch_size: int, num_steps: int):
+def data_iter_random(corpus_indices: list[int], batch_size: int,
+                     num_steps: int) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
     """每次随机截取一段长为 num_steps 的序列作为样本，标签右移一位。
 
-    yield (X, Y)，形状都是 (batch_size, num_steps)。
+    生成器，每次产出 (X, Y)，形状都是 (batch_size, num_steps)。
     """
 ```
 
@@ -61,10 +72,12 @@ def data_iter_random(corpus_indices, batch_size: int, num_steps: int):
 ## T3 相邻采样
 
 ```python
-def data_iter_consecutive(corpus_indices, batch_size: int, num_steps: int):
+def data_iter_consecutive(corpus_indices: list[int], batch_size: int,
+                          num_steps: int
+                          ) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
     """把序列切成 batch_size 条，按顺序切批。
 
-    yield (X, Y)，形状都是 (batch_size, num_steps)。
+    生成器，每次产出 (X, Y)，形状都是 (batch_size, num_steps)。
     """
 ```
 

@@ -6,6 +6,20 @@
 
 ---
 
+## 需要的导入
+
+题面的签名用到 `Callable`，从 `typing` 导入：
+
+```python
+from typing import Any, Callable
+
+import torch
+import torch.nn as nn
+```
+
+`init_state` 是任意类型的状态对象（`Any`），`beam_search` 不关心它的内部结构。
+它由调用方的 `step_fn` 决定：可能是张量，也可能是元组。
+
 ## 先看一段：这一章做什么
 
 把两个 RNN 拼成 seq2seq，再写一个通用的束搜索。
@@ -19,10 +33,11 @@
 ```python
 class Encoder(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, num_hiddens: int,
-                 num_layers: int = 1):
+                 num_layers: int = 1) -> None:
         """Embedding + nn.GRU。"""
 
-    def forward(self, X: torch.Tensor, state=None):
+    def forward(self, X: torch.Tensor, state: torch.Tensor | None = None
+                ) -> tuple[torch.Tensor, torch.Tensor]:
         """X 形状 (seq_len, batch)。返回 (outputs, state)。
 
         outputs: (seq_len, batch, num_hiddens)
@@ -43,13 +58,14 @@ class Encoder(nn.Module):
 ```python
 class Decoder(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, num_hiddens: int,
-                 num_layers: int = 1):
+                 num_layers: int = 1) -> None:
         """Embedding + nn.GRU + Linear(num_hiddens, vocab_size)。"""
 
     def init_state(self, enc_state: torch.Tensor) -> torch.Tensor:
         """把编码器的最终状态拿来做解码器的初始状态。"""
 
-    def forward(self, X: torch.Tensor, state: torch.Tensor):
+    def forward(self, X: torch.Tensor, state: torch.Tensor
+                ) -> tuple[torch.Tensor, torch.Tensor]:
         """X 形状 (seq_len, batch)。返回 (logits, state)。
 
         logits: (seq_len, batch, vocab_size)
@@ -66,10 +82,11 @@ class Decoder(nn.Module):
 
 ```python
 class Seq2Seq(nn.Module):
-    def __init__(self, encoder: Encoder, decoder: Decoder): ...
+    def __init__(self, encoder: Encoder, decoder: Decoder) -> None: ...
 
     def forward(self, enc_X: torch.Tensor, dec_X: torch.Tensor,
-                enc_state=None):
+                enc_state: torch.Tensor | None = None
+                ) -> tuple[torch.Tensor, torch.Tensor]:
         """返回 (logits, dec_state)。"""
 ```
 
@@ -81,8 +98,9 @@ class Seq2Seq(nn.Module):
 ## T4 束搜索
 
 ```python
-def beam_search(step_fn: Callable, init_state, beam_size: int, max_len: int,
-                bos_token: int, eos_token: int, alpha: float = 0.75):
+def beam_search(step_fn: Callable, init_state: Any, beam_size: int, max_len: int,
+                bos_token: int, eos_token: int,
+                alpha: float = 0.75) -> list[tuple[list[int], float]]:
     """通用束搜索。
 
     step_fn(token, state) -> (log_probs, next_state)

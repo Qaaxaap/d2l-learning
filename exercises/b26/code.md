@@ -6,6 +6,18 @@
 
 ---
 
+## 需要的导入
+
+```python
+from typing import Callable
+
+import torch
+import torch.nn as nn
+```
+
+`fn` 是不接受参数、不返回值的函数，写作 `Callable[[], None]`。
+`scaler` 是 `torch.amp.GradScaler` 的实例。
+
 ## 先看一段：这一章做什么
 
 本章不实现算法，做四件事：估算显存、正确计时、写混合精度的训练步、选并行方案。
@@ -19,7 +31,7 @@
 
 ```python
 def model_memory_bytes(num_params: int, precision: str = "fp32",
-                       optimizer: str = "adam") -> dict:
+                       optimizer: str = "adam") -> dict[str, int]:
     """估算训练时各部分的字节数。
 
     参数：
@@ -42,7 +54,8 @@ def model_memory_bytes(num_params: int, precision: str = "fp32",
 ## T2 精确计时
 
 ```python
-def measure_time(fn, iters: int = 5, warmup: int = 3) -> float:
+def measure_time(fn: Callable[[], None], iters: int = 5,
+                 warmup: int = 3) -> float:
     """测 fn 的平均执行时间，单位毫秒。
 
     fn 不接受参数、不返回值。
@@ -66,7 +79,7 @@ def measure_time(fn, iters: int = 5, warmup: int = 3) -> float:
 
 ```python
 def train_step_amp(model: nn.Module, x: torch.Tensor, y: torch.Tensor,
-                   optimizer: torch.optim.Optimizer, scaler,
+                   optimizer: torch.optim.Optimizer, scaler: torch.amp.GradScaler,
                    criterion: nn.Module, device_type: str = "cpu") -> float:
     """用 AMP 做一步训练，返回标量损失。
 
