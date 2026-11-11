@@ -102,6 +102,28 @@ def main() -> int:
             "检查是不是忘了 random.shuffle"
         )
 
+    @case("T2 随机采样：行内连续、行间不连续")
+    def _t2c():
+        seq = list(range(300))
+        random.seed(0)
+        X, _ = next(iter(mod.data_iter_random(seq, batch_size=4, num_steps=5)))
+        # 行内：一行里的 num_steps 个元素在原始序列上接着
+        for i in range(X.shape[0]):
+            row = X[i].tolist()
+            want = list(range(row[0], row[0] + 5))
+            assert row == want, (
+                f"第 {i} 行行内应当连续，应为 {want}，得到 {row}。"
+                "行内连续是「标签右移一位」能成立的前提"
+            )
+        # 行间：四行的起点互不相等，且不是等距的
+        starts = [X[i, 0].item() for i in range(X.shape[0])]
+        assert len(set(starts)) == 4, f"四行的起点应各不相同，得到 {starts}"
+        diffs = [starts[i + 1] - starts[i] for i in range(3)]
+        assert not all(d == 5 for d in diffs), (
+            f"四行起点 {starts} 等距（每行隔 num_steps），这是相邻采样的特征。"
+            "随机采样的起点是洗牌后取的，彼此无关"
+        )
+
     @case("T3 相邻采样：形状与右移")
     def _t3a():
         seq = list(range(30))
@@ -131,6 +153,25 @@ def main() -> int:
         # 第 1 条序列从 15 开始
         assert X1[1, 0].item() == 15, (
             f"第 1 条序列应从 15 开始（30 个元素切 2 条），得到 {X1[1, 0].item()}"
+        )
+
+    @case("T3 相邻采样：行内连续、行间隔着整条平行序列")
+    def _t3c():
+        seq = list(range(30))
+        batches = list(mod.data_iter_consecutive(seq, batch_size=2, num_steps=6))
+        X, _ = batches[0]
+        # 行内连续
+        for i in range(X.shape[0]):
+            row = X[i].tolist()
+            want = list(range(row[0], row[0] + 6))
+            assert row == want, (
+                f"第 {i} 行行内应当连续，应为 {want}，得到 {row}"
+            )
+        # 行间：第 1 行是另一条平行序列，起点相差 30//2 = 15
+        gap = X[1, 0].item() - X[0, 0].item()
+        assert gap == 15, (
+            f"第 1 行应与第 0 行相隔 len//batch_size = 15 个位置，得到 {gap}。"
+            "行间不连续：它们来自两条不同的平行序列"
         )
 
     @case("T4 rnn_step 与手算一致")
