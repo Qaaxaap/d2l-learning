@@ -14,7 +14,7 @@ from typing import Any, Generator
 from torch import Tensor
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 import random
 
 
