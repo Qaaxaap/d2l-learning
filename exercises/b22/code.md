@@ -62,7 +62,11 @@ class Decoder(nn.Module):
         """Embedding + nn.GRU + Linear(num_hiddens, vocab_size)。"""
 
     def init_state(self, enc_state: torch.Tensor) -> torch.Tensor:
-        """把编码器的最终状态拿来做解码器的初始状态。"""
+        """把编码器的最终状态拿来做解码器的初始状态。
+
+        输入形状 (num_layers, batch, h)，返回同形状。
+        **返回值要 detach 过**：requires_grad 为 False，数值与输入相同。
+        """
 
     def forward(self, X: torch.Tensor, state: torch.Tensor
                 ) -> tuple[torch.Tensor, torch.Tensor]:

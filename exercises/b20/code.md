@@ -58,12 +58,18 @@ def init_rnn_state(batch_size: int, num_hiddens: int,
 def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
                 params: tuple[torch.Tensor, ...]
                 ) -> tuple[list[torch.Tensor], tuple[torch.Tensor]]:
-    """inputs 是 num_steps 个 (batch, vocab)；
-    params 是 (W_xh, W_hh, b_h, W_hq, b_q)；state 是 (H,)。
+    """多步前向。返回 (outputs, (H_new,))。
+
+    inputs: 长度 num_steps 的列表，每个元素形状 (batch, vocab)，是 one-hot。
+    state: (H,)，H 形状 (batch, h)，是进入第 0 步之前的状态。
+    params: (W_xh, W_hh, b_h, W_hq, b_q)。
 
     每步：H = tanh(X_t @ W_xh + H @ W_hh + b_h)
           Y_t = H @ W_hq + b_q        ← logits，不做 softmax
-    返回 (outputs, (H_new,))。
+
+    outputs: 长度 num_steps 的列表，outputs[t] 形状 (batch, vocab)，
+             是第 t 步看过 X_t 之后的 logits。
+    H_new:   (H,)，最后一步的状态，与 outputs[-1] 是同一时刻。
     """
 ```
 

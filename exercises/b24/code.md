@@ -119,7 +119,10 @@ class PositionWiseFFN(nn.Module):
         """两层全连接，中间 ReLU。"""
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        """X 形状 (batch, n, ffn_num_input)。"""
+        """X 形状 (batch, n, ffn_num_input)。
+
+        返回形状 (batch, n, ffn_num_outputs)。每个位置独立过同一个 MLP。
+        """
 
 
 class EncoderBlock(nn.Module):

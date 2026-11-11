@@ -136,15 +136,35 @@ def data_iter_consecutive(corpus_indices: list[int], batch_size: int,
 ```python
 def rnn_step(X: torch.Tensor, H: torch.Tensor, W_xh: torch.Tensor,
              W_hh: torch.Tensor, b_h: torch.Tensor) -> torch.Tensor:
-    """单步：H_new = tanh(X @ W_xh + H @ W_hh + b_h)。
+    """单步。返回 H_new，形状 (batch, h)。
 
-    X: (batch, d)  H: (batch, h)  W_xh: (d, h)  W_hh: (h, h)  b_h: (h,)
+    H_new = tanh(X @ W_xh + H @ W_hh + b_h)。
+
+    参数形状：X 是 (batch, d)、H 是 (batch, h)、W_xh 是 (d, h)、
+    W_hh 是 (h, h)、b_h 是 (h,)。
     """
 
 
 def rnn_forward(Xs: torch.Tensor, H0: torch.Tensor, W_xh: torch.Tensor,
                 W_hh: torch.Tensor, b_h: torch.Tensor) -> torch.Tensor:
-    """多步：Xs 形状 (seq_len, batch, d)，返回 (seq_len, batch, h)。"""
+    """多步前向。返回 H_all，形状 (seq_len, batch, h)。
+
+    参数形状：Xs 是 (seq_len, batch, d)，H0 是 (batch, h)。
+
+    返回值定义（逐个下标写死，没有别的解读）：
+
+        H_all[0]   = tanh(Xs[0] @ W_xh + H0 @ W_hh + b_h)
+        H_all[1]   = tanh(Xs[1] @ W_xh + H_all[0] @ W_hh + b_h)
+        H_all[t]   = tanh(Xs[t] @ W_xh + H_all[t-1] @ W_hh + b_h)
+        ...
+        H_all[T-1] = tanh(Xs[T-1] @ W_xh + H_all[T-2] @ W_hh + b_h)
+
+    三点强调：
+
+    1. **返回全部时间步**，不是只返回最后一步。`H_all[-1]` 才是最后的状态。
+    2. **`H0` 只用在第 0 步**。它不参与输出，也不出现在返回值里。
+    3. **每个 `H_all[t]` 是「看过 `Xs[t]` 之后」的状态**，不是看之前的。
+    """
 ```
 
 | 检查 | 期望 |
@@ -157,6 +177,10 @@ def rnn_forward(Xs: torch.Tensor, H0: torch.Tensor, W_xh: torch.Tensor,
 
 **`nn.RNN` 的权重布局**：`weight_ih_l0` 形状是 `(h, d)`，与我们的 `W_xh`（`(d, h)`）
 是转置关系。断言做对比时会自己转置，你只需保证自己的实现用的是 `(d, h)`。
+
+**这个函数与 B20 的同名函数不是一回事。** B20 也会有一个 `rnn_forward`，
+但它的输入是 one-hot 列表加参数元组，返回 `(outputs, state)` 两个值。
+本章这个只做状态序列，返回一个张量。写 B20 时不要照搬。
 
 ## T5 改错
 

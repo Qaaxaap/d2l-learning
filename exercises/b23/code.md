@@ -89,7 +89,10 @@ class DotProductAttention(nn.Module):
     def forward(self, queries: torch.Tensor, keys: torch.Tensor,
                 values: torch.Tensor, valid_lens: torch.Tensor | None = None
                 ) -> torch.Tensor:
-        """queries: (batch, n_q, d)  keys: (batch, n_k, d)  values: (batch, n_k, v)"""
+        """queries: (batch, n_q, d)  keys: (batch, n_k, d)  values: (batch, n_k, v)
+
+        返回 (batch, n_q, v)，并把权重存进 self.attention_weights。
+        """
 ```
 
 | 检查 | 期望 |

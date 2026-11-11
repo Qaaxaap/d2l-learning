@@ -28,7 +28,9 @@ import torch.nn as nn
 ```python
 def gru_step_book(X: torch.Tensor, H: torch.Tensor,
                   params: tuple[torch.Tensor, ...]) -> torch.Tensor:
-    """params 依次是 (W_xr, W_hr, b_r, W_xz, W_hz, b_z, W_xh, W_hh, b_h)。
+    """一步 GRU（按书上的约定）。返回新的 H，形状 (batch, h)。
+
+    params 依次是 (W_xr, W_hr, b_r, W_xz, W_hz, b_z, W_xh, W_hh, b_h)。
 
     权重形状：W_x* 是 (d, h)，W_h* 是 (h, h)，偏置是 (h,)。
     返回新的 H，形状 (batch, h)。
@@ -52,7 +54,9 @@ H = Z * H_prev + (1 - Z) * H_tilde
 ```python
 def gru_step_torch(X: torch.Tensor, H: torch.Tensor,
                    params: tuple[torch.Tensor, ...]) -> torch.Tensor:
-    """params 依次是 (W_ir, W_hr, b_ir, b_hr, W_iz, W_hz, b_iz, b_hz,
+    """一步 GRU（按 torch 的约定）。返回新的 H，形状 (batch, h)。
+
+    params 依次是 (W_ir, W_hr, b_ir, b_hr, W_iz, W_hz, b_iz, b_hz,
                       W_in, W_hn, b_in, b_hn)。
 
     权重形状 (d, h) 或 (h, h)，偏置 (h,)。
@@ -80,7 +84,11 @@ H_new = (1 - z) * n + z * H_prev
 ```python
 def lstm_step(X: torch.Tensor, H: torch.Tensor, C: torch.Tensor,
               params: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, torch.Tensor]:
-    """params 依次是 (W_xi, W_hi, b_i, W_xf, W_hf, b_f,
+    """一步 LSTM。返回 (H_new, C_new)，两个都是 (batch, h)。
+
+    顺序是 H 在前、C 在后，与 nn.LSTM 的 (h_n, c_n) 一致。
+
+    params 依次是 (W_xi, W_hi, b_i, W_xf, W_hf, b_f,
                       W_xo, W_ho, b_o, W_xc, W_hc, b_c)。
 
     返回 (H_new, C_new)，两个形状都是 (batch, h)。
