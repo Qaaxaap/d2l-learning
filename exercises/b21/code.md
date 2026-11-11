@@ -97,7 +97,7 @@ def lstm_step(X: torch.Tensor, H: torch.Tensor, C: torch.Tensor,
 
 ```python
 def hidden_state_shape(num_layers: int, batch_size: int, num_hiddens: int,
-                       bidirectional: bool = False) -> tuple:
+                       bidirectional: bool = False) -> tuple[int, int, int]:
     """返回 nn.RNN/nn.GRU/nn.LSTM 的 h_n 形状，只算不建模型。"""
 
 

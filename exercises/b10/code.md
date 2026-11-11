@@ -27,7 +27,8 @@
 
 ```python
 def make_high_dim(n_train: int = 20, n_test: int = 100,
-                  num_inputs: int = 200, seed: int = 0) -> tuple:
+                  num_inputs: int = 200, seed: int = 0
+                  ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """按讲义 1.3 节的公式生成数据。
 
     返回 (x_train, y_train, x_test, y_test)：
@@ -60,9 +61,10 @@ def l2_penalty(w: torch.Tensor, lam: float) -> torch.Tensor:
 ## T3 带惩罚项的训练
 
 ```python
-def train_high_dim(train_iter, test_iter, lam: float = 0.0,
+def train_high_dim(train_iter: DataLoader, test_iter: DataLoader,
+                   lam: float = 0.0,
                    num_epochs: int = 3, lr: float = 0.003,
-                   seed: int = 0) -> dict:
+                   seed: int = 0) -> dict[str, list[float]]:
     """在高维数据上训练线性回归，返回 {"train_loss": [...], "test_loss": [...]}。
 
     - train_iter 与 test_iter 由调用方给（DataLoader），产出 (X, y)，形状分别是
@@ -119,7 +121,7 @@ def make_dropout_net(num_inputs: int = 784, num_hiddens1: int = 256,
     """
 
 
-def evaluate(net, loader) -> float:
+def evaluate(net: nn.Module, loader: DataLoader) -> float:
     """net 接受 (batch, 1, 28, 28) 返回 (batch, 10) 的 logits。
 
     在整个 loader 上算准确率，返回 Python 浮点数。
@@ -127,7 +129,8 @@ def evaluate(net, loader) -> float:
     """
 
 
-def train_dropout(train_iter, test_iter, use_dropout: bool = True,
+def train_dropout(train_iter: DataLoader, test_iter: DataLoader,
+                  use_dropout: bool = True,
                   num_epochs: int = 5, lr: float = 0.5,
                   batch_size: int = 256, seed: int = 0) -> dict:
     """训练上面那个 MLP，返回 {"train_loss": [...], "train_acc": [...],
@@ -154,7 +157,7 @@ def train_dropout(train_iter, test_iter, use_dropout: bool = True,
 import torch
 import torch.nn as nn
 
-def test_acc(net, loader):
+def test_acc(net: nn.Module, loader: DataLoader) -> float:
     correct, total = 0, 0
     with torch.no_grad():
         for X, y in loader:

@@ -98,7 +98,8 @@ class Seq2Seq(nn.Module):
 ## T4 束搜索
 
 ```python
-def beam_search(step_fn: Callable, init_state: Any, beam_size: int, max_len: int,
+def beam_search(step_fn: Callable[..., Any], init_state: Any,
+                beam_size: int, max_len: int,
                 bos_token: int, eos_token: int,
                 alpha: float = 0.75) -> list[tuple[list[int], float]]:
     """通用束搜索。

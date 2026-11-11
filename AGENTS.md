@@ -526,6 +526,31 @@ MXNet 的对照只在一种情况下有价值：**同一个概念两边默认行
   已全部补齐，包括生成器的 `Iterator[tuple[torch.Tensor, torch.Tensor]]`
   与类的 `__init__ -> None`。
 
+  **生成器写 `Generator[Y, S, R]`，不写 `Iterator[Y]`。** 2026-11-11 学习者指出
+  "我的编辑器比较严格，用 Iterator 作为类型注释会报错"，并给了正确写法
+  `Generator[tuple[Tensor, Tensor], Any, None]`。三个参数是产出类型、`send()` 接受类型、
+  `return` 类型。
+
+  **裸泛型在 `--strict` 下也报错。** 同一轮扫下来，A1 到 B18 有 30 多处
+  `-> dict`、`params: list`、`-> tuple`，全部改成带参数的形式
+  （`dict[str, list[float]]`、`list[torch.Tensor]`、`tuple[torch.Tensor, ...]`）。
+
+  **验证方法**（本机有 `mypy` 与 `pyright`）：把每份 `code.md` 里 `## T5` 之前的
+  代码块用 `ast` 提取函数与类定义、函数体换成 `...`，拼成一个 stub 文件，跑
+  `mypy --strict --no-site-packages --ignore-missing-imports
+  --disable-error-code=empty-body --disable-error-code=misc --disable-error-code=no-redef`。
+  要屏蔽的三项都是 stub 造成的假阳性，不是题面的问题。
+  现在 A1 到 B29 全部 0 错误。脚本逻辑记在下面：
+
+  ```python
+  # 对每个 exercises/*/code.md：
+  #   取 ## T5 之前的 ```python 块
+  #   ast.parse 后把每个 FunctionDef 的 body 换成 [Expr(Constant(Ellipsis))]
+  #   ClassDef 里同样处理每个方法
+  #   ast.unparse 拼成一个文件
+  # 文件头补：typing、torch、nn、F、pandas、DataLoader、json 的 import
+  ```
+
   **每次新写 `code.md` 时当场标全，不要等以后扫。** 上面那条规则是 11-10 补的，
   当时只改了已有题面，11-11 新写的 B26 到 B29 又全缺返回类型。
   校验方法：写完后扫一遍 `def` 行，参数列表里每个参数要有 `: 类型`，

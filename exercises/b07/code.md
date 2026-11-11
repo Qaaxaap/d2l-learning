@@ -115,7 +115,7 @@ def evaluate_accuracy(net: nn.Module, loader: DataLoader) -> float:
 这一题要三个零件：T1 的 `cross_entropy`、下面这个 `sgd`、以及参数初始化。
 
 ```python
-def sgd(params: list, lr: float, batch_size: int) -> None:
+def sgd(params: list[torch.Tensor], lr: float, batch_size: int) -> None:
     """小批量随机梯度下降，与 B06 的 T4 相同，这一章自己重写一遍。
 
     对 params 里的每个参数做 p ← p - lr * p.grad / batch_size。
@@ -124,14 +124,16 @@ def sgd(params: list, lr: float, batch_size: int) -> None:
     """
 
 
-def make_net(num_inputs: int = 784, num_outputs: int = 10, seed: int = 0):
+def make_net(num_inputs: int = 784, num_outputs: int = 10,
+             seed: int = 0) -> nn.Module:
     """返回 (W, b) 两个叶子张量：W 形状 (784, 10) 用均值 0、标准差 0.01 的正态随机数，
     b 形状 (10,) 用全零。都用 seed 保证可复现，都开 requires_grad。"""
 
 
-def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
+def train_from_scratch(train_iter: DataLoader, test_iter: DataLoader,
+                       num_epochs: int = 5,
                        lr: float = 0.1, batch_size: int = 256,
-                       seed: int = 0) -> dict:
+                       seed: int = 0) -> dict[str, list[float]]:
     """用手写的 softmax、交叉熵与 sgd 训练。
 
     返回一个字典，键固定为：
@@ -153,7 +155,8 @@ def train_from_scratch(train_iter, test_iter, num_epochs: int = 5,
 ## T5 混淆矩阵
 
 ```python
-def confusion_matrix(net, loader, q: int = 10) -> torch.Tensor:
+def confusion_matrix(net: nn.Module, loader: DataLoader,
+                     q: int = 10) -> torch.Tensor:
     """返回 (q, q) 的整数张量。
 
     第 i 行第 j 列 = 真实类别是 i 而被预测成 j 的样本数。

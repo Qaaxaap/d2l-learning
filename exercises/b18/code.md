@@ -22,7 +22,8 @@
 ```python
 def batch_norm(X: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
                moving_mean: torch.Tensor, moving_var: torch.Tensor,
-               eps: float, momentum: float, training: bool):
+               eps: float, momentum: float, training: bool
+               ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """手写批量归一化的前向。返回 (Y, moving_mean, moving_var)。
 
     X: 输入张量，形状 (N, features) 或 (N, C, H, W)。

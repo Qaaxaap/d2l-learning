@@ -30,7 +30,7 @@ def grad_of_quadratic(A: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
 ## T2 叶子与非叶子
 
 ```python
-def grad_report(x: torch.Tensor) -> dict:
+def grad_report(x: torch.Tensor) -> dict[str, torch.Tensor]:
     """对 y = (x * 2).sum() 反传，返回一份报告，键固定为：
 
     x_grad     -> x.grad

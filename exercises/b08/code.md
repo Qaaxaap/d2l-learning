@@ -50,7 +50,8 @@ def relu_grad(x: torch.Tensor) -> torch.Tensor:
 
 ```python
 def init_params(num_inputs: int = 784, num_hiddens: int = 256,
-                num_outputs: int = 10, seed: int = 0) -> tuple:
+                num_outputs: int = 10, seed: int = 0
+                ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """返回 (W1, b1, W2, b2)。
 
     W1 形状 (784, 256)，b1 形状 (256,)，W2 形状 (256, 10)，b2 形状 (10,)。
@@ -101,7 +102,7 @@ def count_params(net: nn.Module) -> int:
 这一题需要三个零件：T1 的 `relu`、T2 的参数与 `mlp_forward`、以及下面这个 `sgd`。
 
 ```python
-def sgd(params: list, lr: float, batch_size: int) -> None:
+def sgd(params: list[torch.Tensor], lr: float, batch_size: int) -> None:
     """与 B07 的 T4 相同，这一章自己再写一遍。
 
     对每个参数做 p ← p - lr * p.grad / batch_size，更新后就地清零它的梯度。
@@ -109,9 +110,10 @@ def sgd(params: list, lr: float, batch_size: int) -> None:
     """
 
 
-def train_from_scratch(train_iter, test_iter, num_epochs: int = 10,
+def train_from_scratch(train_iter: DataLoader, test_iter: DataLoader,
+                       num_epochs: int = 10,
                        lr: float = 0.1, batch_size: int = 256,
-                       seed: int = 0) -> dict:
+                       seed: int = 0) -> dict[str, list[float]]:
     """用手写的 relu、mlp_forward、cross_entropy 与 sgd 训练。
 
     交叉熵与准确率用 B07 里自己写的那两份（`cross_entropy` 与 `evaluate_accuracy`，
@@ -140,7 +142,8 @@ T4 直接累加再除以样本数，T5 得先乘回样本数再除以样本数�
 ## T5 简洁实现
 
 ```python
-def train_concise(train_iter, test_iter, num_epochs: int = 10,
+def train_concise(train_iter: DataLoader, test_iter: DataLoader,
+                  num_epochs: int = 10,
                   lr: float = 0.1, seed: int = 0) -> dict:
     """用框架的封装重写一遍。
 

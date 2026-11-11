@@ -30,7 +30,8 @@ def roll_and_estimate(n_rolls: int, seed: int = 0) -> torch.Tensor:
 ## T2 期望与方差
 
 ```python
-def mean_var(values: torch.Tensor, probs: torch.Tensor) -> tuple:
+def mean_var(values: torch.Tensor, probs: torch.Tensor
+             ) -> tuple[torch.Tensor, torch.Tensor]:
     """给定取值和对应概率，返回 (期望, 方差)。
 
     两个参数形状都是 (n,)，probs 之和为 1。

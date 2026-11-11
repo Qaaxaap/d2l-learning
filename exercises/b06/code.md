@@ -14,7 +14,7 @@
 
 ```python
 def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
-              seed: int = 0) -> tuple:
+              seed: int = 0) -> tuple[torch.Tensor, torch.Tensor]:
     """生成线性回归的人造数据。
 
     - X 形状 (n, len(w))，每个元素从标准正态分布抽
@@ -37,7 +37,7 @@ def make_data(n: int, w: torch.Tensor, b: float, noise: float = 0.01,
 
 ```python
 def data_iter(batch_size: int, features: torch.Tensor, labels: torch.Tensor,
-              seed: int = 0):
+              seed: int = 0) -> Generator[tuple[torch.Tensor, torch.Tensor], None, None]:
     """按批量大小随机切分数据，逐批产出 (X, y)。
 
     要求：
@@ -81,7 +81,7 @@ def squared_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 ## T4 `sgd`：参数更新
 
 ```python
-def sgd(params: list, lr: float, batch_size: int) -> None:
+def sgd(params: list[torch.Tensor], lr: float, batch_size: int) -> None:
     """小批量随机梯度下降。对 params 里的每个参数做：
 
         p ← p - lr * p.grad / batch_size

@@ -13,7 +13,7 @@
 `-> dict` 那个位置是类型注解，不参与运行，只是给人看的。
 
 ```python
-def tensor_info(x: torch.Tensor) -> dict:
+def tensor_info(x: torch.Tensor) -> dict[str, object]:
     """返回关于 x 的一份描述，键固定为：
     shape           -> tuple，例如 (3, 4)
     numel           -> int，元素总数

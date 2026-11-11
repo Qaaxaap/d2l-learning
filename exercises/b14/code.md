@@ -95,11 +95,11 @@ def load_params(net: nn.Module, path: str) -> None:
 ## T4 搬到 GPU
 
 ```python
-def to_device(x: torch.Tensor, device) -> torch.Tensor:
+def to_device(x: torch.Tensor, device: torch.device | str) -> torch.Tensor:
     """把张量搬到 device。设备相同时返回同一个对象（不是副本）。"""
 
 
-def move_net(net: nn.Module, device) -> nn.Module:
+def move_net(net: nn.Module, device: torch.device | str) -> nn.Module:
     """把模型的所有参数搬到 device，返回搬完之后的模型。
 
     返回的对象应当**就是传进来的那个模型**（nn.Module.to() 是原地操作）。

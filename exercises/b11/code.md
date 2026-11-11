@@ -29,7 +29,7 @@ B04 里用 `backward()` 一行拿到梯度。这一章先**手写**一遍这个�
 ```python
 def build_model(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
                 W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
-                lam: float = 0.0):
+                lam: float = 0.0) -> torch.Tensor:
     """按下面的前向算出目标函数 J，返回一个标量张量。
 
         z = W1 @ x + b1
@@ -46,7 +46,7 @@ def build_model(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
 
 def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
                       W2: torch.Tensor, b2: torch.Tensor, y: torch.Tensor,
-                      lam: float = 0.0) -> dict:
+                      lam: float = 0.0) -> dict[str, torch.Tensor]:
     """对四个参数求梯度，返回 {"W1": ..., "b1": ..., "W2": ..., "b2": ...}。
 
     **调用方传进来的四个参数是普通张量，`requires_grad` 为 `False`。**
@@ -78,7 +78,8 @@ def grads_by_autograd(x: torch.Tensor, W1: torch.Tensor, b1: torch.Tensor,
 ## T2 数值梯度
 
 ```python
-def numeric_grad(f, x: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+def numeric_grad(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor,
+                 eps: float = 1e-6) -> torch.Tensor:
     """中心差分数值梯度。
 
     **x 是任意形状的张量，不是数据集，也不必是向量。** 返回值形状与 x 相同，

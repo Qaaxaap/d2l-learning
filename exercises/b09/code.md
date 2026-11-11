@@ -31,7 +31,8 @@ $$y = 1.2x - 3.4x^2 + 5.6x^3 + 5 + \epsilon,\qquad \epsilon \sim \mathcal{N}(0, 
 
 ```python
 def make_data(n_train: int = 100, n_test: int = 100,
-              seed: int = 0) -> tuple:
+              seed: int = 0
+              ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """按上面的公式生成数据。
 
     返回 (x_train, y_train, x_test, y_test)，四个都是形状 (n, 1) 的 float32 张量。
@@ -66,7 +67,7 @@ def poly_features(x: torch.Tensor, k: int) -> torch.Tensor:
 def train_poly(x_train: torch.Tensor, y_train: torch.Tensor,
                x_test: torch.Tensor, y_test: torch.Tensor, k: int,
                num_epochs: int = 100, lr: float = 0.01,
-               batch_size: int = 10, seed: int = 0) -> dict:
+               batch_size: int = 10, seed: int = 0) -> dict[str, list[float]]:
     """用 k 阶多项式做小批量梯度下降。
 
     返回 {"train_loss": [...], "test_loss": [...]}，两个列表长度都是 num_epochs。
@@ -94,7 +95,8 @@ def train_poly(x_train: torch.Tensor, y_train: torch.Tensor,
 ## T4 画图
 
 ```python
-def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
+def plot_errors(train_loss: list[float], test_loss: list[float],
+                path: str) -> None:
     """把两条误差曲线画在一张图上并存到 path。
 
     要求：横轴是轮数，纵轴用**对数刻度**，两条曲线要有图例区分，
@@ -117,7 +119,7 @@ def plot_errors(train_loss: list, test_loss: list, path: str) -> None:
 ## T5 k 折切分
 
 ```python
-def k_fold_indices(n: int, k: int, seed: int = 0) -> list:
+def k_fold_indices(n: int, k: int, seed: int = 0) -> list[list[int]]:
     """把 0 到 n-1 这 n 个下标切成 k 份。返回一个长度 k 的列表，
     每一项是一个 Python 整数列表。
 
@@ -134,7 +136,7 @@ def k_fold_indices(n: int, k: int, seed: int = 0) -> list:
 ## T6 看曲线下结论
 
 ```python
-def diagnose(train_loss: list, test_loss: list) -> str:
+def diagnose(train_loss: list[float], test_loss: list[float]) -> str:
     """给定两条曲线，返回 "underfitting"、"overfitting" 或 "good"。
 
     判据按顺序：

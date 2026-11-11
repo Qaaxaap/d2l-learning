@@ -58,7 +58,7 @@ def vgg_block(num_convs: int, num_channels: int,
     """
 
 
-def make_vgg(conv_arch, num_classes: int = 10,
+def make_vgg(conv_arch: list[tuple[int, int]], num_classes: int = 10,
              in_channels: int = 1) -> nn.Module:
     """conv_arch 形如 ((1, 64), (1, 128), (2, 256), (2, 512), (2, 512))。
 
@@ -115,7 +115,8 @@ def make_nin(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
 
 ```python
 class Inception(nn.Module):
-    def __init__(self, c1, c2, c3, c4, in_channels: int):
+    def __init__(self, c1: int, c2: tuple[int, int], c3: tuple[int, int],
+                 c4: int, in_channels: int) -> None:
         """in_channels 是输入通道数，四条并行线路都吃同一个输入：
 
         线路 1：1×1 卷积，输出 c1 个通道

@@ -8,11 +8,15 @@
 
 ## 需要的导入
 
-题面的签名用到 `Iterator`，从 `typing` 导入：
+题面的签名用到 `Generator` 与 `Any`，从 `typing` 导入：
 
 ```python
-from typing import Iterator
+from typing import Any, Generator
 ```
+
+两个采样函数是生成器（含 `yield`），返回类型写
+`Generator[tuple[torch.Tensor, torch.Tensor], Any, None]`。
+三个参数依次是产出类型、`send()` 接受类型、`return` 类型。
 
 另外需要 `torch`。向量与索引用 `torch.Tensor`，索引列表用 `list[int]`。
 
@@ -30,11 +34,14 @@ from typing import Iterator
 ## T1 字符索引
 
 ```python
-def build_vocab(text: str) -> tuple[dict, dict]:
-    """返回 (char_to_idx, idx_to_char)，两个映射互逆。"""
+def build_vocab(text: str) -> tuple[dict[str, int], dict[int, str]]:
+    """返回 (char_to_idx, idx_to_char)，两个映射互逆。
+
+    char_to_idx 的键是字符、值是下标；idx_to_char 反过来。
+    """
 
 
-def to_indices(text: str, char_to_idx: dict) -> list[int]:
+def to_indices(text: str, char_to_idx: dict[str, int]) -> list[int]:
     """把文本转成索引列表。"""
 ```
 
@@ -51,7 +58,7 @@ def to_indices(text: str, char_to_idx: dict) -> list[int]:
 
 ```python
 def data_iter_random(corpus_indices: list[int], batch_size: int,
-                     num_steps: int) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
+                     num_steps: int) -> Generator[tuple[torch.Tensor, torch.Tensor], Any, None]:
     """每次随机截取一段长为 num_steps 的序列作为样本，标签右移一位。
 
     生成器，每次产出 (X, Y)，形状都是 (batch_size, num_steps)。
@@ -90,7 +97,7 @@ def data_iter_random(corpus_indices: list[int], batch_size: int,
 ```python
 def data_iter_consecutive(corpus_indices: list[int], batch_size: int,
                           num_steps: int
-                          ) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
+                          ) -> Generator[tuple[torch.Tensor, torch.Tensor], Any, None]:
     """把序列切成 batch_size 条，按顺序切批。
 
     生成器，每次产出 (X, Y)，形状都是 (batch_size, num_steps)。

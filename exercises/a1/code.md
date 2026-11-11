@@ -55,7 +55,7 @@ Counter(start=10)()      # 返回 11
 ## T3 生成器
 
 ```python
-def batch_indices(n: int, batch_size: int):
+def batch_indices(n: int, batch_size: int) -> list[list[int]]:
     """把 0 到 n-1 这 n 个索引按 batch_size 分批，逐批产出。"""
 ```
 

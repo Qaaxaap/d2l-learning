@@ -40,7 +40,7 @@
 ## T1 读数据
 
 ```python
-def load_houses(csv_dir: str = "data") -> tuple:
+def load_houses(csv_dir: str = "data") -> tuple[pd.DataFrame, pd.DataFrame]:
     """读两个 CSV，返回 (train_data, test_data) 两个 DataFrame。
 
     csv_dir 是数据目录，两个文件分别叫 kaggle_house_pred_train.csv

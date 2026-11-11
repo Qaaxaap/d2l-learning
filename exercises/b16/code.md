@@ -59,7 +59,8 @@ def make_lenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
 ## T2 评估准确率
 
 ```python
-def evaluate(net: nn.Module, loader, device) -> float:
+def evaluate(net: nn.Module, loader: DataLoader,
+             device: torch.device | str) -> float:
     """返回模型在 loader 上的分类准确率，范围 [0, 1]。不改变 net 的参数。"""
 ```
 
@@ -76,8 +77,9 @@ def evaluate(net: nn.Module, loader, device) -> float:
 ## T3 训练
 
 ```python
-def train_lenet(net: nn.Module, train_iter, test_iter, num_epochs: int,
-                lr: float, device) -> dict:
+def train_lenet(net: nn.Module, train_iter: DataLoader, test_iter: DataLoader,
+                num_epochs: int,
+                lr: float, device: torch.device | str) -> dict[str, list[float]]:
     """训练 net，每个 epoch 记一次指标。
 
     返回 {"train_loss": [...], "train_acc": [...], "test_acc": [...]}

@@ -11,7 +11,8 @@
 ## T1 按轴求和的形状
 
 ```python
-def reduce_shape(shape: tuple, dim: int, keepdim: bool) -> tuple:
+def reduce_shape(shape: tuple[int, ...], dim: int, keepdim: bool
+                 ) -> tuple[int, ...]:
     """算出「对形状 shape 的张量沿 dim 求和」之后的结果形状。
 
     不调用 torch，纯推导。
