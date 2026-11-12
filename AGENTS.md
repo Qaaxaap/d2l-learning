@@ -105,15 +105,19 @@
 
 - 同步：`tools/sync.sh push`（写作区 → 开发机，不碰 `work/`）、
   `tools/sync.sh pull`（开发机 → 写作区，拉 `work/` 与 `PROGRESS.md`）。
-- 跑 Python 直接调开发机的系统解释器，**不要**套 `nix develop`：
+- 开发机是 **NixOS**（2026-11-11 从 Arch 换过来的）。解释器与科学计算包由 nix profile
+  提供，**不在 `nix develop` 里**，所以不要套 devShell 跑：
 
 ```bash
-ssh <开发机> 'cd <仓库目录> && python3 work/b02/b02.py'
+ssh <开发机> 'cd <仓库目录> && just check b19'
 ```
 
-  解释器和包都是系统那份（Arch python3.14 + `python-pytorch-cuda` 2.14.0，CUDA 可用）。
-  用 nix 的 python 会遮蔽系统解释器，C 扩展对不上。nix 只提供 uv/just/git。
-- 只有装了 `.venv` 里的包才要 `uv run python ...`。
+  当前是 python 3.13.17 + torch 2.11.0+cu128，CUDA 可用（RTX 4070 SUPER，11.6 GiB）。
+  仓库的 `flake.nix` 只装 uv/just/git 三个工具。
+- **用 justfile 当入口，不要手敲 `python3 tools/...`。** 有 justfile 的项目按项目入口走：
+  `just env` 查环境、`just check <单元>` 跑断言、`just run <脚本>` 跑作业、`just setup` 装依赖。
+  2026-11-12 之前我一直手敲 `python3 tools/check_xxx.py`，等于绕过了项目入口。
+- 只有需要 `.venv` 里的额外包时才 `uv run python ...`。
 
 ## 教学事实
 
