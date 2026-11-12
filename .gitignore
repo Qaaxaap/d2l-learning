@@ -6,6 +6,12 @@ result
 .direnv/
 data/
 output/
+
+# 学习过程中的产物：提交文件、模型权重、数组。代码（.py）才入库。
+work/**/*.csv
+work/**/*.pt
+work/**/*.pth
+work/**/*.npy
 *.png
 !notes/**/*.png
 LOCAL.md
