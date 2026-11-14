@@ -129,6 +129,15 @@ def beam_search(step_fn: Callable[..., Any], init_state: Any,
 
 下面这段想实现 seq2seq 与束搜索。**三处**问题。
 
+`Encoder`：输入 `X` 是 `(seq_len, batch)` 的整数张量（词索引）。
+`step_fn` 之外的编码器要返回两个值：`outputs` 是 `(seq_len, batch, num_hiddens)`，
+`state` 是 `(num_layers, batch, num_hiddens)`。调用方拿 `state` 当解码器的初始状态。
+
+`Decoder.init_state`：接收 `(num_layers, batch, num_hiddens)`，返回同形状。
+
+`beam_search`：`step_fn(token, state)` 返回 `(log_probs, next_state)`，
+其中 `log_probs` 是 `(vocab_size,)` 的对数概率。候选序列的分数是对数概率的**累加**。
+
 ```python
 class Encoder(nn.Module):
     def __init__(self, vocab_size, embed_size, num_hiddens):
@@ -162,5 +171,8 @@ def beam_search(step_fn, init_state, beam_size, max_len, bos, eos, alpha=0.75):
 
 三处分别指：**编码器的返回值**、**`init_state`**、**束搜索的分数表示**。
 
-三段提示：第一处让背景变量拿到了形状不对的张量；第二处让显存翻倍；
-第三处跑到十几步时所有分数都变成 0。
+三段提示：
+
+1. 第一处让背景变量拿到了形状不对的张量。
+2. 第二处让显存翻倍。
+3. 第三处跑到十几步时所有分数都变成 0。

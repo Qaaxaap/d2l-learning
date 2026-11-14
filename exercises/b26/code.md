@@ -129,6 +129,10 @@ def choose_parallel(num_params: int, num_gpus: int,
 
 下面这段是「训练一个 epoch 并计时」的写法。**三处**问题。
 
+`model` 是 `nn.Module`，`loader` 是 `DataLoader`，每次产出 `(x, y)` 两个张量；
+`optimizer` 是 `torch.optim` 里的优化器；`criterion` 是损失函数；
+`device` 是字符串 `"cuda"` 或 `"cpu"`。训练在本机 GPU 上跑，混合精度用 fp16。
+
 ```python
 def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
@@ -146,5 +150,8 @@ def train_epoch(model, loader, optimizer, criterion, device):
 
 三处分别指：**计时方式**、**混合精度的配套**、**循环里的打印**。
 
-三段提示：第一处测到的是提交任务的时间；第二处会让 fp16 的梯度下溢成 0；
-第三处每步都强制同步 GPU，还会触发图中断。
+三段提示：
+
+1. 第一处测到的是提交任务的时间。
+2. 第二处会让 fp16 的梯度下溢成 0。
+3. 第三处每步都强制同步 GPU，还会触发图中断。

@@ -183,6 +183,15 @@ def make_googlenet(in_channels: int = 1, num_classes: int = 10) -> nn.Module:
 
 下面这段想实现一个 Inception 块。**三处**问题。
 
+参数含义：
+
+- `c1`、`c4`：整数，通道数
+- `c2`、`c3`：`(int, int)` 二元组，第一个数是 1×1 卷积降维后的通道数，
+  第二个数是 3×3 或 5×5 卷积的输出通道数
+- `in_channels`：输入通道数
+
+块内所有卷积的步幅都是 1，输入的高宽在块内不变。
+
 ```python
 class Inception(nn.Module):
     def __init__(self, c1, c2, c3, c4, in_channels):
@@ -204,6 +213,9 @@ class Inception(nn.Module):
 
 三处分别指：**3×3 卷积的填充**、**5×5 卷积的填充**、**`torch.cat` 的维度**。
 
-三段提示：前两处的高宽对不上；第三处默认在**批量维**拼接——通道数不同时会报
+三段提示：
+
+1. 前两处的高宽对不上。
+2. 第三处默认在**批量维**拼接——通道数不同时会返回
 `Sizes of tensors must match except in dimension 0`，如果四条线的通道数恰好相同，
-则不报错、把批量拼成 4 倍。
+则不返回错误、把批量拼成 4 倍。

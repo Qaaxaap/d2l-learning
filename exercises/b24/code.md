@@ -150,6 +150,13 @@ class EncoderBlock(nn.Module):
 
 下面这段想实现多头注意力与位置编码。**三处**问题。
 
+`transpose_qkv`：输入 `(batch, n, p)`，输出 `(batch * num_heads, n, p / num_heads)`。
+
+`PositionalEncoding`：`forward` 接收 `(batch, n, num_hiddens)`，返回同形状。
+
+`AddNorm`：`forward(X, Y)` 里 `X` 与 `Y` 都是 `(batch, n, num_hiddens)`，
+残差连接要求两者同形状。
+
 ```python
 def transpose_qkv(X, num_heads):
     # X: (batch, n, p)
@@ -181,5 +188,8 @@ class AddNorm(nn.Module):
 
 三处分别指：**`transpose_qkv` 的切法**、**`P` 的存放方式**、**`AddNorm` 里 dropout 的位置**。
 
-三段提示：第一处会把每个位置的前几段通道当成一个头；第二处会让位置编码被训练；
-第三处会把残差路径也随机丢掉。
+三段提示：
+
+1. 第一处会把每个位置的前几段通道当成一个头。
+2. 第二处会让位置编码被训练。
+3. 第三处会把残差路径也随机丢掉。

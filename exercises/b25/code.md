@@ -122,6 +122,10 @@ params = params - lr * v_hat / (sqrt(s_hat) + eps)
 
 下面这段想实现 Adam。**三处**问题。
 
+`params` 是参数列表，每个元素是可训练张量；`grads` 与 `v`、`s` 都是列表，
+逐项与 `params` 同形状。`lr`、`beta1`、`beta2`、`eps` 是 Python float，
+`t` 是 Python int，表示第几步。函数原地更新 `params`，不返回值。
+
 ```python
 def adam_step(params, grads, v, s, lr, t, beta1=0.9, beta2=0.999, eps=1e-8):
     for p, g, vi, si in zip(params, grads, v, s):
@@ -135,5 +139,9 @@ def adam_step(params, grads, v, s, lr, t, beta1=0.9, beta2=0.999, eps=1e-8):
 
 三处分别指：**`v` 与 `s` 的用法**、**`t` 的起点**、**反向传播时的保护**。
 
-三段提示：第一处让前几步的更新量只有应有的 1/10；第二处会让 `beta1 ** t` 在第一步
-等于 1、除出 0；第三处会让带梯度的参数在 `.backward()` 时抛原地操作错误。
+三段提示：
+
+1. 第一处让前几步的更新量只有应有的 1/10。
+2. 第二处会让 `beta1 ** t` 在第一步
+等于 1、除出 0。
+3. 第三处会让带梯度的参数在 `.backward()` 时抛原地操作错误。

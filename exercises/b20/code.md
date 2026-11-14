@@ -143,29 +143,61 @@ def train_rnn(corpus_indices: list[int], vocab_size: int, num_hiddens: int,
 
 ## T5 改错
 
-下面这段想训练字符级 RNN。**三处**问题。
+下面这段想训练字符级 RNN。三个函数各有一处问题，共三处。
+
+代码的注释里标了每个变量的形状，读之前先对一遍形状。
 
 ```python
 def to_onehot(X: torch.Tensor, vocab_size: int) -> list[torch.Tensor]:
-    return [torch.nn.functional.one_hot(x, vocab_size).float() for x in X.T]
+    """X: (batch, num_steps) 的整数张量。
 
-def rnn_forward(inputs, state, params):
+    返回长度 num_steps 的列表，第 t 个元素是第 t 步的输入。
+    """
+    return [torch.nn.functional.one_hot(x, vocab_size).float() for x in X]
+
+
+def rnn_forward(inputs: list[torch.Tensor], state: tuple[torch.Tensor],
+                params: tuple[torch.Tensor, ...]) -> tuple[list[torch.Tensor],
+                                                          tuple[torch.Tensor]]:
+    """inputs: num_steps 个 (batch, vocab)
+    state: (H,)，H 形状 (batch, h)
+    params: (W_xh, W_hh, b_h, W_hq, b_q)
+    返回 (outputs, (H_new,))，outputs 里每个元素是 (batch, vocab) 的 logits。
+    """
     W_xh, W_hh, b_h, W_hq, b_q = params
     H, = state
     outputs = []
-    for X in inputs:
-        H = torch.tanh(X @ W_xh + H @ W_hh + b_h)
+    for X in inputs:                                  # X: (batch, vocab)
+        H = torch.tanh(X @ W_xh + H @ W_hh + b_h)     # H: (batch, h)
         outputs.append(torch.softmax(H @ W_hq + b_q, dim=1))
     return outputs, (H,)
 
+
 def grad_clipping(params: list[torch.Tensor], theta: float) -> float:
+    """params 里每个元素的 .grad 与它本身同形状。
+
+    返回裁剪前的总范数。
+    """
     norm = torch.sqrt(sum((p.grad ** 2).sum() for p in params))
     if norm > theta:
         for p in params:
             p.data *= theta / norm
+    return norm
 ```
 
-三处分别指：**`to_onehot` 的拆法**、**输出的激活**、**裁剪的对象**。
+三处的位置：`to_onehot` 的推导式、`rnn_forward` 的 `outputs.append`、
+`grad_clipping` 的 `for p in params` 那两行。
 
-三段提示：第一处会让每个时间步的输入形状变成 `(num_steps,)` 而不是 `(batch,)`；
-第二处不报错，但训练几乎不动；第三处不报错，但模型会越训越小。
+改完的验收标准：
+
+| 函数 | 检查 |
+|---|---|
+| `to_onehot` | 返回列表长度等于 `num_steps`（即 `X.shape[1]`），每个元素形状 `(batch, vocab_size)` |
+| `rnn_forward` | `outputs` 里每个元素是 logits，能直接传给 `torch.nn.functional.cross_entropy`，不需要外部再做什么 |
+| `grad_clipping` | 调用前后 `p` 本身不变，`p.grad` 被缩放；返回值是裁剪前的总范数 |
+
+三段提示：
+
+1. 第一处会让第 t 步拿到 `(num_steps,)` 而不是 `(batch,)`。
+2. 第二处不返回错误，但训练几乎不动。
+3. 第三处不返回错误，但模型的参数会越训越小。

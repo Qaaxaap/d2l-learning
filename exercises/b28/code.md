@@ -145,6 +145,12 @@ def analogy(a: int, b: int, c: int, vecs: torch.Tensor,
 
 下面这段是跳字损失与共现矩阵的写法。**三处**问题。
 
+`skipgram_loss`：`center_vecs` 是 `(n, d)`、`context_idx` 是 `(n,)` 的整型张量、
+`all_vecs` 是 `(V, d)`。返回这批样本的平均损失，是 Python float。
+
+`cooccurrence`：`corpus` 是整数列表，`vocab_size` 是词表大小。
+返回 `(vocab_size, vocab_size)` 的浮点张量，窗口是双向的。
+
 ```python
 def skipgram_loss(center_vecs, context_idx, all_vecs):
     scores = center_vecs @ all_vecs.T
@@ -169,5 +175,8 @@ def cooccurrence(corpus, vocab_size, window=2):
 
 三处分别指：**`log_softmax` 的维度**、**共现矩阵的对称性**、**`target` 那行没用上**。
 
-三段提示：第一处会在样本之间归一化；第二处让 `X` 不等于 `X.T`；
-第三处说明写了两个版本的 `picked`，其中一个多余。
+三段提示：
+
+1. 第一处会在样本之间归一化。
+2. 第二处让 `X` 不等于 `X.T`。
+3. 第三处说明写了两个版本的 `picked`，其中一个多余。

@@ -120,6 +120,11 @@ def build_classifier(embed: torch.Tensor, num_classes: int) -> torch.nn.Module:
 
 下面这段想做一个用双向 RNN 的情感分类器。**三处**问题。
 
+输入 `inputs` 是 `(batch, num_steps)` 的整数张量（已填充到同一长度）。
+`vocab_size` 是词表大小，`num_classes` 是情感类别数。
+`nn.GRU` 用了 `batch_first=True` 与 `bidirectional=True`，所以 `h` 的形状是
+`(num_layers * 2, batch, num_hiddens)`。
+
 ```python
 class SentimentRNN(nn.Module):
     def __init__(self, vocab_size, embed_size, num_hiddens, num_classes):
@@ -139,5 +144,8 @@ class SentimentRNN(nn.Module):
 
 三处分别指：**嵌入层的填充符号**、**双向 RNN 取哪个状态**、**softmax 与损失函数**。
 
-三段提示：第一处让填充符号也被训练成有意义的向量；第二处只取到一个方向；
-第三处与 `CrossEntropyLoss` 重复了。
+三段提示：
+
+1. 第一处让填充符号也被训练成有意义的向量。
+2. 第二处只取到一个方向。
+3. 第三处与 `CrossEntropyLoss` 重复了。

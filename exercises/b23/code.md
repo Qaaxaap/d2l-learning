@@ -126,6 +126,15 @@ def nadaraya_watson(queries: torch.Tensor, keys: torch.Tensor,
 
 下面这段想实现注意力。**三处**问题。
 
+`masked_softmax`：`X` 是 `(batch, n, m)`，`valid_lens` 是 `None` 或
+`(batch,)` 或 `(batch, n)`；返回与 `X` 同形状。
+
+`AdditiveAttention`：`queries` 是 `(batch, n_q, q)`，`keys` 是 `(batch, n_k, k)`，
+`values` 是 `(batch, n_k, v)`，其中 `q ≠ k` 是允许的；返回 `(batch, n_q, v)`。
+
+`DotProductAttention`：`queries` 是 `(batch, n_q, d)`，`keys` 是 `(batch, n_k, d)`，
+两者最后一维相同，都是 `d`；返回 `(batch, n_q, v)`。
+
 ```python
 def masked_softmax(X, valid_lens):
     if valid_lens is None:
@@ -163,5 +172,8 @@ class DotProductAttention(nn.Module):
 
 三处分别指：**掩蔽值**、**加性注意力的广播**、**点积注意力的缩放**。
 
-三段提示：第一处训练几步梯度就变 `nan`；第二处要求 `n_q == n_k` 才能跑；
-第三处 `d` 大时权重接近 one-hot。
+三段提示：
+
+1. 第一处训练几步梯度就变 `nan`。
+2. 第二处要求 `n_q == n_k` 才能跑。
+3. 第三处 `d` 大时权重接近 one-hot。

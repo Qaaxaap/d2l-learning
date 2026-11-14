@@ -26,8 +26,8 @@ from typing import Any, Generator
 
 **这一章不训练**。数据管道与 RNN 前向分开验证，训练在 B20。
 
-验收分三类：**精确**（形状、右移一位、与 `nn.RNN` 一致）、
-**结构**（词表互逆）、**性质**（随机采样的随机性、相邻采样的连续性）。
+验收分三类。**精确**：形状、右移一位、与 `nn.RNN` 一致。**结构**：词表互逆。
+**性质**：随机采样的随机性、相邻采样的连续性。
 
 ---
 
@@ -186,8 +186,12 @@ def rnn_forward(Xs: torch.Tensor, H0: torch.Tensor, W_xh: torch.Tensor,
 
 下面这段想实现随机采样。**三处**问题。
 
+`corpus` 是长度 800 的整数列表，`batch_size = 8`，`num_steps = 6`。
+生成器的每次产出是 `(X, Y)`，两者都应当是 `(batch_size, num_steps)` 的整型张量。
+
 ```python
-def data_iter_random(corpus: list[int], batch_size: int, num_steps: int):
+def data_iter_random(corpus: list[int], batch_size: int, num_steps: int
+                     ) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
     num_examples = len(corpus) // num_steps
     epoch_size = num_examples // batch_size
     starts = list(range(num_examples))
@@ -201,5 +205,9 @@ def data_iter_random(corpus: list[int], batch_size: int, num_steps: int):
 
 三处分别指：**样本个数的算法**、**标签的切片**、**起点的顺序**。
 
-三段提示：第一处不报错，但最后一段的标签会越界；第二处不报错，损失能降，
-但模型学成原样复制；第三处不报错，只是每轮的批次顺序固定不变。
+三段提示：
+
+1. 第一处不返回错误，但最后一段的标签会越界。
+2. 第二处不返回错误，损失能降，
+但模型学成原样复制。
+3. 第三处不返回错误，只是每轮的批次顺序固定不变。
