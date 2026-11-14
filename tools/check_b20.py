@@ -70,6 +70,18 @@ def main() -> int:
             f"第 0 步应当把索引 0 与 2 置 1，得到 {out[0].tolist()}"
         )
 
+    @case("T1 to_onehot 用满 vocab_size")
+    def _t1b():
+        # 这一批里没有索引 3，词表大小仍是 4
+        X = torch.tensor([[0, 0, 1], [1, 0, 0]])
+        outs = mod.to_onehot(X, vocab_size=4)
+        assert len(outs) == 3, f"应有 3 个时间步，得到 {len(outs)}"
+        for t, o in enumerate(outs):
+            assert tuple(o.shape) == (2, 4), (
+                f"第 {t} 步形状应为 (batch, vocab_size) = (2,4)，得到 {tuple(o.shape)}。"
+                "one_hot 要传 num_classes，最后一维不能由这一批的最大索引决定"
+            )
+
     @case("T2 init_rnn_state 与 rnn_forward")
     def _t2a():
         torch.manual_seed(0)

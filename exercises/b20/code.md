@@ -35,6 +35,9 @@ def to_onehot(X: torch.Tensor, vocab_size: int) -> list[torch.Tensor]:
     """X 形状 (batch, num_steps) 的整数张量。
 
     返回长度为 num_steps 的列表，每个元素形状 (batch, vocab_size)。
+
+    vocab_size 是函数参数，不是「这一批里出现过的最大索引 + 1」。
+    某一批只出现了 0 和 1 时，输出仍然必须是 (batch, vocab_size)。
     """
 ```
 
