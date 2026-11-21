@@ -34,7 +34,11 @@ import torch.nn as nn
 class Encoder(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, num_hiddens: int,
                  num_layers: int = 1) -> None:
-        """Embedding + nn.GRU。"""
+        """Embedding + nn.GRU。
+
+        嵌入层见讲义第 2 节：nn.Embedding(vocab_size, embed_size)，
+        权重形状 (vocab_size, embed_size)，输入索引几维输出就多一维。
+        """
 
     def forward(self, X: torch.Tensor, state: torch.Tensor | None = None
                 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -59,7 +63,10 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, num_hiddens: int,
                  num_layers: int = 1) -> None:
-        """Embedding + nn.GRU + Linear(num_hiddens, vocab_size)。"""
+        """Embedding + nn.GRU + Linear(num_hiddens, vocab_size)。
+
+        嵌入层用法同 T1，见讲义第 2 节。
+        """
 
     def init_state(self, enc_state: torch.Tensor) -> torch.Tensor:
         """把编码器的最终状态拿来做解码器的初始状态。
