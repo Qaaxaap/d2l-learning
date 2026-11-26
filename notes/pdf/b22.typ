@@ -3,7 +3,7 @@
 // 深蓝 #16324F 灰度约 20%，节标题 #1F4E79 约 32%，红 #A33A2E 约 40%
 // 金 #C0872A 约 55%，底色都在 92% 以上，转灰度后仍是浅底
 #set document(title: "B22 编码器-解码器与束搜索", author: "d2l 私教")
-#set page(paper: "a4", margin: (left: 46mm, right: 46mm, top: 20mm, bottom: 22mm))
+#set page(paper: "a4", margin: (left: 32mm, right: 32mm, top: 18mm, bottom: 20mm))
 #set page(footer: context {
   set text(size: 8pt, fill: rgb("#555"))
   grid(columns: (1fr, auto),
