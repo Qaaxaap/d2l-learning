@@ -1,4 +1,7 @@
 // ---- 版面 ----
+// 配色：屏幕彩色，灰度打印后靠明度差与结构（边框/标签）区分
+// 深蓝 #16324F 灰度约 20%，节标题 #1F4E79 约 32%，红 #A33A2E 约 40%
+// 金 #C0872A 约 55%，底色都在 92% 以上，转灰度后仍是浅底
 #set document(title: "B22 编码器-解码器与束搜索", author: "d2l 私教")
 #set page(paper: "a4", margin: (left: 46mm, right: 46mm, top: 20mm, bottom: 22mm))
 #set page(footer: context {
@@ -13,14 +16,14 @@
 
 // 标题
 #show heading.where(level: 1): it => {
-  set text(size: 17pt, weight: "bold", fill: rgb("#111111"))
+  set text(size: 17pt, weight: "bold", fill: rgb("#16324F"))
   block(above: 1.6em, below: 0.9em, width: 100%,
     [#it
      #v(2pt)
-     #line(length: 100%, stroke: 1.2pt + rgb("#111111"))])
+     #line(length: 100%, stroke: 1.2pt + rgb("#1F4E79"))])
 }
 #show heading.where(level: 2): it => {
-  set text(size: 12.5pt, weight: "bold", fill: rgb("#222222"))
+  set text(size: 12.5pt, weight: "bold", fill: rgb("#1F4E79"))
   block(above: 1.3em, below: 0.6em, it)
 }
 #show heading.where(level: 3): it => {
@@ -30,25 +33,25 @@
 
 // 行内代码
 #show raw.where(block: false): it => box(
-  fill: rgb("#F0F0F0"), inset: (x: 2.5pt, y: 0.5pt), radius: 1.5pt,
-  text(font: ("DejaVu Sans Mono", "Noto Sans CJK SC"), size: 8.8pt, fill: rgb("#333333"), it.text),
+  fill: rgb("#F6F8FA"), inset: (x: 2.5pt, y: 0.5pt), radius: 1.5pt,
+  text(font: ("DejaVu Sans Mono", "Noto Sans CJK SC"), size: 8.8pt, fill: rgb("#8B2252"), it.text),
 )
 // 代码块：突破正文宽度
 #show raw.where(block: true): it => block(
   width: 100%, outset: (x: 18mm), fill: rgb("#F7F7F7"),
-  stroke: (left: 2pt + rgb("#222222")), inset: (x: 8pt, y: 6pt), radius: 0pt,
+  stroke: (left: 2pt + rgb("#1F4E79")), inset: (x: 8pt, y: 6pt), radius: 0pt,
   text(font: ("DejaVu Sans Mono", "Noto Sans CJK SC"), size: 8.4pt, it),
 )
 
 // ---- 组件 ----
-#let note(body, title: "要点", color: rgb("#222222"), bg: rgb("#F4F4F4")) = block(
+#let note(body, title: "要点", color: rgb("#1F4E79"), bg: rgb("#EDF3FA")) = block(
   width: 100%, fill: bg, stroke: (left: 2.5pt + color), radius: (right: 2pt),
   inset: (x: 9pt, y: 7pt), above: 0.9em, below: 0.9em,
   [#text(size: 9pt, weight: "bold", fill: color)[#title] #h(0.4em)
    #text(size: 9.5pt)[#body]],
 )
-#let warn(body) = note(body, title: "坑", color: rgb("#111111"), bg: rgb("#F4F4F4"))
-#let box-node(body, fill: rgb("#F4F4F4"), stroke: rgb("#222222"), inset: 8pt) = box(
+#let warn(body) = note(body, title: "坑", color: rgb("#A33A2E"), bg: rgb("#FBEFEC"))
+#let box-node(body, fill: rgb("#EDF3FA"), stroke: rgb("#1F4E79"), inset: 8pt) = box(
   inset: (x: inset, y: 5pt), radius: 3pt, stroke: 0.7pt + stroke, fill: fill,
   align(center, text(size: 9.5pt)[#body]),
 )
@@ -70,21 +73,21 @@
 #page(footer: none)[
 #align(center)[
   #v(38mm)
-  #text(size: 11pt, fill: rgb("#888"))[动手学深度学习 · 第一版 · 第 10 章]
+  #text(size: 11pt, fill: rgb("#777"))[动手学深度学习 · 第一版 · 第 10 章]
   #v(8mm)
-  #text(size: 26pt, weight: "bold", fill: rgb("#111111"))[编码器-解码器]
-  #text(size: 26pt, weight: "bold", fill: rgb("#111111"))[与束搜索]
+  #text(size: 26pt, weight: "bold", fill: rgb("#16324F"))[编码器-解码器]
+  #text(size: 26pt, weight: "bold", fill: rgb("#16324F"))[与束搜索]
   #v(6mm)
   #text(size: 12pt, fill: rgb("#555"))[从 one-hot 到嵌入，从定长到变长]
   #v(20mm)
-  #block(width: 60%, stroke: (top: 0.8pt + rgb("#888")))
+  #block(width: 60%, stroke: (top: 0.8pt + rgb("#777")))
   #v(6mm)
   #text(size: 9.5pt, fill: rgb("#666"))[
     讲义 § B22 · 读完能自己写出 seq2seq 与束搜索
   ]
 ]
 #v(1fr)
-#align(center, text(size: 8.5pt, fill: rgb("#888"))[
+#align(center, text(size: 8.5pt, fill: rgb("#777"))[
   2026-11 · 第二版 · 源文件 notes/pdf/b22.typ
 ])
 ]
@@ -94,7 +97,7 @@
 // ---- 目录 ----
 #outline()
 #v(8pt)
-#text(size: 8.5pt, fill: rgb("#888"))[
+#text(size: 8.5pt, fill: rgb("#777"))[
   页码在页脚。框标「要点」的是该记住的,标「坑」的是常错的。
 ]
 
@@ -117,11 +120,11 @@
 ]
 
 #v(6pt)
-#text(size: 9pt, weight: "bold", fill: rgb("#111111"))[全章路线]
+#text(size: 9pt, weight: "bold", fill: rgb("#1F4E79"))[全章路线]
 #v(4pt)
 
 #block(width: 100%, [
-  #let step(n, title, detail, color: rgb("#222222")) = block(
+  #let step(n, title, detail, color: rgb("#1F4E79")) = block(
     width: 100%, fill: rgb("#FAFAFA"), stroke: (left: 2.5pt + color),
     inset: (x: 9pt, y: 6pt), radius: (right: 2pt), below: 4pt,
     grid(columns: (auto, auto, 1fr), column-gutter: 8pt, align: horizon,
@@ -130,7 +133,7 @@
       text(size: 8.5pt, fill: rgb("#666"))[#detail],
     )
   )
-  #step([2], [嵌入], [词索引怎么变成向量。这一节是后面所有模型的入口], color: rgb("#333333"))
+  #step([2], [嵌入], [词索引怎么变成向量。这一节是后面所有模型的入口], color: rgb("#8B2252"))
   #step([3-4], [编码器与解码器], [两个 RNN 拼成 seq2seq，把变长压成定长再展开])
   #step([5], [训练], [强制教学与它的代价])
   #step([6-8], [生成], [贪婪、穷举、束搜索，一条从差到好的线])
@@ -139,7 +142,7 @@
 #v(10pt)
 #grid(columns: (1fr, 1fr), column-gutter: 18pt,
   block([
-    #text(size: 9pt, weight: "bold", fill: rgb("#111111"))[读之前需要的东西]
+    #text(size: 9pt, weight: "bold", fill: rgb("#1F4E79"))[读之前需要的东西]
     #v(3pt)
     #set text(size: 8.5pt)
     #set par(leading: 0.75em)
@@ -148,7 +151,7 @@
     - B21 的 GRU 与 LSTM 门控
   ]),
   block([
-    #text(size: 9pt, weight: "bold", fill: rgb("#111111"))[本章关键词]
+    #text(size: 9pt, weight: "bold", fill: rgb("#1F4E79"))[本章关键词]
     #v(3pt)
     #text(size: 8.5pt)[
       背景变量、嵌入、自回归、强制教学、
@@ -181,9 +184,9 @@ B19 与 B20 的字符级语言模型，输入 $T$ 个字符，输出 $T$ 个预�
 原因是 RNN 的结构固定。它每读一个输入就更新一次隐藏状态，每个隐藏状态对应一次输出。输入几步，输出就几步。
 
 #flow(
-  box-node[#text(size: 8.5pt, fill: rgb("#888"))[输入] \ 4 个词],
+  box-node[#text(size: 8.5pt, fill: rgb("#777"))[输入] \ 4 个词],
   arrow[→], box-node[RNN], arrow[→],
-  box-node[#text(size: 8.5pt, fill: rgb("#888"))[输出] \ 4 个词],
+  box-node[#text(size: 8.5pt, fill: rgb("#777"))[输出] \ 4 个词],
 )
 #caption[单 RNN：读几个词，就只能吐几个词。步数绑死。]
 
@@ -196,7 +199,7 @@ B19 与 B20 的字符级语言模型，输入 $T$ 个字符，输出 $T$ 个预�
 #flow(
   box-node[#text(size: 8.5pt)[编码器] \ GRU],
   arrow[→],
-  box-node(fill: rgb("#E4E4E4"), stroke: rgb("#111111"))[背景变量 $bold(c)$ \ #text(size: 8pt)[定长]],
+  box-node(fill: rgb("#FDF4E3"), stroke: rgb("#C0872A"))[背景变量 $bold(c)$ \ #text(size: 8pt)[定长]],
   arrow[→],
   box-node[#text(size: 8.5pt)[解码器] \ GRU],
 )
@@ -224,10 +227,10 @@ B19 与 B20 用的是 one-hot。建一个长度等于词表大小的向量，第
 
 #let bit(v, size: 15pt) = box(
   width: size, height: size,
-  fill: if v == 1 { rgb("#222222") } else { rgb("#EDEDED") },
+  fill: if v == 1 { rgb("#1F4E79") } else { rgb("#EDEDED") },
   stroke: 0.6pt + white,
   align(center + horizon,
-    text(size: 7.5pt, fill: if v == 1 { white } else { rgb("#999") })[#v]),
+    text(size: 7.5pt, fill: if v == 1 { white } else { rgb("#777") })[#v]),
 )
 
 #align(center, block(breakable: false, above: 0.8em, below: 0.4em, [
@@ -257,11 +260,11 @@ torch 里用 `F.one_hot(索引, num_classes=V)` 生成。B20 的 `to_onehot` 做
   #v(5pt)
   #grid(columns: (68pt, 1fr), column-gutter: 8pt, row-gutter: 6pt, align: horizon,
     text(size: 8.5pt)[one-hot],
-    block(width: 100%, height: 14pt, fill: rgb("#111111"), radius: 2pt,
+    block(width: 100%, height: 14pt, fill: rgb("#A33A2E"), radius: 2pt,
       inset: (x: 5pt),
       [#align(left + horizon, text(size: 7.5pt, fill: white, weight: "bold")[39 KB])]),
     text(size: 8.5pt)[128 维嵌入],
-    block(width: 4%, height: 14pt, fill: rgb("#222222"), radius: 2pt),
+    block(width: 4%, height: 14pt, fill: rgb("#1F4E79"), radius: 2pt),
   )
 ])
 #caption[实心块长度按实际占用画。差 78 倍。]
@@ -282,16 +285,16 @@ $ bold(W) in RR^(V times d), quad V = "词表大小", quad d = "每个词的维�
 
 #align(center, block(breakable: false, above: 1em, below: 0.4em, [
   #grid(columns: (86pt, auto, auto), column-gutter: 14pt, align: horizon,
-    block(stroke: 0.6pt + rgb("#888"), inset: 5pt, radius: 2pt, width: 100%, [
-      #text(size: 7.5pt, fill: rgb("#999"))[权重矩阵 $(V, d)$]
+    block(stroke: 0.6pt + rgb("#777"), inset: 5pt, radius: 2pt, width: 100%, [
+      #text(size: 7.5pt, fill: rgb("#777"))[权重矩阵 $(V, d)$]
       #v(2pt)
       #grid(columns: 1, row-gutter: 2.5pt,
-        [#text(size: 7.5pt, fill: rgb("#999"))[第 0 行]],
-        [#text(size: 7.5pt, fill: rgb("#999"))[第 1 行]],
-        [#block(width: 100%, fill: rgb("#222222"), inset: 2.5pt, radius: 1.5pt,
+        [#text(size: 7.5pt, fill: rgb("#777"))[第 0 行]],
+        [#text(size: 7.5pt, fill: rgb("#777"))[第 1 行]],
+        [#block(width: 100%, fill: rgb("#7B2D5E"), inset: 2.5pt, radius: 1.5pt,
           text(size: 7.5pt, fill: white)[第 3 行])],
-        [#text(size: 7.5pt, fill: rgb("#999"))[第 4 行]],
-        [#text(size: 7.5pt, fill: rgb("#999"))[...]],
+        [#text(size: 7.5pt, fill: rgb("#777"))[第 4 行]],
+        [#text(size: 7.5pt, fill: rgb("#777"))[...]],
       )
     ]),
     text(size: 12pt)[→],
@@ -326,7 +329,7 @@ $ bold(W) in RR^(V times d), quad V = "词表大小", quad d = "每个词的维�
 
 以下是在本机测的，$V = 10000$、$d = 128$。
 
-#table(columns: (auto, auto, 1fr), stroke: (x, y) => (top: 0.5pt + rgb("#999")),
+#table(columns: (auto, auto, 1fr), stroke: (x, y) => (top: 0.5pt + rgb("#777")),
   align: (left, left, left),
   [输入], [输出], [说明],
   [`(3,)`], [`(3, 128)`], [前面几个索引，输出就多几行],
@@ -353,7 +356,7 @@ $ bold(e)_i bold(W) = bold(W)[i] $
 
 本章题面统一用 `embed_size` 表示 $d$，书上取 32。序列长度 $T$ 加批量 $n$ 之后，编码器的输入形状是：
 
-#table(columns: (auto, auto, 1fr), stroke: (x, y) => (top: 0.5pt + rgb("#999")),
+#table(columns: (auto, auto, 1fr), stroke: (x, y) => (top: 0.5pt + rgb("#777")),
   align: (left, left, left),
   [步骤], [形状], [说明],
   [原始索引], [`(T, n)`], [$T$ 个时间步，每步 $n$ 个整数],
@@ -398,11 +401,11 @@ $ bold(h)_t = f(bold(x)_t, bold(h)_(t-1)), quad bold(c) = q(bold(h)_1, dots, bol
 设序列长 $T$、批量 $n$、词表 $V$、嵌入维 $e$、隐藏维 $h$、层数 1。
 
 #flow(
-  box-node(fill: rgb("#F0F0F0"))[索引 `(T, n)`],
+  box-node(fill: rgb("#F6F8FA"))[索引 `(T, n)`],
   arrow[→],
   box-node[嵌入 `(T, n, e)`],
   arrow[→],
-  box-node(fill: rgb("#E4E4E4"), stroke: rgb("#111111"))[`h_n` `(1, n, h)`],
+  box-node(fill: rgb("#FDF4E3"), stroke: rgb("#C0872A"))[`h_n` `(1, n, h)`],
 )
 #caption[从词索引走到背景变量。解码器需要的正是最后那个。]
 
@@ -414,9 +417,9 @@ $ bold(h)_t = f(bold(x)_t, bold(h)_(t-1)), quad bold(c) = q(bold(h)_1, dots, bol
   #grid(columns: (auto, auto, auto), column-gutter: 10pt, align: horizon,
     [#grid(columns: 1, row-gutter: 2pt,
       [#text(size: 7.5pt)[5 个词]],
-      [#block(width: 90pt, height: 7pt, fill: rgb("#222222"), radius: 1pt)])],
+      [#block(width: 90pt, height: 7pt, fill: rgb("#1F4E79"), radius: 1pt)])],
     arrow[→],
-    box-node(fill: rgb("#F4F4F4"), stroke: rgb("#111111"), inset: 5pt)[`(1, n, h)`],
+    box-node(fill: rgb("#FBEFEC"), stroke: rgb("#A33A2E"), inset: 5pt)[`(1, n, h)`],
   )
 ]))
 #caption[不管输入多长,都压成同一个形状。50 个词的细节要挤进这个向量。]
@@ -442,9 +445,9 @@ $y_(t'-1)$ 是上一步的输出。解码器用自己的输出作为下一步的
 
 #align(center, block(breakable: false, above: 0.9em, below: 0.3em, [
   #grid(columns: (auto, auto, auto, auto, auto), column-gutter: 6pt, align: horizon,
-    box-node(fill: rgb("#F0F0F0"))[$y_0$],
+    box-node(fill: rgb("#F6F8FA"))[$y_0$],
     arrow[→], box-node[解码器], arrow[→],
-    box-node(fill: rgb("#F4F4F4"))[$y_1$ #text(size: 7.5pt, fill: rgb("#888"))[回填]],
+    box-node(fill: rgb("#EDF3FA"))[$y_1$ #text(size: 7.5pt, fill: rgb("#777"))[回填]],
   )
 ]))
 #caption[上一步的输出转一圈回到输入。这叫自回归。]
@@ -458,7 +461,7 @@ $y_(t'-1)$ 是上一步的输出。解码器用自己的输出作为下一步的
 #align(center, block(breakable: false, above: 0.9em, below: 0.3em, [
   #grid(columns: (auto, auto, auto), column-gutter: 10pt, align: horizon,
     box-node[编码器的计算图],
-    text(size: 10pt, fill: rgb("#111111"))[✂ detach],
+    text(size: 10pt, fill: rgb("#A33A2E"))[✂ detach],
     box-node[解码器的计算图],
   )
 ]))
@@ -485,15 +488,15 @@ $ -log P = -sum_(t'=1)^(T') log P(y_(t') | y_1, dots, y_(t'-1), bold(c)) $
 训练时解码器的输入有两种选择。
 
 #block(above: 1em, below: 0.6em, grid(columns: (1fr, 1fr), column-gutter: 14pt,
-  block(fill: rgb("#F4F4F4"), inset: 9pt, radius: 2pt, [
-    #text(weight: "bold", fill: rgb("#111111"))[自回归]
+  block(fill: rgb("#EDF3FA"), inset: 9pt, radius: 2pt, [
+    #text(weight: "bold", fill: rgb("#5A6673"))[自回归]
     #v(3pt)
     输入是上一步的*预测* $hat(y)_(t'-1)$。
     #v(3pt)
     早期预测全错,输入就是噪声,误差累积,学得很慢。
   ]),
-  block(fill: white, stroke: 1.2pt + rgb("#111111"), inset: 9pt, radius: 2pt, [
-    #text(weight: "bold", fill: rgb("#111111"))[强制教学 teacher forcing]
+  block(fill: white, stroke: 1.2pt + rgb("#1F4E79"), inset: 9pt, radius: 2pt, [
+    #text(weight: "bold", fill: rgb("#1F4E79"))[强制教学 teacher forcing]
     #v(3pt)
     输入是上一步的*标签* $y_(t'-1)$。
     #v(3pt)
@@ -510,8 +513,8 @@ $ -log P = -sum_(t'=1)^(T') log P(y_(t') | y_1, dots, y_(t'-1), bold(c)) $
 #align(center, block(breakable: false, above: 0.8em, below: 0.3em, [
   #table(columns: (auto, auto, 1fr), stroke: none,
     align: (left, left, left), inset: (y: 3pt), column-gutter: 12pt,
-    [*训练时*], [`我 爱 学 习` → 预测 `学`], [#text(size: 8pt, fill: rgb("#888"))[看到正确的过去]],
-    [*预测时*], [`我 爱 跑 习` → 预测 ?], [#text(size: 8pt, fill: rgb("#888"))[看到自己生成的过去]],
+    [*训练时*], [`我 爱 学 习` → 预测 `学`], [#text(size: 8pt, fill: rgb("#777"))[看到正确的过去]],
+    [*预测时*], [`我 爱 跑 习` → 预测 ?], [#text(size: 8pt, fill: rgb("#777"))[看到自己生成的过去]],
   )
 ]))
 #caption[两者的分布不同。这个差异叫暴露偏差。]
@@ -521,7 +524,7 @@ $ -log P = -sum_(t'=1)^(T') log P(y_(t') | y_1, dots, y_(t'-1), bold(c)) $
 #heading(level: 2)[5.4 输入与标签错一位]
 
 #align(center, block(breakable: false, above: 0.8em, below: 0.4em, [
-  #table(columns: (auto, auto), stroke: (x, y) => (top: 0.5pt + rgb("#999")),
+  #table(columns: (auto, auto), stroke: (x, y) => (top: 0.5pt + rgb("#777")),
     align: (left, left),
     [解码器输入], [`<bos>` 我 爱 学 习],
     [解码器标签], [我 爱 学 习 `<eos>`],
@@ -544,11 +547,11 @@ $ -log P = -sum_(t'=1)^(T') log P(y_(t') | y_1, dots, y_(t'-1), bold(c)) $
 词表有 A、B、C、`<eos>` 四个词,每步概率如下。
 
 #align(center, block(breakable: false, above: 0.9em, below: 0.3em, [
-  #table(columns: (auto, auto, auto), stroke: (x, y) => (top: 0.5pt + rgb("#999")),
+  #table(columns: (auto, auto, auto), stroke: (x, y) => (top: 0.5pt + rgb("#777")),
     align: (left, left, center),
     [路径], [每步概率], [总概率],
-    [贪婪选出 `A B C <eos>`], [$0.5 times 0.4 times 0.4 times 0.6$], [#text(fill: rgb("#111111"), weight: "bold")[0.048]],
-    [另一条 `A C B <eos>`], [$0.5 times 0.3 times 0.6 times 0.6$], [#text(fill: rgb("#111111"), weight: "bold")[0.054]],
+    [贪婪选出 `A B C <eos>`], [$0.5 times 0.4 times 0.4 times 0.6$], [#text(fill: rgb("#A33A2E"), weight: "bold")[0.048]],
+    [另一条 `A C B <eos>`], [$0.5 times 0.3 times 0.6 times 0.6$], [#text(fill: rgb("#1F4E79"), weight: "bold")[0.054]],
   )
 ]))
 #caption[第二条第 2 步是 0.3,不是最大。但之后每步更高,总概率反而更大。]
@@ -569,19 +572,19 @@ $ -log P = -sum_(t'=1)^(T') log P(y_(t') | y_1, dots, y_(t'-1), bold(c)) $
 
 #align(center, block(breakable: false, above: 0.9em, below: 0.4em, [
   #grid(columns: (1fr, 1fr, 1fr), column-gutter: 10pt,
-    block(fill: rgb("#F0F0F0"), inset: 8pt, radius: 2pt, [
+    block(fill: rgb("#F6F8FA"), inset: 8pt, radius: 2pt, [
       #align(center, [#text(weight: "bold")[贪婪]])
       #align(center, [#text(size: 8.5pt)[每步留 1 个]])
       #v(3pt)
       #align(center, [#text(fill: rgb("#666"), size: 8pt)[$O(|cal(Y)| T')$]])
     ]),
-    block(fill: white, stroke: 1.2pt + rgb("#111111"), inset: 8pt, radius: 2pt, [
-      #align(center, [#text(weight: "bold", fill: rgb("#222222"))[束搜索]])
+    block(fill: white, stroke: 1.2pt + rgb("#1F4E79"), inset: 8pt, radius: 2pt, [
+      #align(center, [#text(weight: "bold", fill: rgb("#1F4E79"))[束搜索]])
       #align(center, [#text(size: 8.5pt)[每步留 $k$ 个]])
       #v(3pt)
       #align(center, [#text(fill: rgb("#666"), size: 8pt)[$O(k |cal(Y)| T')$]])
     ]),
-    block(fill: rgb("#F0F0F0"), inset: 8pt, radius: 2pt, [
+    block(fill: rgb("#F6F8FA"), inset: 8pt, radius: 2pt, [
       #align(center, [#text(weight: "bold")[穷举]])
       #align(center, [#text(size: 8.5pt)[每步留全部]])
       #v(3pt)
@@ -626,7 +629,7 @@ $ "score" = 1 / L^alpha sum_(t'=1)^L log P(y_(t') | dots), quad alpha = 0.75 $
 // ============ 第 9 章 坑 ============
 #heading(level: 1)[九、实现会踩的坑]
 
-#table(columns: (auto, auto), stroke: (x, y) => (top: 0.4pt + rgb("#999")),
+#table(columns: (auto, auto), stroke: (x, y) => (top: 0.4pt + rgb("#777")),
   align: (left, left), inset: (y: 4pt),
   [#text(weight: "bold")[坑]], [#text(weight: "bold")[症状与原因]],
   [背景变量取了 `out`], [形状对但语义错。多层时 `out` 只反映最后一层,该取 `h_n`],
@@ -646,7 +649,7 @@ $ "score" = 1 / L^alpha sum_(t'=1)^L log P(y_(t') | dots), quad alpha = 0.75 $
 // ============ 速查 ============
 #heading(level: 1)[命令速查]
 
-#table(columns: (auto, 1fr, auto), stroke: (x, y) => (top: 0.4pt + rgb("#999")),
+#table(columns: (auto, 1fr, auto), stroke: (x, y) => (top: 0.4pt + rgb("#777")),
   align: (left, left, center), inset: (y: 4pt),
   [#text(weight: "bold")[命令]], [#text(weight: "bold")[作用]], [#text(weight: "bold")[节]],
   [`nn.Embedding(V, d)`], [建词嵌入表,权重形状 `(V, d)`], [2.4],
@@ -681,7 +684,7 @@ $ "score" = 1 / L^alpha sum_(t'=1)^L log P(y_(t') | dots), quad alpha = 0.75 $
 
 #heading(level: 1)[答案]
 
-#block(fill: rgb("#F4F4F4"), stroke: (left: 2.5pt + rgb("#111111")), inset: (x: 9pt, y: 6pt), radius: (right: 2pt), above: 0.6em, below: 1em, [
+#block(fill: rgb("#EDF3FA"), stroke: (left: 2.5pt + rgb("#C0872A")), inset: (x: 9pt, y: 6pt), radius: (right: 2pt), above: 0.6em, below: 1em, [
   #text(size: 9pt)[先自己做一遍。看一眼答案能想起来,合上纸还是写不出。]
 ])
 
