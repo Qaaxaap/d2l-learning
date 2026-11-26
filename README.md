@@ -8,7 +8,7 @@
 |---|---|
 | 教材 | 《动手学深度学习》第一版（书上代码是 MXNet） |
 | 电子版 | <https://zh.d2l.ai/>（第二版，有 PyTorch 代码，章节号与纸质书不同） |
-| 框架 | PyTorch 2.14 + CUDA |
+| 框架 | PyTorch 2.11 + CUDA |
 
 ## 仓库里有什么
 
@@ -59,6 +59,19 @@ just --list                         # 看全部命令
 ```
 
 搭环境、跑脚本、看图、git 的细节见 [`notes/a0-setup.md`](notes/a0-setup.md)。
+
+## 许可证
+
+两类内容分别授权。
+
+| 内容 | 许可 | 全文 |
+|---|---|---|
+| 源代码（`.py`、`.typ`、`.nix`、`justfile`）| MIT | [LICENSE](LICENSE) |
+| 文档与讲义（`.md`、`.pdf`、图片）| CC BY-SA 4.0 | [LICENSE-docs](LICENSE-docs) |
+
+`exercises/*/code.md` 里既有说明文字也有代码片段。文字按 CC BY-SA，代码片段按 MIT。
+
+简单说：代码随便拿去用；讲义可以转载和改编，改编后的版本要按同样许可发布并署名。
 
 ## 参考材料
 
