@@ -16,3 +16,6 @@ work/**/*.npy
 !notes/**/*.png
 LOCAL.md
 LOCAL.env
+
+# 本地实验与临时产物
+.cache/
